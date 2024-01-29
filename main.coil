@@ -23,4 +23,4 @@ end
 
 let css_ast_node = parse_decl(".test { width: 10px; }").0
 
-$("#app"):append(to_html(css_ast_node))
+$(".editor"):append(to_html(css_ast_node))

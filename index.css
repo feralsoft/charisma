@@ -1,0 +1,57 @@
+.editor {
+  background: lightgray;
+  padding: 0.5rem;
+  font-family: monospace;
+
+  --number-color: green;
+  --class-color: darkblue;
+}
+
+[data-kind]:hover {
+  outline: 1px solid black;
+}
+
+[data-kind="declaration"] > [data-attr="query"] {
+  display: flex;
+  gap: 0.25rem;
+  &::after {
+    content: "{";
+  }
+}
+
+[data-kind="declaration"]::after {
+  content: "}";
+}
+
+[data-kind="declaration"] > [data-attr="rules"] {
+  padding-left: 1rem;
+  > [data-kind] {
+    display: flex;
+    gap: 0.25rem;
+    > [data-attr="name"]::after {
+      content: ":";
+    }
+    &::after {
+      margin-left: -0.25rem;
+      content: ";";
+    }
+  }
+}
+
+[data-kind="px_value"] {
+  display: flex;
+  color: var(--number-color);
+  &::after {
+    color: black;
+    content: "px";
+  }
+}
+
+[data-kind="class_selector"] {
+  display: flex;
+  color: var(--class-color);
+  &::before {
+    color: black;
+    content: ".";
+  }
+}
