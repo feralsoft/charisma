@@ -55,3 +55,12 @@
     content: ".";
   }
 }
+
+[data-kind="selector_modifier"] {
+  display: flex;
+}
+
+[data-kind="child_selector"] {
+  display: flex;
+  gap: 0.25rem;
+}
