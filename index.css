@@ -7,8 +7,11 @@
   --class-color: darkblue;
 }
 
-[data-kind]:hover {
-  outline: 1px solid black;
+[data-kind] {
+  width: min-content;
+  &:hover {
+    outline: 1px solid black;
+  }
 }
 
 [data-kind="declaration"] > [data-attr="query"] {
