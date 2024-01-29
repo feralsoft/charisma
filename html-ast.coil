@@ -1,0 +1,32 @@
+export def compile(node) = node.pipe(:kind {
+  def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
+  def :class_selector({name}) = str("." name)
+  def :declaration({query rules}) = str(compile(query) "{\n  " rules.map(compile).join(";\n  ") "\n}")
+  def :rule({name value}) = str(name ": " compile(value))
+  def :pct_value({value}) = str(value "%")
+  def :vh_value({value}) = str(value "vh")
+  def :vw_value({value}) = str(value "vw")
+  def :px_value({value}) = str(value "px")
+  def :pseudo_selector_without_args({name}) = str(":" name)
+  def :pseudo_selector_with_args({name args}) = str(":" name "(" args.map(compile).join(", ") ")")
+  def :selector_arg({arg}) = arg
+})(node)
+
+export protocol to_ast
+
+def Underscore:prototype.to_ast = this:insert(to_ast)
+
+def HTMLElement:prototype.to_ast()
+  if let kind = this:getAttribute("data-kind")
+    let node = {kind: kind}
+    for elem of this:children
+      node.(elem:getAttribute("data-attr")) = elem.to_ast()
+    end
+    return node
+  end
+  if this:childElementCount == 0
+    return this:textContent
+  else if this:getAttribute("data-attr")
+    return this:children.0.to_ast()
+  end
+end

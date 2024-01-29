@@ -1,22 +1,4 @@
-def html_to_ast(html_node)
-  if let kind = html_node:getAttribute("data-kind")
-    let node = {kind: kind}
-    for elem of html_node:children
-      node.(elem:getAttribute("data-attr")) = html_to_ast(elem)
-    end
-    return node
-  end
-  if html_node:childElementCount == 0
-    return html_node:textContent
-  else if html_node:getAttribute("data-attr")
-    return html_to_ast(html_node:children.0)
-  end
-end
-
-def compile_query_string(node) = node.pipe(:kind {
-  def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
-  def :class_selector({name}) = str("." name)
-})(node)
+import {to_ast, compile} from "../html-ast.coil"
 
 def highlight_elements_who_match_query(queries)
   for decl of $$("[data-kind=declaration]")
@@ -26,13 +8,13 @@ def highlight_elements_who_match_query(queries)
     decl:addEventListener("mouseleave" |e| entered = false)
     window:addEventListener("keydown" do |e|
       if e:ctrlKey if entered
-          for elem of $$(query_node.pipe(html_to_ast compile_query_string))
+          for elem of $$(query_node.pipe(_.to_ast() compile))
             elem:classList:add("css-query-hover")
           end
       end end
     end)
     window:addEventListener("keyup" do |e|
-      for elem of $$(query_node.pipe(html_to_ast compile_query_string))
+      for elem of $$(query_node.pipe(_.to_ast() compile))
         elem:classList:remove("css-query-hover")
       end
     end)
