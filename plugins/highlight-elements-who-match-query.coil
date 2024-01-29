@@ -25,11 +25,11 @@ def highlight_elements_who_match_query(queries)
     decl:addEventListener("mouseenter" |e| entered = true)
     decl:addEventListener("mouseleave" |e| entered = false)
     window:addEventListener("keydown" do |e|
-      if e:ctrlKey and entered
-        for elem of $$(query_node.pipe(html_to_ast compile_query_string))
-          elem:classList:add("css-query-hover")
-        end
-      end
+      if e:ctrlKey if entered
+          for elem of $$(query_node.pipe(html_to_ast compile_query_string))
+            elem:classList:add("css-query-hover")
+          end
+      end end
     end)
     window:addEventListener("keyup" do |e|
       for elem of $$(query_node.pipe(html_to_ast compile_query_string))
