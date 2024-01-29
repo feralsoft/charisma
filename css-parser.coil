@@ -155,7 +155,7 @@ let parse_value = ParseMap{
 
 let parse_rule = Parser[
   Init[{kind: :rule}]
-  Trim Store[/^\w+/ :name]
+  Trim Store[/^(\w|-)+/ :name]
   Trim Skip[":"]
   Trim Then[parse_value :value]
   Trim Skip[";"]

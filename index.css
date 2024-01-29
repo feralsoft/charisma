@@ -31,8 +31,11 @@
   > [data-kind] {
     display: flex;
     gap: 0.25rem;
-    > [data-attr="name"]::after {
-      content: ":";
+    > [data-attr="name"] {
+      width: max-content;
+      &::after {
+        content: ":";
+      }
     }
     &::after {
       margin-left: -0.25rem;
@@ -66,4 +69,8 @@
 [data-kind="child_selector"] {
   display: flex;
   gap: 0.25rem;
+}
+
+.css-query-hover {
+  outline: 2px solid rgba(255, 255, 0, 0.439);
 }

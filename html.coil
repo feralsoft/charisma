@@ -11,3 +11,7 @@ def Keyword:prototype.(Meta:from_entries)(entries)
   end
   return elem
 end
+
+window:$ = document:querySelector:bind(document)
+window:$$ = document:querySelectorAll:bind(document)
+def window:str(...strings) = strings:join("")
