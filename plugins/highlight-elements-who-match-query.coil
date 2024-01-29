@@ -19,14 +19,20 @@ def compile_query_string(node) = node.pipe(:kind {
 })(node)
 
 def highlight_elements_who_match_query(queries)
-  for query_elem of $$("[data-kind=declaration] > [data-attr=query]")
-    query_elem:addEventListener("mouseover" do |e|
-      for elem of $$(query_elem.pipe(html_to_ast compile_query_string))
-        elem:classList:add("css-query-hover")
+  for decl of $$("[data-kind=declaration]")
+    let query_node = decl:querySelector("[data-attr=query]")
+    let entered = false
+    decl:addEventListener("mouseenter" |e| entered = true)
+    decl:addEventListener("mouseleave" |e| entered = false)
+    window:addEventListener("keydown" do |e|
+      if e:ctrlKey and entered
+        for elem of $$(query_node.pipe(html_to_ast compile_query_string))
+          elem:classList:add("css-query-hover")
+        end
       end
     end)
-    query_elem:addEventListener("mouseleave" do |e|
-      for elem of $$(query_elem.pipe(html_to_ast compile_query_string))
+    window:addEventListener("keyup" do |e|
+      for elem of $$(query_node.pipe(html_to_ast compile_query_string))
         elem:classList:remove("css-query-hover")
       end
     end)
