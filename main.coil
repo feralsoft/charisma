@@ -7,10 +7,12 @@ def to_html(node)
   let elem = :div{"data-kind" => node:kind}
   for [key val] of node.reject(0 Set["kind" "children"])
     let attr_elem = :div{"data-attr" => key}
-    if typeof(val) == "string"
+    if Object(val).is_a?(String)
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:append(val)
+    else if val.is_a?(Array)
+      attr_elem:append(...val.map(to_html))
     else
       attr_elem:append(to_html(val))
     end
@@ -19,10 +21,6 @@ def to_html(node)
   return elem
 end
 
-let css_ast_node = parse_decl("
-.name {
-  width: 10px;
-}
-")
+let css_ast_node = parse_decl(".test { width: 10px; }").0
 
--- $("#app"):append(to_html(css_ast_node))
+$("#app"):append(to_html(css_ast_node))
