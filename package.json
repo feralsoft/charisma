@@ -1,0 +1,17 @@
+{
+  "name": "css-edit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8"
+  },
+  "dependencies": {
+    "@coil-lang/compiler": "^0.1.4"
+  }
+}

@@ -1,0 +1,13 @@
+def Keyword:prototype.(Meta:create)(...children)
+  let elem = document:createElement(this)
+  elem:append(...children)
+  return elem
+end
+
+def Keyword:prototype.(Meta:from_entries)(entries)
+  let elem = document:createElement(this)
+  for [key val] of entries
+    elem:setAttribute(key val)
+  end
+  return elem
+end
