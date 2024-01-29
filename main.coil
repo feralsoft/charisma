@@ -5,9 +5,9 @@ let $ = document:querySelector:bind(document)
 
 def to_html(node)
   let elem = :div{"data-kind" => node:kind}
-  for [key val] of node.reject(0 Set["kind" "children"])
+  for [key val] of node.reject(0 Set["kind"])
     let attr_elem = :div{"data-attr" => key}
-    if Object(val).is_a?(String)
+    if val.is_a?(String)
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:append(val)
