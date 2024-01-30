@@ -4,7 +4,7 @@ import {to_html, compile, to_ast} from "./html-ast.coil"
 import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.coil"
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
 
-let css = ".test { color: rgba(255, 20, 20, 0); }"
+let css = ".test { color: #afafaf; }"
 
 let css_ast_node = parse_decl(css).0
 

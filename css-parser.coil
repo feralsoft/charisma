@@ -177,6 +177,14 @@ let parse_rgba_value = Parser[
   Trim Skip[")"]
 ]
 
+let parse_hex_value = Parser[
+  Init[{kind: :hex_value}]
+  Skip["#"]
+  Trim Store[/^[a-fA-F0-9]{2}/ :r]
+  Trim Store[/^[a-fA-F0-9]{2}/ :g]
+  Trim Store[/^[a-fA-F0-9]{2}/ :b]
+]
+
 let parse_value = ParseMap{
   /^\d+px/ => parse_px_value
   /^\d+vw/ => parse_vw_value
@@ -184,6 +192,7 @@ let parse_value = ParseMap{
   /^\d+%/ => parse_pct_value
   "rgba" => parse_rgba_value
   "rgb" => parse_rgb_value
+  "#" => parse_hex_value
 }
 
 let parse_rule = Parser[

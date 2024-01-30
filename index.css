@@ -109,6 +109,23 @@
   }
 }
 
+[data-kind="hex_value"] {
+  display: flex;
+  &::before {
+    content: "#";
+    color: var(--function-color);
+  }
+  [data-attr="r"] {
+    background-color: rgba(255, 0, 0, 0.25);
+  }
+  [data-attr="g"] {
+    background-color: rgba(0, 255, 0, 0.25);
+  }
+  [data-attr="b"] {
+    background-color: rgba(0, 0, 255, 0.25);
+  }
+}
+
 .css-query-hover {
   outline: 2px solid rgba(255, 255, 0, 0.439);
 }
