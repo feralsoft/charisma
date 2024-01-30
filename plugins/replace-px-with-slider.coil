@@ -1,4 +1,4 @@
-def replace_px_with_slider
+def replace_px_with_slider({rebuild})
   for elem of $$("[data-kind=px_value]")
     let val_elem = elem:querySelector("[data-attr=value]")
     let original_value = val_elem:textContent.as_num()
@@ -14,10 +14,13 @@ def replace_px_with_slider
         let new_value = original_value - (e:clientY - start_y)
         val_elem:setAttribute("data-value" new_value)
         val_elem:replaceChildren(new_value)
+        rebuild()
       end
     })
 
-    window:addEventListener("mouseup" |e| active = false)
+    window:addEventListener("mouseup" |e| {
+      active = false
+    })
   end
 end
 

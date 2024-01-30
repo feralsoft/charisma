@@ -9,7 +9,7 @@
 
 [data-kind] {
   width: min-content;
-  &:hover {
+  &:hover:not(:has([data-kind]:hover)) {
     outline: 1px solid black;
   }
 }

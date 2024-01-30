@@ -21,8 +21,13 @@ export def Parser(...@steps) end
 def Parser:prototype.invoke([_ str]) =
   this:steps.reduce(|[result str] parser| parser([result str]), [nil str])
 
+let nid_count = 1
 export def Init(@state) end
-def Init:prototype.invoke([_ str]) = [this:state str]
+def Init:prototype.invoke([_ str])
+  let nid = nid_count
+  nid_count = nid_count + 1
+  return [{...this:state nid: nid} str]
+end
 
 export def Then(@parser @property) end
 def Then:prototype.invoke([state str]) = this:parser([state str])

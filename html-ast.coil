@@ -1,11 +1,15 @@
-def call_with(object) = |key| ({
+def call_with(object) = {
+  def Meta:from_entries(entries) = {
+    ...entries
+    def Meta:invoke(key) = this.key(object)
+  }
+}
 
-})
-
-export def compile(node) = node.pipe(:kind {
+export def compile(node) = node.pipe(:kind call_with(node){
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
   def :class_selector({name}) = str("." name)
-  def :declaration({query rules}) = str(compile(query) "{\n  " rules.map(compile).join(";\n  ") "\n}")
+  -- TODO: handle no rules case
+  def :declaration({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
   def :rule({name value}) = str(name ": " compile(value))
   def :pct_value({value}) = str(value "%")
   def :vh_value({value}) = str(value "vh")
@@ -14,17 +18,18 @@ export def compile(node) = node.pipe(:kind {
   def :pseudo_selector_without_args({name}) = str(":" name)
   def :pseudo_selector_with_args({name args}) = str(":" name "(" args.map(compile).join(", ") ")")
   def :selector_arg({arg}) = arg
-})(node)
+})
 
 export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind}
-  for [key val] of ast_node.reject(0 Set["kind"])
+  for [key val] of ast_node.reject(0 Set["kind" "nid"])
     let attr_elem = :div{"data-attr" => key}
     if val.is_a?(String)
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:append(val)
     else if val.is_a?(Array)
+      attr_elem:setAttribute("data-array" true)
       attr_elem:append(...val.map(to_html))
     else
       attr_elem:append(to_html(val))
@@ -48,7 +53,9 @@ def HTMLElement:prototype.to_ast()
   end
   if this:childElementCount == 0
     return this:textContent
-  else if this:getAttribute("data-attr")
+  else if this:getAttribute("data-array") == "true"
+    return this:children.map(|node| node.to_ast()).into([])
+  else
     return this:children.0.to_ast()
   end
 end
