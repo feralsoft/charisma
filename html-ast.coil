@@ -1,3 +1,7 @@
+def call_with(object) = |key| ({
+
+})
+
 export def compile(node) = node.pipe(:kind {
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
   def :class_selector({name}) = str("." name)
@@ -11,6 +15,24 @@ export def compile(node) = node.pipe(:kind {
   def :pseudo_selector_with_args({name args}) = str(":" name "(" args.map(compile).join(", ") ")")
   def :selector_arg({arg}) = arg
 })(node)
+
+export def to_html(ast_node)
+  let elem = :div{"data-kind" => ast_node:kind}
+  for [key val] of ast_node.reject(0 Set["kind"])
+    let attr_elem = :div{"data-attr" => key}
+    if val.is_a?(String)
+      attr_elem:setAttribute("data-value" val)
+      attr_elem:setAttribute("contenteditable", true)
+      attr_elem:append(val)
+    else if val.is_a?(Array)
+      attr_elem:append(...val.map(to_html))
+    else
+      attr_elem:append(to_html(val))
+    end
+    elem:append(attr_elem)
+  end
+  return elem
+end
 
 export protocol to_ast
 

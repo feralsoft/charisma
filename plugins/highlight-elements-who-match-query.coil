@@ -6,18 +6,18 @@ def highlight_elements_who_match_query(queries)
     let entered = false
     decl:addEventListener("mouseenter" |e| entered = true)
     decl:addEventListener("mouseleave" |e| entered = false)
-    window:addEventListener("keydown" do |e|
+    window:addEventListener("keydown" |e| {
       if e:ctrlKey if entered
           for elem of $$(query_node.pipe(_.to_ast() compile))
             elem:classList:add("css-query-hover")
           end
       end end
-    end)
-    window:addEventListener("keyup" do |e|
+    })
+    window:addEventListener("keyup" |e| {
       for elem of $$(query_node.pipe(_.to_ast() compile))
         elem:classList:remove("css-query-hover")
       end
-    end)
+    })
   end
 end
 

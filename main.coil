@@ -1,25 +1,8 @@
 import "./html.coil"
 import {parse_decl} from "./css-parser.coil"
+import {to_html, compile} from "./html-ast.coil"
 import replace_px_with_slider from "./plugins/replace-px-with-slider.coil"
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
-
-def to_html(node)
-  let elem = :div{"data-kind" => node:kind}
-  for [key val] of node.reject(0 Set["kind"])
-    let attr_elem = :div{"data-attr" => key}
-    if val.is_a?(String)
-      attr_elem:setAttribute("data-value" val)
-      attr_elem:setAttribute("contenteditable", true)
-      attr_elem:append(val)
-    else if val.is_a?(Array)
-      attr_elem:append(...val.map(to_html))
-    else
-      attr_elem:append(to_html(val))
-    end
-    elem:append(attr_elem)
-  end
-  return elem
-end
 
 let css = ".test { font-size: 10px; }"
 
@@ -29,24 +12,18 @@ document:styleSheets.0:insertRule(css)
 
 let rules = [css_ast_node]
 
-def compile_query_string(node) = node.pipe(:kind {
-  def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
-  def :class_selector({name}) = str("." name)
-})(node)
-
-let queries = rules.map(|node| [compile_query_string(node:query) node]).into(Map{}).log()
+let queries = rules.map(|node| [compile(node:query) node]).into(Map{}).log()
 
 def find_decls_that_apply_to(node) = queries.filter(|[query _]| node:matches(query)).map(1)
 
 $(".editor"):append(to_html(css_ast_node))
 
-
 let plugins = [replace_px_with_slider highlight_elements_who_match_query(queries)]
 
-window:addEventListener("click" do |e|
+window:addEventListener("click" |e| {
   if e:altKey
     let node = find_decls_that_apply_to(e:target).each(|node| $(".editor"):append(to_html(node)))
   end
-end)
+})
 
 plugins.each(|plugin| plugin())

@@ -12,6 +12,6 @@
     "vite": "^5.0.8"
   },
   "dependencies": {
-    "@coil-lang/compiler": "0.1.5"
+    "@coil-lang/compiler": "0.1.6"
   }
 }

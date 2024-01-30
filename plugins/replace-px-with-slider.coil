@@ -4,18 +4,18 @@ def replace_px_with_slider
     let original_value = val_elem:textContent.as_num()
     let start_y = nil
     let active = false
-    elem:addEventListener("mousedown" do |e|
+    elem:addEventListener("mousedown" |e| {
       start_y = e:clientY
       active = true
-    end)
+    })
 
-    window:addEventListener("mousemove" do |e|
+    window:addEventListener("mousemove" |e| {
       if active
         let new_value = original_value - (e:clientY - start_y)
         val_elem:setAttribute("data-value" new_value)
         val_elem:replaceChildren(new_value)
       end
-    end)
+    })
 
     window:addEventListener("mouseup" |e| active = false)
   end
