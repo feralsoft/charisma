@@ -1,12 +1,13 @@
 def replace_px_with_slider({rebuild})
   for elem of $$("[data-kind=px_value]")
     let val_elem = elem:querySelector("[data-attr=value]")
-    let original_value = val_elem:textContent.as_num()
+    let original_value = nil
     let start_y = nil
     let active = false
     elem:addEventListener("mousedown" |e| {
       start_y = e:clientY
       active = true
+      original_value = val_elem:textContent.as_num()
     })
 
     window:addEventListener("mousemove" |e| {

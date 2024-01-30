@@ -30,6 +30,7 @@ plugins.each(|plugin| plugin({
   queries: queries
   def :rebuild()
     for html_node of $$("[data-kind=declaration]")
+      -- TODO: this is brittle as hell!
       document:styleSheets.0:deleteRule(0)
       document:styleSheets.0:insertRule(compile(html_node.to_ast()))
     end
