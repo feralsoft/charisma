@@ -5,6 +5,7 @@
 
   --number-color: green;
   --class-color: darkblue;
+  --function-color: darkred;
 }
 
 [data-kind] {
@@ -72,6 +73,40 @@
 [data-kind="child_selector"] {
   display: flex;
   gap: 0.25rem;
+}
+
+[data-kind="rgb_value"] {
+  display: flex;
+  &::before {
+    content: "rgb";
+    color: var(--function-color);
+  }
+  > [data-attr]:not(:last-child)::after {
+    content: ",";
+  }
+  > [data-attr="r"]::before {
+    content: "(";
+  }
+  > [data-attr="b"]::after {
+    content: ")";
+  }
+}
+
+[data-kind="rgba_value"] {
+  display: flex;
+  &::before {
+    content: "rgba";
+    color: var(--function-color);
+  }
+  > [data-attr]:not(:last-child)::after {
+    content: ",";
+  }
+  > [data-attr="r"]::before {
+    content: "(";
+  }
+  > [data-attr="a"]::after {
+    content: ")";
+  }
 }
 
 .css-query-hover {

@@ -18,6 +18,8 @@ export def compile(node) = node.pipe(:kind call_with(node){
   def :pseudo_selector_without_args({name}) = str(":" name)
   def :pseudo_selector_with_args({name args}) = str(":" name "(" args.map(compile).join(", ") ")")
   def :selector_arg({arg}) = arg
+  def :rgb_value({r g b}) = str("rgb(" r ", " g ", " b ")")
+  def :rgba_value({r g b a}) = str("rgba(" r ", " g ", " b ", " a ")")
 })
 
 export def to_html(ast_node)
