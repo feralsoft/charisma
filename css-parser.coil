@@ -245,7 +245,7 @@ let parse_value = ParseMap{
   "rgb" => parse_rgb_value
   "#" => parse_hex_value
   _ => parse_text_value
-}.log()
+}
 
 let parse_rule = Parser[
   Init[{kind: :rule}]

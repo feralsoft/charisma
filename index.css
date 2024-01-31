@@ -5,7 +5,8 @@
   --number-color: green;
   --class-color: darkblue;
   --function-color: darkred;
-  --rule-name-color: darkblue;
+  --rule-name-color: rgb(32, 123, 156);
+  --string-color: brown;
 }
 
 [data-kind="declaration"]::after {
@@ -142,6 +143,7 @@
 [data-kind="variable"] {
   > [data-attr="name"] {
     color: var(--variable-color);
+    filter: contrast(0.5);
     &::before {
       content: "--";
     }
@@ -161,6 +163,7 @@
     content: "=";
   }
   > [data-attr="value"] {
+    color: var(--string-color);
     &::before,
     &::after {
       content: '"';

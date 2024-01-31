@@ -5,7 +5,7 @@ def call_with(object) = {
   }
 }
 
-export def compile(node) = node.pipe(:kind call_with(node.log()){
+export def compile(node) = node.pipe(:kind call_with(node){
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
   def :class_selector({name}) = str("." name)
   def :selector_modifier({lhs rhs}) = str(compile(lhs) compile(rhs))
@@ -37,6 +37,7 @@ export def to_html(ast_node)
     if val.is_a?(String)
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
+      attr_elem:style:setProperty("--value" val)
       if Number(val).pipe(Number:isNaN !_)
         attr_elem:setAttribute("data-numeric", true)
       end
