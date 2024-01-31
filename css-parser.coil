@@ -17,6 +17,8 @@ def RegExp:prototype.matches?(str)
   end
 end
 
+def _.matches?(str) = {result: str, skip: 0}
+
 export def Parser(...@steps) end
 def Parser:prototype.invoke([_ str]) =
   this:steps.reduce(|[result str] parser| parser([result str]), [nil str])
@@ -78,6 +80,10 @@ def Trim.invoke([state str]) = [state str:trimLeft()]
 def Debug(@msg) end
 def Debug:prototype.invoke([state str]) = [state str].log(this:msg)
 
+let digit_regex = /^[+-]?([0-9]*[.])?[0-9]+/
+
+def RegExp:prototype.+(regex) = RegExp[this:source + regex:source]
+
 let parse_class_selector = Parser[
   Init[{kind: :class_selector}]
   Skip["."]
@@ -129,25 +135,25 @@ end
 
 let parse_px_value = Parser[
   Init[{kind: :px_value}]
-  Store[/^\d+/ :value]
+  Store[digit_regex :value]
   Skip["px"]
 ]
 
 let parse_vw_value = Parser[
   Init[{kind: :vw_value}]
-  Store[/^\d+/ :value]
+  Store[digit_regex :value]
   Skip["vw"]
 ]
 
 let parse_vh_value = Parser[
   Init[{kind: :vh_value}]
-  Store[/^\d+/ :value]
+  Store[digit_regex :value]
   Skip["vh"]
 ]
 
 let parse_pct_value = Parser[
   Init[{kind: :pct_value}]
-  Store[/^\d+/ :value]
+  Store[digit_regex :value]
   Skip["%"]
 ]
 
@@ -155,11 +161,11 @@ let parse_rgb_value = Parser[
   Init[{kind: :rgb_value}]
   Skip["rgb"]
   Trim Skip["("]
-  Trim Store[/^\d+/ :r]
+  Trim Store[digit_regex :r]
   Trim Skip[","]
-  Trim Store[/^\d+/ :g]
+  Trim Store[digit_regex :g]
   Trim Skip[","]
-  Trim Store[/^\d+/ :b]
+  Trim Store[digit_regex :b]
   Trim Skip[")"]
 ]
 
@@ -167,13 +173,13 @@ let parse_rgba_value = Parser[
   Init[{kind: :rgba_value}]
   Skip["rgba"]
   Trim Skip["("]
-  Trim Store[/^\d+/ :r]
+  Trim Store[digit_regex :r]
   Trim Skip[","]
-  Trim Store[/^\d+/ :g]
+  Trim Store[digit_regex :g]
   Trim Skip[","]
-  Trim Store[/^\d+/ :b]
+  Trim Store[digit_regex :b]
   Trim Skip[","]
-  Trim Store[/^\d+/ :a]
+  Trim Store[digit_regex :a]
   Trim Skip[")"]
 ]
 
@@ -185,15 +191,34 @@ let parse_hex_value = Parser[
   Trim Store[/^[a-fA-F0-9]{2}/ :b]
 ]
 
+let parse_text_value = Parser[
+  Init[{kind: :plain_text_value}]
+  Store[/^((?!;).)*/ :value]
+]
+
+let parse_rem_value = Parser[
+  Init[{kind: :rem_value}]
+  Store[digit_regex :value]
+  Skip["rem"]
+]
+
+let parse_em_value = Parser[
+  Init[{kind: :em_value}]
+  Store[digit_regex :value]
+  Skip["em"]]
+
 let parse_value = ParseMap{
-  /^\d+px/ => parse_px_value
-  /^\d+vw/ => parse_vw_value
-  /^\d+vh/ => parse_vh_value
-  /^\d+%/ => parse_pct_value
+  digit_regex + /px/ => parse_px_value
+  digit_regex + /vw/ => parse_vw_value
+  digit_regex + /vh/ => parse_vh_value
+  digit_regex + /rem/ => parse_rem_value
+  digit_regex + /em/ => parse_em_value
+  digit_regex + /%/ => parse_pct_value
   "rgba" => parse_rgba_value
   "rgb" => parse_rgb_value
   "#" => parse_hex_value
-}
+  _ => parse_text_value
+}.log()
 
 let parse_rule = Parser[
   Init[{kind: :rule}]
@@ -203,11 +228,23 @@ let parse_rule = Parser[
   Trim Skip[";"]
 ]
 
+let parse_variable = Parser[
+  Init[{kind: :variable}]
+  Trim Skip["--"] Store[/^(\w|-)+/ :name]
+  Trim Skip[":"]
+  Trim Then[parse_value :value]
+  Trim Skip[";"]
+]
+
+let parse_statement = Parser[Trim
+  ParseMap{"--" => parse_variable _ => parse_rule}
+]
+
 let parse_declaration = Parser[
   Init[{kind: :declaration}]
   Trim Then[parse_query :query]
   Trim Skip["{"]
-  Until[/^\s*}/ parse_rule :rules]
+  Until[/^\s*}/ parse_statement :rules]
   Trim Skip["}"]
 ]
 

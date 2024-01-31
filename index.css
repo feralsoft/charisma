@@ -1,11 +1,11 @@
 .editor {
-  background: lightgray;
+  background-color: lightgray;
   padding: 0.5rem;
   font-family: monospace;
-
   --number-color: green;
   --class-color: darkblue;
   --function-color: darkred;
+  --rule-name-color: darkblue;
 }
 
 [data-kind] {
@@ -36,6 +36,7 @@
     display: flex;
     gap: 0.25rem;
     > [data-attr="name"] {
+      color: var(--rule-name-color);
       width: max-content;
       &::after {
         content: ":";
@@ -128,4 +129,21 @@
 
 .css-query-hover {
   outline: 2px solid rgba(255, 255, 0, 0.439);
+}
+
+[data-kind="rem_value"] > [data-attr="value"]::after {
+  content: "rem";
+}
+
+[data-kind="em_value"] > [data-attr="value"]::after {
+  content: "em";
+}
+
+[data-kind="variable"] {
+  > [data-attr="name"] {
+    color: var(--variable-color);
+    &::before {
+      content: "--";
+    }
+  }
 }

@@ -11,6 +11,7 @@ export def compile(node) = node.pipe(:kind call_with(node){
   -- TODO: handle no rules case
   def :declaration({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
   def :rule({name value}) = str(name ": " compile(value))
+  def :variable({name value}) = str("--" name ": " compile(value))
   def :pct_value({value}) = str(value "%")
   def :vh_value({value}) = str(value "vh")
   def :vw_value({value}) = str(value "vw")
@@ -20,6 +21,9 @@ export def compile(node) = node.pipe(:kind call_with(node){
   def :selector_arg({arg}) = arg
   def :rgb_value({r g b}) = str("rgb(" r ", " g ", " b ")")
   def :rgba_value({r g b a}) = str("rgba(" r ", " g ", " b ", " a ")")
+  def :plain_text_value({value}) = value
+  def :rem_value({value}) = str(value "rem")
+  def :em_value({value}) = str(value "em")
 })
 
 export def to_html(ast_node)
