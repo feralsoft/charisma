@@ -5,7 +5,7 @@ import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.c
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
 
 let rules = []
-for rule of document:styleSheets.0:rules.take(2)
+for rule of document:styleSheets.0:rules.take(1)
   rules:push(parse_decl(rule:cssText).0)
 end
 
