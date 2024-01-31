@@ -110,10 +110,37 @@ let parse_pseudo_selector_without_args = Parser[
   Store[/^(\w|-)+/ :name]
 ]
 
+let parse_pseudo_element_selector = Parser[
+  Init[{kind: :pseudo_element_selector}]
+  Skip["::"]
+  Store[/^(\w|-)+/ :name]
+]
+
+let parse_attribute_selector_no_match = Parser[
+  Init[{kind: :attribute_selector_no_match}]
+  Skip["["]
+  Store[/^(\w|-)+/ :name]
+  Skip["]"]
+]
+
+let parse_attribute_selector_equals = Parser[
+  Init[{kind: :attribute_selector_equals}]
+  Skip["["]
+  Store[/^(\w|-)+/ :name]
+  Trim Skip["="]
+  Trim Skip["\""]
+  Store[/^((?!").)+/ :value]
+  Skip["\""]
+  Trim Skip["]"]
+]
+
 let parse_query_step = ParseMap{
   "." => parse_class_selector
+  "::" => parse_pseudo_element_selector
   /^:(\w|-)+\(/ => parse_pseudo_selector_with_args
   ":" => parse_pseudo_selector_without_args
+  /^\[(\w|-)+=".*"\]/ => parse_attribute_selector_equals
+  /^\[(\w|-)+\]/ => parse_attribute_selector_no_match
 }
 
 def parse_query([_ s])

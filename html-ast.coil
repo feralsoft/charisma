@@ -5,9 +5,10 @@ def call_with(object) = {
   }
 }
 
-export def compile(node) = node.pipe(:kind call_with(node){
+export def compile(node) = node.pipe(:kind call_with(node.log()){
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
   def :class_selector({name}) = str("." name)
+  def :selector_modifier({lhs rhs}) = str(compile(lhs) compile(rhs))
   -- TODO: handle no rules case
   def :declaration({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
   def :rule({name value}) = str(name ": " compile(value))
@@ -18,12 +19,15 @@ export def compile(node) = node.pipe(:kind call_with(node){
   def :px_value({value}) = str(value "px")
   def :pseudo_selector_without_args({name}) = str(":" name)
   def :pseudo_selector_with_args({name args}) = str(":" name "(" args.map(compile).join(", ") ")")
+  def :pseudo_element_selector({name}) = str("::" name)
   def :selector_arg({arg}) = arg
   def :rgb_value({r g b}) = str("rgb(" r ", " g ", " b ")")
   def :rgba_value({r g b a}) = str("rgba(" r ", " g ", " b ", " a ")")
   def :plain_text_value({value}) = value
   def :rem_value({value}) = str(value "rem")
   def :em_value({value}) = str(value "em")
+  def :attribute_selector_no_match({name}) = str("[" name "]")
+  def :attribute_selector_equals({name value}) = str("[" name "=\"" value"\"]")
 })
 
 export def to_html(ast_node)

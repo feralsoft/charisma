@@ -8,6 +8,10 @@
   --rule-name-color: darkblue;
 }
 
+[data-kind="declaration"]::after {
+  content: "}";
+}
+
 [data-kind] {
   width: min-content;
   &:hover:not(:has([data-kind]:hover)) {
@@ -24,10 +28,6 @@
   [data-attr="name"] {
     width: max-content;
   }
-}
-
-[data-kind="declaration"]::after {
-  content: "}";
 }
 
 [data-kind="declaration"] > [data-attr="rules"] {
@@ -145,5 +145,28 @@
     &::before {
       content: "--";
     }
+  }
+}
+
+[data-kind="pseudo_element_selector"] > [data-attr="name"]::before {
+  content: "::";
+}
+
+[data-kind="attribute_selector_equals"] {
+  display: flex;
+  &::before {
+    content: "[";
+  }
+  > [data-attr="name"]::after {
+    content: "=";
+  }
+  > [data-attr="value"] {
+    &::before,
+    &::after {
+      content: '"';
+    }
+  }
+  &::after {
+    content: "]";
   }
 }

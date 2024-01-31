@@ -4,19 +4,16 @@ import {to_html, compile, to_ast} from "./html-ast.coil"
 import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.coil"
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
 
-let css = document:styleSheets.0:rules.0:cssText.log()
-
-let css_ast_node = parse_decl(css).0
-
--- document:styleSheets.0:insertRule(css)
-
-let rules = [css_ast_node]
+let rules = []
+for rule of document:styleSheets.0:rules.take(2)
+  rules:push(parse_decl(rule:cssText).0)
+end
 
 let queries = rules.map(|node| [compile(node:query) node]).into(Map{})
 
 def find_decls_that_apply_to(node) = queries.filter(|[query _]| node:matches(query)).map(1).into([])
 
-$(".editor"):append(to_html(css_ast_node))
+rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
 
 -- TODO: make a plugin to handle text input rerender the rule
 let plugins = [replace_numeric_with_slider highlight_elements_who_match_query]
