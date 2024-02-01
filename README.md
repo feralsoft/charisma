@@ -2,7 +2,8 @@
 
 ## Demos
 
-https://github.com/marcellerusu/css-edit/assets/7607387/32393a35-2e10-4ff1-993c-a4c36beec18f
+
+https://github.com/marcellerusu/css-edit/assets/7607387/27863977-ba38-4289-b78f-806a4726a5cc
 
 <img width="426" alt="Screenshot 2024-01-30 at 3 13 09 PM" src="https://github.com/marcellerusu/css-edit/assets/7607387/8419448d-6f12-418f-b7f3-bcb5f372453e">
 
