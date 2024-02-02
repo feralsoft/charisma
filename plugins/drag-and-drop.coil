@@ -1,0 +1,52 @@
+import {to_ast, to_html} from "../html-ast.coil"
+import "./drag-and-drop.css"
+import is_object from "./is_object.js"
+let draggable_query = ":is([data-kind=rule], [data-kind=variable])"
+
+
+def json_to_object(raw_obj)
+  if is_object(raw_obj)
+    let out = {}
+    for [key value] of Object:entries(raw_obj)
+      out.key = json_to_object(value)
+    end
+    return out
+  else
+    return raw_obj
+  end
+end
+
+
+def drag_and_drop
+  let root = $("[data-kind=declaration]")
+  let current = nil
+  for draggable of $$(draggable_query)
+    draggable:setAttribute("draggable" true)
+    draggable:addEventListener("dragstart" |e| {
+      draggable:classList:add("dragging")
+      e:dataTransfer:dropEffect = "move"
+      current = draggable
+      e:dataTransfer:setData("text/json", JSON:stringify(draggable.to_ast()))
+    })
+    draggable:addEventListener("dragenter" |e| {
+      draggable:classList:add("dragover")
+    })
+    draggable:addEventListener("dragleave" |e| {
+      draggable:classList:remove("dragover")
+    })
+    draggable:addEventListener("dragover" |e| {
+      e:preventDefault()
+      e:dataTransfer:dropEffect = "move"
+    })
+    draggable:addEventListener("drop" |e| {
+      e:preventDefault()
+      draggable:classList:remove("dragover")
+      let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
+      draggable:before(to_html(ast_node))
+      current:remove()
+      -- TODO: rebuild
+    })
+  end
+end
+
+export default drag_and_drop

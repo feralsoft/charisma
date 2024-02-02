@@ -5,6 +5,7 @@ import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.c
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
 import toggle_representation from "./plugins/toggle-representation.coil"
 import copy_paste from "./plugins/copy-paste.coil"
+import drag_and_drop from "./plugins/drag-and-drop.coil"
 
 let rules = []
 for rule of document:styleSheets.0:rules.take(1)
@@ -19,12 +20,14 @@ rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
 
 -- TODO: make a plugin to handle text input rerender the rule
 let plugins = [
-  toggle_representation
   replace_numeric_with_slider
   highlight_elements_who_match_query
+  toggle_representation
   copy_paste
+  drag_and_drop
 ]
 
+-- TODO: move to highlight_elements_who_match_query
 window:addEventListener("click" |e| {
   if e:altKey
     let node = find_decls_that_apply_to(e:target).each(|node| $(".editor"):append(to_html(node)))
@@ -38,6 +41,7 @@ plugins.each(|plugin| plugin({
       -- TODO: this is brittle as hell!
       document:styleSheets.0:deleteRule(0)
       document:styleSheets.0:insertRule(compile(html_node.to_ast()))
+      -- TODO: rebuild has to rerun all the plugins!!
     end
   end
 }))
