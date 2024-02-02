@@ -14,6 +14,7 @@ def copy_paste
       decl:classList:add("copied")
       setTimeout(|| decl:classList:remove("copied"), 1500)
     else
+      -- TODO: what if we're on a rule node already
       let rule = e:target:closest(rule_query)
       let code = str("\n" compile(rule.to_ast()) ";")
       e:clipboardData:setData("text/plain", code)
