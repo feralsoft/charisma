@@ -1,0 +1,26 @@
+import {compile, to_ast} from "../html-ast.coil"
+import "./copy-paste.css"
+
+let rule_query = ":is([data-kind=rule], [data-kind=variable])"
+
+def copy_paste
+  document:addEventListener("copy" |e| {
+    e:preventDefault()
+    -- TODO: brittle query
+    if let parent = e:target:closest("[data-attr=query]")
+      let decl = e:target:closest("[data-kind=declaration]")
+      let code = compile(decl.to_ast())
+      e:clipboardData:setData("text/plain", code)
+      decl:classList:add("copied")
+      setTimeout(|| decl:classList:remove("copied"), 1500)
+    else
+      let rule = e:target:closest(rule_query)
+      let code = str("\n" compile(rule.to_ast()) ";")
+      e:clipboardData:setData("text/plain", code)
+      rule:classList:add("copied")
+      setTimeout(|| rule:classList:remove("copied"), 1500)
+    end
+  })
+end
+
+export default copy_paste

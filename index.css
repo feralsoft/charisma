@@ -15,7 +15,6 @@
 }
 
 [data-kind] {
-  width: min-content;
   &:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
     outline: 1px solid black;
   }

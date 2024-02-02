@@ -4,12 +4,19 @@ import {parse_value} from "../css-parser.coil"
 
 def parse_val(str) = parse_value([nil str]).0
 
+def rem_font_size() = getComputedStyle(document:documentElement)
+  .:fontSize:split("px").0.pipe(parseInt)
+
 def hex(s) = parseInt(s):toString(16):padStart(2 "0")
 def from_hex(val) = parseInt(val 16)
+def rem_to_px(val) = Number(val) * rem_font_size()
+def px_to_rem(val) = Number(val) / rem_font_size()
 
 let convert_to_s = {
   def :rgb_value({r g b}) = str("#" hex(r) hex(g) hex(b))
   def :hex_value({r g b}) = str("rgb(" from_hex(r) "," from_hex(g) "," from_hex(b) ")")
+  def :rem_value({value})= str(rem_to_px(value) "px")
+  def :px_value({value})= str(px_to_rem(value) "rem")
 }
 
 def toggle(node) = node

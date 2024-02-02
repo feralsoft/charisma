@@ -4,6 +4,7 @@ import {to_html, compile, to_ast} from "./html-ast.coil"
 import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.coil"
 import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
 import toggle_representation from "./plugins/toggle-representation.coil"
+import copy_paste from "./plugins/copy-paste.coil"
 
 let rules = []
 for rule of document:styleSheets.0:rules.take(1)
@@ -21,6 +22,7 @@ let plugins = [
   toggle_representation
   replace_numeric_with_slider
   highlight_elements_who_match_query
+  copy_paste
 ]
 
 window:addEventListener("click" |e| {
