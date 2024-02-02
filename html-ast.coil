@@ -1,9 +1,4 @@
-def call_with(object) = {
-  def Meta:from_entries(entries) = {
-    ...entries
-    def Meta:invoke(key) = this.key(object)
-  }
-}
+import {call_with} from "./utils.coil"
 
 export def compile(node) = node.pipe(:kind call_with(node){
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
@@ -60,7 +55,7 @@ def Underscore:prototype.to_ast = this:insert(to_ast)
 def HTMLElement:prototype.to_ast()
   if let kind = this:getAttribute("data-kind")
     let node = {kind: kind}
-    for elem of this:children
+    for elem of this:children.filter(|elem| elem:hasAttribute("data-attr"))
       node.(elem:getAttribute("data-attr")) = elem.to_ast()
     end
     return node
@@ -68,7 +63,9 @@ def HTMLElement:prototype.to_ast()
   if this:childElementCount == 0
     return this:textContent
   else if this:getAttribute("data-array") == "true"
-    return this:children.map(|node| node.to_ast()).into([])
+    return this:children
+      .filter(|elem| elem:hasAttribute("data-kind"))
+      .map(|node| node.to_ast()).into([])
   else
     return this:children.0.to_ast()
   end

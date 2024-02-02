@@ -1,0 +1,34 @@
+import {call_with} from "../utils.coil"
+import {to_ast to_html} from "../html-ast.coil"
+import {parse_value} from "../css-parser.coil"
+
+def parse_val(str) = parse_value([nil str]).0
+
+def hex(s) = parseInt(s):toString(16):padStart(2 "0")
+def from_hex(val) = parseInt(val 16)
+
+let convert_to_s = {
+  def :rgb_value({r g b}) = str("#" hex(r) hex(g) hex(b))
+  def :hex_value({r g b}) = str("rgb(" from_hex(r) "," from_hex(g) "," from_hex(b) ")")
+}
+
+def toggle(node) = node
+  .pipe(:kind call_with(node){...convert_to_s} parse_val to_html)
+
+def replace_self_with_alt_representation(elem rebuild) = |e| {  
+  e:stopPropagation()
+  let new_elem = toggle(elem.to_ast())
+  elem:replaceWith(new_elem)
+  new_elem:addEventListener("dblclick" replace_self_with_alt_representation(new_elem rebuild))
+  -- rebuild()
+}
+
+let toggle_ready_nodes = convert_to_s.keys().into(Set[])
+
+def toggle_representation({rebuild})
+  for elem of $$("[data-kind]:has(> [data-value])").filter(|e| e:dataset:kind toggle_ready_nodes)
+    elem:addEventListener("dblclick" replace_self_with_alt_representation(elem rebuild))
+  end
+end
+
+export default toggle_representation

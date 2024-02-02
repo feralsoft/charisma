@@ -234,7 +234,7 @@ let parse_em_value = Parser[
   Store[digit_regex :value]
   Skip["em"]]
 
-let parse_value = ParseMap{
+export let parse_value = ParseMap{
   digit_regex + /px/ => parse_px_value
   digit_regex + /vw/ => parse_vw_value
   digit_regex + /vh/ => parse_vh_value

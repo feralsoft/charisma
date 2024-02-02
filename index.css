@@ -1,12 +1,13 @@
 .editor {
   background-color: lightgray;
   padding: 0.5rem;
+  font-size: 20px;
   font-family: monospace;
-  --number-color: green;
-  --class-color: darkblue;
-  --function-color: darkred;
+  --number-color: rgb(0, 128, 0);
+  --class-color: rgb(0, 0, 139);
+  --function-color: rgb(139, 0, 0);
   --rule-name-color: rgb(32, 123, 156);
-  --string-color: brown;
+  --string-color: rgb(165, 42, 42);
 }
 
 [data-kind="declaration"]::after {
@@ -15,14 +16,17 @@
 
 [data-kind] {
   width: min-content;
-  &:hover:not(:has([data-kind]:hover)) {
+  &:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
     outline: 1px solid black;
   }
+}
+[data-value]:hover {
+  outline: 1px solid black;
 }
 
 [data-kind="declaration"] > [data-attr="query"] {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.25em;
   &::after {
     content: "{";
   }
@@ -32,27 +36,32 @@
 }
 
 [data-kind="declaration"] > [data-attr="rules"] {
-  padding-left: 1rem;
+  padding-left: 1em;
   > [data-kind] {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.25em;
     > [data-attr="name"] {
       color: var(--rule-name-color);
       width: max-content;
       &::after {
         content: ":";
+        color: black;
       }
     }
     &::after {
-      margin-left: -0.25rem;
+      margin-left: -0.25em;
       content: ";";
+      color: black;
     }
   }
 }
 
+[data-numeric="true"] {
+  color: var(--number-color);
+}
+
 [data-kind="px_value"] {
   display: flex;
-  color: var(--number-color);
   &::after {
     color: black;
     content: "px";
@@ -74,7 +83,7 @@
 
 [data-kind="child_selector"] {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.25em;
 }
 
 [data-kind="rgb_value"] {
@@ -85,12 +94,15 @@
   }
   > [data-attr]:not(:last-child)::after {
     content: ",";
+    color: black;
   }
   > [data-attr="r"]::before {
     content: "(";
+    color: black;
   }
   > [data-attr="b"]::after {
     content: ")";
+    color: black;
   }
 }
 
@@ -102,12 +114,15 @@
   }
   > [data-attr]:not(:last-child)::after {
     content: ",";
+    color: black;
   }
   > [data-attr="r"]::before {
     content: "(";
+    color: black;
   }
   > [data-attr="a"]::after {
     content: ")";
+    color: black;
   }
 }
 
@@ -134,10 +149,12 @@
 
 [data-kind="rem_value"] > [data-attr="value"]::after {
   content: "rem";
+  color: black;
 }
 
 [data-kind="em_value"] > [data-attr="value"]::after {
   content: "em";
+  color: black;
 }
 
 [data-kind="variable"] {
@@ -152,6 +169,7 @@
 
 [data-kind="pseudo_element_selector"] > [data-attr="name"]::before {
   content: "::";
+  color: black;
 }
 
 [data-kind="attribute_selector_equals"] {
