@@ -1,4 +1,4 @@
-import {to_ast, to_html} from "../html-ast.coil"
+import {to_ast, to_html} from "../../html-ast.coil"
 import "./drag-and-drop.css"
 import is_object from "./is_object.js"
 let draggable_query = ":is([data-kind=rule], [data-kind=variable])"

@@ -1,4 +1,4 @@
-import {to_ast, compile} from "../html-ast.coil"
+import {to_ast, compile} from "../../html-ast.coil"
 
 def highlight_elements_who_match_query({queries})
   for decl of $$("[data-kind=declaration]")

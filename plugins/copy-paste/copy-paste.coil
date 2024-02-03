@@ -1,4 +1,4 @@
-import {compile, to_ast} from "../html-ast.coil"
+import {compile, to_ast} from "../../html-ast.coil"
 import "./copy-paste.css"
 
 let rule_query = ":is([data-kind=rule], [data-kind=variable])"

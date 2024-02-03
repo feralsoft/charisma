@@ -1,11 +1,7 @@
 import "./html.coil"
 import {parse_decl} from "./css-parser.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
-import replace_numeric_with_slider from "./plugins/replace-numeric-with-slider.coil"
-import highlight_elements_who_match_query from "./plugins/highlight-elements-who-match-query.coil"
-import toggle_representation from "./plugins/toggle-representation.coil"
-import copy_paste from "./plugins/copy-paste.coil"
-import drag_and_drop from "./plugins/drag-and-drop.coil"
+import plugins from "./plugins"
 
 let rules = []
 for rule of document:styleSheets.0:rules.take(1)
@@ -18,15 +14,6 @@ def find_decls_that_apply_to(node) = queries.filter(|[query _]| node:matches(que
 
 rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
 
--- TODO: make a plugin to handle text input rerender the rule
-let plugins = [
-  replace_numeric_with_slider
-  highlight_elements_who_match_query
-  toggle_representation
-  copy_paste
-  drag_and_drop
-]
-
 -- TODO: move to highlight_elements_who_match_query
 window:addEventListener("click" |e| {
   if e:altKey
@@ -34,7 +21,8 @@ window:addEventListener("click" |e| {
   end
 })
 
-plugins.each(|plugin| plugin({
+-- TODO: make a plugin to handle text input rerender the rule
+Object:entries(plugins).each(|[name plugin]| plugin({
   queries: queries
   def :rebuild()
     for html_node of $$("[data-kind=declaration]")

@@ -1,6 +1,6 @@
-import {call_with} from "../utils.coil"
-import {to_ast to_html} from "../html-ast.coil"
-import {parse_value} from "../css-parser.coil"
+import {call_with} from "../../utils.coil"
+import {to_ast to_html} from "../../html-ast.coil"
+import {parse_value} from "../../css-parser.coil"
 
 def parse_val(str) = parse_value([nil str]).0
 
