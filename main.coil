@@ -3,35 +3,22 @@ import {parse_decl} from "./css-parser.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import plugins from "./plugins"
 
-let rules = []
-for rule of document:styleSheets.0:rules.take(1)
-  rules:push(parse_decl(rule:cssText).0)
-end
+let rules = document:styleSheets.0:rules.take(1).map(:cssText parse_decl 0)
+rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
 
 let queries = rules.map(|node| [compile(node:query) node]).into(Map{})
 
-def find_decls_that_apply_to(node) = queries.filter(|[query _]| node:matches(query)).map(1).into([])
-
-rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
-
--- TODO: move to highlight_elements_who_match_query
-window:addEventListener("click" |e| {
-  if e:altKey
-    let node = find_decls_that_apply_to(e:target).each(|node| $(".editor"):append(to_html(node)))
-  end
-})
-
 -- TODO: make a plugin to handle text input rerender the rule
-Object:entries(plugins).each(|[name plugin]| plugin({
-  queries: queries
-  def :rebuild()
-    for html_node of $$("[data-kind=declaration]")
-      -- TODO: this is brittle as hell!
-      document:styleSheets.0:deleteRule(0)
-      document:styleSheets.0:insertRule(compile(html_node.to_ast()))
-      -- TODO: rebuild has to rerun all the plugins!!
+for [_name plugin] of Object:entries(plugins)
+  plugin({
+    queries: queries
+    def :rebuild()
+      for html_node of $$("[data-kind=declaration]")
+        -- TODO: this is brittle as hell!
+        document:styleSheets.0:deleteRule(0)
+        document:styleSheets.0:insertRule(compile(html_node.to_ast()))
+        -- TODO: rebuild has to rerun all the plugins!!
+      end
     end
-  end
-}))
-
-
+  })
+end
