@@ -1,24 +1,26 @@
-def replace_numeric_with_slider({rebuild})
+def replace_numeric_with_slider({rebuild, signal})
   for elem of $$("[data-numeric]")
     let original_value = nil
     let start_y = nil
     let active = false
-    elem:addEventListener("mousedown" |e| {
+    signal:listen(elem "mousedown" |e| {
       start_y = e:clientY
       active = true
       original_value = elem:textContent.as_num()
     })
 
-    window:addEventListener("mousemove" |e| {
+    signal:listen(window "mousemove" |e| {
       if active
         let new_value = original_value - (e:clientY - start_y)
         elem:setAttribute("data-value" new_value)
         elem:replaceChildren(new_value)
-        rebuild()
       end
     })
 
-    window:addEventListener("mouseup" |e| active = false)
+    signal:listen(window "mouseup" |e| {
+      active = false
+      rebuild()
+    })
   end
 end
 

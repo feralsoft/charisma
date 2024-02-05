@@ -1,27 +1,29 @@
-import {to_ast, compile} from "../../html-ast.coil"
+import {to_ast, compile, to_html} from "../../html-ast.coil"
+import {parse_decl} from "../../css-parser.coil"
 
-def highlight_elements_who_match_query({queries})
-  def find_decls_that_apply_to(node) = queries.filter(|[query _]| node:matches(query)).map(1).into([])
-
-  window:addEventListener("click" |e| {
+def highlight_elements_who_match_query({signal})
+  signal:listen(window "click" |e| {
     if e:altKey
-      let node = find_decls_that_apply_to(e:target).each(|node| $(".editor"):append(to_html(node)))
+      document:styleSheets.0:rules
+        .filter(|rule| e:target:matches(rule:selectorText))
+        .map(:cssText parse_decl 0)
+        .each(|node| $(".editor"):append(to_html(node)))
     end
   })
 
   for decl of $$("[data-kind=declaration]")
     let query_node = decl:querySelector("[data-attr=query]")
     let entered = false
-    decl:addEventListener("mouseenter" |e| entered = true)
-    decl:addEventListener("mouseleave" |e| entered = false)
-    window:addEventListener("keydown" |e| {
+    signal:listen(decl "mouseenter" |e| entered = true)
+    signal:listen(decl "mouseleave" |e| entered = false)
+    signal:listen(window "keydown" |e| {
       if e:ctrlKey if entered
-          for elem of $$(query_node.pipe(_.to_ast() compile))
-            elem:classList:add("css-query-hover")
-          end
+        for elem of $$(query_node.pipe(_.to_ast() compile))
+          elem:classList:add("css-query-hover")
+        end
       end end
     })
-    window:addEventListener("keyup" |e| {
+    signal:listen(window "keyup" |e| {
       for elem of $$(query_node.pipe(_.to_ast() compile))
         elem:classList:remove("css-query-hover")
       end

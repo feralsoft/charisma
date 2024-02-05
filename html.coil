@@ -21,6 +21,15 @@ def Keyword:prototype.(Meta:from_entries)(entries)
   return elem
 end
 
-window:$ = document:querySelector:bind(document)
-window:$$ = document:querySelectorAll:bind(document)
+def window:$(...strs) = document:querySelector(str(...strs))
+def window:$$(...strs) = document:querySelectorAll(str(...strs))
 def window:str(...strings) = strings:join("")
+def window:str:kw(...args) = |obj|
+  args.map(|arg| {
+    if arg.primitive_type() == "string"
+      return arg
+    else
+      return arg(obj)
+    end
+  })
+  .join("")

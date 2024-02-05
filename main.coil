@@ -3,22 +3,40 @@ import {parse_decl} from "./css-parser.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import plugins from "./plugins"
 
-let rules = document:styleSheets.0:rules.take(1).map(:cssText parse_decl 0)
-rules.each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
-
-let queries = rules.map(|node| [compile(node:query) node]).into(Map{})
+document:styleSheets.0:rules.take(1).map(:cssText parse_decl 0).each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
 
 -- TODO: make a plugin to handle text input rerender the rule
-for [_name plugin] of Object:entries(plugins)
-  plugin({
-    queries: queries
-    def :rebuild()
-      for html_node of $$("[data-kind=declaration]")
-        -- TODO: this is brittle as hell!
-        document:styleSheets.0:deleteRule(0)
-        document:styleSheets.0:insertRule(compile(html_node.to_ast()))
-        -- TODO: rebuild has to rerun all the plugins!!
+
+def create_signal() = {
+  abort_handlers: []
+  def :destroy() = this:abort_handlers.each(|f| f())
+  def :on_abort(cb) = this:abort_handlers:push(cb)
+  def :listen(obj event_name cb)
+    obj:addEventListener(event_name cb)
+    this:on_abort(|| obj:removeEventListener(event_name cb))
+  end
+}
+
+let configs = []
+
+def init()
+  configs.each(|conf| conf:signal:destroy())
+  configs = []
+  for [_name plugin] of Object:entries(plugins)
+    let config = {
+      signal: create_signal()
+      def :rebuild()
+        for [html_node idx] of $$("[data-kind=declaration]").zip(0..)
+          let ast = html_node.to_ast()
+          document:styleSheets.0:deleteRule(idx)
+          document:styleSheets.0:insertRule(compile(ast) idx)
+          init()
+        end
       end
-    end
-  })
+    }
+    configs:push(config)
+    plugin(config)
+  end
 end
+
+init()
