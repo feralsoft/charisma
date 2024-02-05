@@ -29,7 +29,7 @@ export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}
   for [key val] of ast_node.reject(0 Set["kind" "nid"])
     let attr_elem = :div{"data-attr" => key}
-    if val.primitive_type() == "string"
+    if type_of(val) == "string"
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:style:setProperty("--value" val)
