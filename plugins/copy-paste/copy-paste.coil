@@ -21,7 +21,7 @@ def copy_paste({signal})
       let code = compile(decl.to_ast())
       e:clipboardData:setData("text/plain", code)
       decl:classList:add("copied")
-      setTimeout(|| decl:classList:remove("copied"), 1500)
+      return setTimeout(|| decl:classList:remove("copied"), 1500)
     end
   })
 end
