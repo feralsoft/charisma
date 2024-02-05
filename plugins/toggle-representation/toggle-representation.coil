@@ -12,14 +12,14 @@ def from_hex(val) = parseInt(val 16)
 def rem_to_px(val) = Number(val) * rem_font_size()
 def px_to_rem(val) = Number(val) / rem_font_size()
 
-let convert_to_s = {
+let toggle_compile = {
   def :rgb_value({r g b}) = str("#" hex(r) hex(g) hex(b))
   def :hex_value({r g b}) = str("rgb(" from_hex(r) "," from_hex(g) "," from_hex(b) ")")
   def :rem_value({value})= str(rem_to_px(value) "px")
   def :px_value({value})= str(px_to_rem(value) "rem")
 }
 
-let enabled_nodes_query = convert_to_s.keys()
+let enabled_nodes_query = toggle_compile.keys()
   .map(|kind| str("[data-kind=" kind "]"))
   .join(", ")
   .pipe(str:kw(":is(" _ ")"))
@@ -29,7 +29,7 @@ def toggle_representation({signal, rebuild})
     signal:listen(elem "dblclick" |e| {
       e:stopPropagation()
       let node = elem.to_ast()
-      let new_elem = node.pipe(:kind call_with(node){...convert_to_s} parse_val to_html)
+      let new_elem = node.pipe(:kind call_with(node){...toggle_compile} parse_val to_html)
       elem:replaceWith(new_elem)
       rebuild()
     })
