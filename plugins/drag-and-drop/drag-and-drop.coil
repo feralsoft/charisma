@@ -1,7 +1,6 @@
 import {to_ast, to_html} from "../../html-ast.coil"
 import "./drag-and-drop.css"
 import is_object from "./is_object.js"
-let draggable_query = ":is([data-kind=rule], [data-kind=variable])"
 
 def json_to_object(raw_obj)
   if is_object(raw_obj)
@@ -15,10 +14,9 @@ def json_to_object(raw_obj)
   end
 end
 
-def drag_and_drop({signal, rebuild})
-  let root = $("[data-kind=declaration]")
+def drag_and_drop({signal, rebuild, root})
   let current = nil
-  for draggable of $$(draggable_query)
+  for draggable of root.query_all(":is([data-kind=rule], [data-kind=variable])")
     draggable:setAttribute("draggable" true)
     signal:listen(draggable "dragstart" |e| {
       draggable:classList:add("dragging")
@@ -36,9 +34,10 @@ def drag_and_drop({signal, rebuild})
       e:preventDefault()
       draggable:classList:remove("dragover")
       let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
-      draggable:before(to_html(ast_node))
+      let new_node = to_html(ast_node)
+      draggable:before(new_node)
       current:remove()
-      rebuild()
+      rebuild(new_node)
     })
   end
 end

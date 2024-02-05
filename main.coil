@@ -3,9 +3,11 @@ import {parse_decl} from "./css-parser.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import plugins from "./plugins"
 
-document:styleSheets.0:rules.take(1).map(:cssText parse_decl 0).each(|css_ast_node| $(".editor"):append(to_html(css_ast_node)))
-
--- TODO: make a plugin to handle text input rerender the rule
+document:styleSheets.0:rules.take(1).zip(0..).map(|[rule idx]| [parse_decl(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
+  let css_decl = to_html(css_ast_node)
+  css_decl:setAttribute("data-css-index", idx)
+  $(".editor"):append(css_decl)
+})
 
 def create_signal() = {
   abort_handlers: []
@@ -17,26 +19,30 @@ def create_signal() = {
   end
 }
 
-let configs = []
+let signals = []
 
-def init()
-  configs.each(|conf| conf:signal:destroy())
-  configs = []
-  for [_name plugin] of Object:entries(plugins)
-    let config = {
-      signal: create_signal()
-      def :rebuild()
-        for [html_node idx] of $$("[data-kind=declaration]").zip(0..)
-          let ast = html_node.to_ast()
-          document:styleSheets.0:deleteRule(idx)
-          document:styleSheets.0:insertRule(compile(ast) idx)
-          init()
-        end
+def init(root)
+  signals.each(|signal| signal:destroy())
+  signals = []
+  for plugin of Object:values(plugins)
+    let signal = create_signal()
+    signals:push(signal)
+    plugin({
+      root: root
+      signal: signal
+      def :rebuild(new_root)
+        config:eval_css(new_root)
+        init(new_root or root)
       end
-    }
-    configs:push(config)
-    plugin(config)
+      def :eval_css(new_root)
+        let html_node = (new_root or root):closest("[data-kind=declaration]")
+        let ast_node = html_node.to_ast()
+        let idx = html_node:getAttribute("data-css-index").as_num()
+        document:styleSheets.0:deleteRule(idx)
+        document:styleSheets.0:insertRule(compile(ast_node) idx)
+      end
+    })
   end
 end
 
-init()
+init(document)

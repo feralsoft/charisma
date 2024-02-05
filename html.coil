@@ -33,3 +33,12 @@ def window:str:kw(...args) = |obj|
     end
   })
   .join("")
+
+protocol query
+protocol query_all
+
+window:query = query
+window:query_all = query_all
+
+def Object:prototype.query(...strs) = this:querySelector(str(...strs))
+def Object:prototype.query_all(...strs) = this:querySelectorAll(str(...strs))
