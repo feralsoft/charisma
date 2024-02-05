@@ -19,11 +19,8 @@ let convert_to_s = {
   def :px_value({value})= str(px_to_rem(value) "rem")
 }
 
-def toggle(node) = node
-  .pipe(:kind call_with(node){...convert_to_s} parse_val to_html)
-
 let enabled_nodes_query = convert_to_s.keys()
-  .map(|kind| str("[data-kind=" kind"]"))
+  .map(|kind| str("[data-kind=" kind "]"))
   .join(", ")
   .pipe(str:kw(":is(" _ ")"))
 
@@ -31,7 +28,8 @@ def toggle_representation({signal, rebuild})
   for elem of $$("[data-kind]:has(> [data-value])" enabled_nodes_query)
     signal:listen(elem "dblclick" |e| {
       e:stopPropagation()
-      let new_elem = toggle(elem.to_ast())
+      let node = elem.to_ast()
+      let new_elem = node.pipe(:kind call_with(node){...convert_to_s} parse_val to_html)
       elem:replaceWith(new_elem)
       rebuild()
     })
