@@ -13,7 +13,6 @@ def copy_paste({signal})
       setTimeout(|| decl:classList:remove("copied"), 1500)
     else
       -- TODO: what if we're on a rule node already
-      e:target.log()
       let rule = e:target:closest(":is([data-kind=rule], [data-kind=variable])")
       let code = str("\n" compile(rule.to_ast()) ";")
       e:clipboardData:setData("text/plain", code)
