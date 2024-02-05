@@ -26,7 +26,7 @@ export def compile(node) = node.pipe(:kind call_with(node){
 })
 
 export def to_html(ast_node)
-  let elem = :div{"data-kind" => ast_node:kind}
+  let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}
   for [key val] of ast_node.reject(0 Set["kind" "nid"])
     let attr_elem = :div{"data-attr" => key}
     if val.is_a?(String)
