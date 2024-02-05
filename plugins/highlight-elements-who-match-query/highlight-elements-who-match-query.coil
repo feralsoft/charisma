@@ -5,9 +5,14 @@ def highlight_elements_who_match_query({signal})
   signal:listen(window "click" |e| {
     if e:altKey
       document:styleSheets.0:rules
-        .filter(|rule| e:target:matches(rule:selectorText))
-        .map(:cssText parse_decl 0)
-        .each(|node| $(".editor"):append(to_html(node)))
+        .zip(0..)
+        .filter(|[rule _]| e:target:matches(rule:selectorText))
+        .reject(|[_ idx]| $("[data-css-index=\"" idx "\"]"))
+        .each(|[rule idx]| {
+          let html_node = to_html(parse_decl(rule:cssText).0)
+          html_node:setAttribute("data-css-index", idx)
+          $(".editor"):append(html_node)
+        })
     end
   })
 

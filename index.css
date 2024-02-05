@@ -1,13 +1,14 @@
 .editor {
   background-color: lightgray;
   padding: 0.5rem;
-  font-size: 20px;
+  font-size: 19px;
   font-family: monospace;
   --number-color: rgb(0, 128, 0);
   --class-color: rgb(0, 0, 139);
   --function-color: rgb(139, 0, 0);
   --rule-name-color: rgb(32, 123, 156);
   --string-color: rgb(165, 42, 42);
+  --attribute-color: rgba(0, 0, 255, 0.557);
 }
 
 [data-kind="declaration"]::after {
@@ -166,17 +167,41 @@
   }
 }
 
+[data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
+  content: ":";
+}
+
 [data-kind="pseudo_element_selector"] > [data-attr="name"]::before {
   content: "::";
   color: black;
 }
 
+[data-kind="attribute_selector_no_match"] {
+  > [data-attr="name"] {
+    color: var(--attribute-color);
+    &::before,
+    &::after {
+      color: black;
+    }
+    &::before {
+      content: "[";
+    }
+    &::after {
+      content: "]";
+    }
+  }
+}
+
 [data-kind="attribute_selector_equals"] {
   display: flex;
+  > [data-attr="name"] {
+    color: var(--attribute-color);
+  }
   &::before {
     content: "[";
   }
   > [data-attr="name"]::after {
+    color: black;
     content: "=";
   }
   > [data-attr="value"] {
