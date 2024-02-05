@@ -29,7 +29,7 @@ export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}
   for [key val] of ast_node.reject(0 Set["kind" "nid"])
     let attr_elem = :div{"data-attr" => key}
-    if val.is_a?(String)
+    if val.primitive_type() == "string"
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:style:setProperty("--value" val)
@@ -37,7 +37,7 @@ export def to_html(ast_node)
         attr_elem:setAttribute("data-numeric", true)
       end
       attr_elem:append(val)
-    else if val.is_a?(Array)
+    else if val instanceof Array
       attr_elem:setAttribute("data-array" true)
       attr_elem:append(...val.map(to_html))
     else
