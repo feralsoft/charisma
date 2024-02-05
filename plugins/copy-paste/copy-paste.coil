@@ -7,20 +7,21 @@ def copy_paste({signal})
     -- e:target doesn't understand [data-kind=rule] is active
     -- even though it has tabindex=0.. not sure why, but this works
     let elem = document:activeElement
-    -- TODO: brittle query
-    if let parent = elem:closest("[data-attr=query]")
-      let decl = elem:closest("[data-kind=declaration]")
+    if let query = elem:closest("[data-attr=query]")
+      let code = compile(query.to_ast())
+      e:clipboardData:setData("text/plain", code)
+      query:classList:add("copied")
+      return setTimeout(|| query:classList:remove("copied"), 1500)
+    end if let rule = elem:closest(":is([data-kind=rule], [data-kind=variable])")
+      let code = str("\n" compile(rule.to_ast()) ";")
+      e:clipboardData:setData("text/plain", code)
+      rule:classList:add("copied")
+      return setTimeout(|| rule:classList:remove("copied"), 1500)
+    end if let decl = elem:closest("[data-kind=declaration]")
       let code = compile(decl.to_ast())
       e:clipboardData:setData("text/plain", code)
       decl:classList:add("copied")
       setTimeout(|| decl:classList:remove("copied"), 1500)
-    else
-      if let rule = elem:closest(":is([data-kind=rule], [data-kind=variable])")
-        let code = str("\n" compile(rule.to_ast()) ";")
-        e:clipboardData:setData("text/plain", code)
-        rule:classList:add("copied")
-        setTimeout(|| rule:classList:remove("copied"), 1500)
-      end
     end
   })
 end
