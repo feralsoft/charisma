@@ -1,0 +1,13 @@
+.newly-added {
+  animation: newly-added-fadeout 1s;
+}
+
+@keyframes newly-added-fadeout {
+  0% {
+    background-color: rgba(218, 212, 41, 0.559);
+  }
+
+  100% {
+    background-color: none;
+  }
+}

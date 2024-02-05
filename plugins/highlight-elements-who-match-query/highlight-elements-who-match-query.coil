@@ -1,3 +1,4 @@
+import "./highlight-elements.css"
 import {to_ast, compile, to_html} from "../../html-ast.coil"
 import {parse_decl} from "../../css-parser.coil"
 
@@ -12,6 +13,8 @@ def highlight_elements_who_match_query({signal})
           let html_node = to_html(parse_decl(rule:cssText).0)
           html_node:setAttribute("data-css-index", idx)
           $(".editor"):append(html_node)
+          html_node:classList:add("newly-added")
+          setTimeout(|| html_node:classList:remove("newly-added"), 1500)
         })
     end
   })

@@ -9,6 +9,8 @@ document:styleSheets.0:rules.take(1).zip(0..).map(|[rule idx]| [parse_decl(rule:
   $(".editor"):append(css_decl)
 })
 
+-- idea: split plain-text-value by space & try to parse out values 
+
 def create_signal() = {
   abort_handlers: []
   def :destroy() = this:abort_handlers.each(|f| f())
