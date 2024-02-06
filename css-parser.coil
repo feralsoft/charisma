@@ -115,7 +115,6 @@ let parse_pseudo_element_selector = Parser[
   Skip["::"]
   Store[/^(\w|-)+/ :name]
 ]
-
 let parse_attribute_selector_no_match = Parser[
   Init[{kind: :attribute_selector_no_match}]
   Skip["["]
@@ -234,16 +233,34 @@ let parse_em_value = Parser[
   Store[digit_regex :value]
   Skip["em"]]
 
+let parse_var_value = Parser[
+  Init[{kind: :var_value}]
+  Skip["var"] Trim Skip["("] Trim
+  Store[/^--(\w|-)+/ :name]
+  Trim Skip[")"]
+]
+
+def parse_var_with_default_value(result) = Parser[
+  Init[{kind: :var_with_default_value}]  
+  Skip["var"] Trim Skip["("] Trim Skip["--"]
+  Store[/^(\w|-)+/ :name]
+  Trim Skip[","] Trim
+  Then[parse_value :default_value]
+  Trim Skip[")"]
+](result)
+
 export let parse_value = ParseMap{
+  "rgba" => parse_rgba_value
+  "rgb" => parse_rgb_value
+  "#" => parse_hex_value
   digit_regex + /px/ => parse_px_value
   digit_regex + /vw/ => parse_vw_value
   digit_regex + /vh/ => parse_vh_value
   digit_regex + /rem/ => parse_rem_value
   digit_regex + /em/ => parse_em_value
   digit_regex + /%/ => parse_pct_value
-  "rgba" => parse_rgba_value
-  "rgb" => parse_rgb_value
-  "#" => parse_hex_value
+  /^var\(--(\w|-)+\)/ => parse_var_value
+  "var" => parse_var_with_default_value
   _ => parse_text_value
 }
 

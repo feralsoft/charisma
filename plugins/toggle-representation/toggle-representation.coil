@@ -1,5 +1,5 @@
 import {call_with} from "../../utils.coil"
-import {to_ast to_html} from "../../html-ast.coil"
+import {to_ast, to_html, compile} from "../../html-ast.coil"
 import {parse_value} from "../../css-parser.coil"
 
 def parse_val(str) = parse_value([nil str]).0
@@ -15,8 +15,17 @@ def px_to_rem(val) = Number(val) / rem_font_size()
 let toggle_compile = {
   def :rgb_value({r g b}) = str("#" hex(r) hex(g) hex(b))
   def :hex_value({r g b}) = str("rgb(" from_hex(r) "," from_hex(g) "," from_hex(b) ")")
-  def :rem_value({value})= str(rem_to_px(value) "px")
-  def :px_value({value})= str(px_to_rem(value) "rem")
+  def :rem_value({value}) = str(rem_to_px(value) "px")
+  def :px_value({value}) = str(px_to_rem(value) "rem")
+  def :var_value({name} elem)
+    let rule_name = elem:closest("[data-kind=rule]").query("[data-attr=name]"):innerText:trim()
+    return elem:closest("[data-kind=declaration]")
+      .query("[data-attr=query]")
+      .to_ast()
+      .pipe(compile $$)
+      .map(getComputedStyle Keyword:for(rule_name))
+      .:next():value
+  end
 }
 
 let enabled_nodes_query = toggle_compile.keys()
@@ -29,7 +38,7 @@ def toggle_representation({signal, rebuild, root})
     signal:listen(elem "dblclick" |e| {
       e:stopPropagation()
       let node = elem.to_ast()
-      let new_elem = node.pipe(:kind call_with(node){...toggle_compile} parse_val to_html)
+      let new_elem = node.pipe(:kind call_with(node, elem){...toggle_compile} parse_val to_html)
       elem:replaceWith(new_elem)
       rebuild(elem)
     })

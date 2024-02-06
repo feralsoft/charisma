@@ -1,6 +1,6 @@
-export def call_with(object) = {
+export def call_with(...args) = {
   def Meta:from_entries(entries) = {
     ...entries
-    def Meta:invoke(key) = this.key(object)
+    def Meta:invoke(key) = this.key(...args)
   }
 }

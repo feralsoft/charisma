@@ -23,8 +23,7 @@ end
 
 def window:$(...strs) = document:querySelector(str(...strs))
 def window:$$(...strs) = document:querySelectorAll(str(...strs))
-def window:str(...strings) = strings:join("")
-def window:str:kw(...args) = |obj|
+def str:kw(...args) = |obj|
   args.map(|arg| {
     if type_of(arg) == "string"
       return arg
