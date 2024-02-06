@@ -23,15 +23,6 @@ end
 
 def window:$(...strs) = document:querySelector(str(...strs))
 def window:$$(...strs) = document:querySelectorAll(str(...strs))
-def str:kw(...args) = |obj|
-  args.map(|arg| {
-    if type_of(arg) == "string"
-      return arg
-    else
-      return arg(obj)
-    end
-  })
-  .join("")
 
 protocol query
 protocol query_all

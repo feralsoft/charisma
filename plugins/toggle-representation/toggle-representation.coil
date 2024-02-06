@@ -31,7 +31,7 @@ let toggle_compile = {
 let enabled_nodes_query = toggle_compile.keys()
   .map(|kind| str("[data-kind=" kind "]"))
   .join(", ")
-  .pipe(str:kw(":is(" _ ")"))
+  .pipe(str:fmt(":is(" _ ")"))
 
 def toggle_representation({signal, rebuild, root})
   for elem of root.query_all("[data-kind]:has(> [data-value])" enabled_nodes_query)
