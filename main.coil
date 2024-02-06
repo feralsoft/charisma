@@ -13,7 +13,11 @@ document:styleSheets.0:rules.take(2).zip(0..).map(|[rule idx]| [parse_decl(rule:
 
 def create_signal() = {
   abort_handlers: []
-  def :destroy() = this:abort_handlers.each(|f| f())
+  id: crypto:randomUUID()
+  def :destroy
+    this:abort_handlers.each(|f| f())
+    this:abort_handlers = []
+  end
   def :on_abort(cb) = this:abort_handlers:push(cb)
   def :listen(obj event_name cb)
     obj:addEventListener(event_name cb)
@@ -21,15 +25,11 @@ def create_signal() = {
   end
 }
 
-let signals = []
 
 def init(root)
-  signals.each(|signal| signal:destroy())
-  signals = []
   for plugin of Object:values(plugins)
     let signal = create_signal()
-    signals:push(signal)
-    plugin({
+    let config = {
       root: root
       signal: signal
       def :rebuild(new_root)
@@ -43,8 +43,9 @@ def init(root)
         document:styleSheets.0:deleteRule(idx)
         document:styleSheets.0:insertRule(compile(ast_node) idx)
       end
-    })
+    }
+    plugin(config)
   end
 end
 
-init(document)
+init(document:body)

@@ -30,5 +30,25 @@ protocol query_all
 window:query = query
 window:query_all = query_all
 
-def Object:prototype.query(...strs) = this:querySelector(str(...strs))
-def Object:prototype.query_all(...strs) = this:querySelectorAll(str(...strs))
+def Node:prototype.query(...strs)
+  let query_str = str(...strs)
+  if this:matches(query_str)
+    return this
+  else
+    return this:querySelector(query_str)
+  end
+end
+def Node:prototype.query_all(...strs)
+  let query_str = str(...strs)
+  let results = this:querySelectorAll(query_str)
+  if this:matches(query_str)
+    let elem = this
+    return {
+      def* Symbol:iterator
+        yield elem
+        yield* results
+      end
+    }
+  end
+  return results
+end

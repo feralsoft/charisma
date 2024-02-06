@@ -15,13 +15,11 @@ def json_to_object(raw_obj)
 end
 
 def drag_and_drop({signal, rebuild, root})
-  let current = nil
   for draggable of root.query_all(":is([data-kind=rule], [data-kind=variable])")
     draggable:setAttribute("draggable" true)
     signal:listen(draggable "dragstart" |e| {
       draggable:classList:add("dragging")
       e:dataTransfer:dropEffect = "move"
-      current = draggable
       e:dataTransfer:setData("text/json", JSON:stringify(draggable.to_ast()))
     })
     signal:listen(draggable "dragenter" |e| draggable:classList:add("dragover"))
@@ -36,7 +34,7 @@ def drag_and_drop({signal, rebuild, root})
       let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
       let new_node = to_html(ast_node)
       draggable:before(new_node)
-      current:remove()
+      $(".editor .dragging"):remove()
       rebuild(new_node)
     })
   end
