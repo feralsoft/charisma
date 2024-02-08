@@ -7,7 +7,7 @@ def highlight_elements_who_match_query({signal, root})
     if e:altKey
       document:styleSheets.0:rules
         .zip(0..)
-        .filter(|[rule _]| e:target:matches(rule:selectorText))
+        .filter(|[rule _]| document:activeElement:matches(rule:selectorText))
         .reject(|[_ idx]| $("[data-css-index=\"" idx "\"]"))
         .each(|[rule idx]| {
           let html_node = to_html(parse_decl(rule:cssText).0)

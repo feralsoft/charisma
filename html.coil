@@ -38,6 +38,7 @@ def Node:prototype.query(...strs)
     return this:querySelector(query_str)
   end
 end
+
 def Node:prototype.query_all(...strs)
   let query_str = str(...strs)
   let results = this:querySelectorAll(query_str)

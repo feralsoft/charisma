@@ -84,16 +84,78 @@ let digit_regex = /^[+-]?([0-9]*[.])?[0-9]+/
 
 def RegExp:prototype.+(regex) = RegExp[this:source + regex:source]
 
-let parse_class_selector = Parser[
-  Init[{kind: :class_selector}]
-  Skip["."]
-  Store[/^\w+/ :name]
-]
+def* generator end
+let GeneratorFunction = generator:constructor
 
-let parse_selector_arg = Parser[
-  Init[{kind: :selector_arg}]
-  Trim Store[/^\w+/ :arg] Trim
-]
+protocol run
+
+def GeneratorFunction:prototype.run(string)
+  let gen = this()
+  let result = nil
+  while true
+    let {value, done} = gen:next(result)
+    if done
+      return [value string]
+    else
+      let r = value.run(string)
+      result = r.0
+      string = r.1
+    end
+  end
+end
+
+def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
+
+def chomp(pattern) = {kind: :chomp, pattern: pattern}
+def capture(pattern) = {kind: :capture, pattern: pattern}
+def test(pattern) = {kind: :test, pattern: pattern}
+def trim = {kind: :trim}
+
+def :chomp.run({pattern}, string)
+  if let {skip} = pattern.matches?(string)
+    return [nil string:slice(skip)]
+  else
+    this.log(string) Error[]:stack.log() panic!()
+  end
+end
+
+def :capture.run({pattern}, string)
+  if let {result skip} = pattern.matches?(string)
+    return [result string:slice(skip)]
+  else
+    this.log(string) Error[]:stack.log() panic!()
+  end
+end
+
+def :trim.run(_, string) = [nil string:trimLeft()]
+
+def :test.run({pattern}, string) = pattern.matches?(string)
+
+def* parse_class
+  yield chomp(".")
+  let name = yield capture(/^\w+/)
+  return {kind: :class_selector, name: name}
+end
+
+def parse_class_selector([_ string]) = parse_class.run(string)
+
+-- def* parse_selector_arg
+--   if yield test("odd")
+--     yield trim()
+--     yield chomp("odd")
+--     yield 
+--   else if yield test("even")
+--   end
+-- end
+
+let parse_odd = Parser[Init[{kind: :odd}] Trim Skip["odd"] Trim]
+let parse_even = Parser[Init[{kind: :even}] Trim Skip["even"] Trim]
+
+def parse_selector_arg(result) = ParseMap{
+  "odd" => parse_odd
+  "even" => parse_even
+  _ => parse_query_step
+}(result)
 
 let parse_pseudo_selector_with_args = Parser[
   Init[{kind: :pseudo_selector_with_args}]
@@ -133,14 +195,20 @@ let parse_attribute_selector_equals = Parser[
   Trim Skip["]"]
 ]
 
-let parse_query_step = ParseMap{
+let parse_element_selector = Parser[
+  Init[{kind: :element_selector}]
+  Store[/^(\w|-)+/ :name]
+]
+
+def parse_query_step(result) = ParseMap{
   "." => parse_class_selector
   "::" => parse_pseudo_element_selector
+  /^(\w|-)+/ => parse_element_selector
   /^:(\w|-)+\(/ => parse_pseudo_selector_with_args
   ":" => parse_pseudo_selector_without_args
   /^\[(\w|-)+=".*"\]/ => parse_attribute_selector_equals
   /^\[(\w|-)+\]/ => parse_attribute_selector_no_match
-}
+}(result)
 
 def parse_query([_ s])
   let [query str] = parse_query_step([nil s])

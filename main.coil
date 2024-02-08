@@ -3,7 +3,7 @@ import {parse_decl} from "./css-parser.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import plugins from "./plugins"
 
-document:styleSheets.0:rules.take(2).zip(0..).map(|[rule idx]| [parse_decl(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
+document:styleSheets.0:rules.take(4).zip(0..).map(|[rule idx]| [parse_decl(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
   let css_decl = to_html(css_ast_node)
   css_decl:setAttribute("data-css-index", idx)
   $(".editor"):append(css_decl)
@@ -25,6 +25,7 @@ def create_signal() = {
   end
 }
 
+let fetching = false
 
 def init(root)
   for plugin of Object:values(plugins)
@@ -36,12 +37,25 @@ def init(root)
         config:eval_css(new_root)
         init(new_root or root)
       end
-      def :eval_css(new_root)
+      async def :eval_css(new_root)
         let html_node = (new_root or root):closest("[data-kind=declaration]")
         let ast_node = html_node.to_ast()
         let idx = html_node:getAttribute("data-css-index").as_num()
-        document:styleSheets.0:deleteRule(idx)
-        document:styleSheets.0:insertRule(compile(ast_node) idx)
+        let [sheet] = document:styleSheets
+        sheet:deleteRule(idx)
+        sheet:insertRule(compile(ast_node) idx)
+        if !fetching
+          -- make sure
+          fetching = true
+          await fetch("http://localhost:5173/update_css", {
+            method: "POST",
+            body: JSON:stringify({
+              css: sheet:rules.map(:cssText).join("\n")
+              file: sheet:ownerNode:getAttribute("data-vite-dev-id")
+            })
+          })
+          fetching = false
+        end
       end
     }
     plugin(config)
