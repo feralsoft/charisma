@@ -5,11 +5,23 @@ import plugins from "./plugins"
 
 document:styleSheets.0:rules.take(4).zip(0..).map(|[rule idx]| [parse_decl(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
   let css_decl = to_html(css_ast_node)
+  let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
+  let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
+  let relative_path = absolute_path:slice(root_path.len())
+
   css_decl:setAttribute("data-css-index", idx)
+  css_decl:setAttribute("data-file-path", relative_path)
+  -- TODO: compute line number by counting rules
+  -- ^ this won't be so easy
+  css_decl:prepend(:a{
+    href: str("vscode://file" absolute_path),
+    children: relative_path,
+    class: "open-in-vscode"
+  })
   $(".editor"):append(css_decl)
 })
 
--- idea: split plain-text-value by space & try to parse out values 
+-- warn on unused query
 
 def create_signal() = {
   abort_handlers: []
@@ -25,7 +37,7 @@ def create_signal() = {
   end
 }
 
-let fetching = false
+let fetching = true
 
 def init(root)
   for plugin of Object:values(plugins)
@@ -47,6 +59,7 @@ def init(root)
         if !fetching
           -- make sure
           fetching = true
+          -- TODO: use a websocket, it'll be much faster
           await fetch("http://localhost:5173/update_css", {
             method: "POST",
             body: JSON:stringify({

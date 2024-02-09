@@ -1,6 +1,6 @@
-import {call_with} from "./utils.coil"
+import {match_on} from "./utils.coil"
 
-export def compile(node) = node.pipe(:kind call_with(node){
+export let compile = match_on(:kind){
   def :child_selector({lhs rhs}) = str(compile_query_string(lhs) " " compile_query_string(rhs))
   def :class_selector({name}) = str("." name)
   def :selector_modifier({lhs rhs}) = str(compile(lhs) compile(rhs))
@@ -23,7 +23,7 @@ export def compile(node) = node.pipe(:kind call_with(node){
   def :em_value({value}) = str(value "em")
   def :attribute_selector_no_match({name}) = str("[" name "]")
   def :attribute_selector_equals({name value}) = str("[" name "=\"" value"\"]")
-})
+}
 
 export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}

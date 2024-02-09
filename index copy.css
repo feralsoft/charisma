@@ -11,21 +11,27 @@
   --string-color: rgb(165, 42, 42);
   --attribute-color: rgba(0, 0, 255, 0.557);
 }
+
 [data-numeric="true"] {
   color: var(--number-color);
 }
+
 [data-kind="declaration"]::after {
   content: "}";
 }
+
 [data-kind]:hover:not(:has([data-kind]:hover)) {
-  outline: black solid 1px;
+  outline: 1px solid black;
 }
+
 [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
-  outline: black solid 1px;
+  outline: 1px solid black;
 }
+
 [data-value]:hover {
-  outline: black solid 1px;
+  outline: 1px solid black;
 }
+
 [data-kind="declaration"] > [data-attr="query"] {
   display: flex;
   gap: 0.25em;
@@ -36,15 +42,17 @@
     width: max-content;
   }
 }
+
 [data-kind="rule"] > [data-attr="name"] {
   color: var(--rule-name-color);
 }
+
 [data-kind="declaration"] > [data-attr="rules"] {
   padding-left: 1em;
-  & > [data-kind] {
+  > [data-kind] {
     display: flex;
     gap: 0.25em;
-    & > [data-attr="name"] {
+    > [data-attr="name"] {
       width: max-content;
       &::after {
         content: ":";
@@ -58,6 +66,7 @@
     }
   }
 }
+
 [data-kind="px_value"] {
   display: flex;
   &::after {
@@ -65,6 +74,7 @@
     content: "px";
   }
 }
+
 [data-kind="class_selector"] {
   display: flex;
   color: var(--class-color);
@@ -73,51 +83,56 @@
     content: ".";
   }
 }
+
 [data-kind="selector_modifier"] {
   display: flex;
 }
+
 [data-kind="child_selector"] {
   display: flex;
   gap: 0.25em;
 }
+
 [data-kind="rgb_value"] {
   display: flex;
   &::before {
     content: "rgb";
     color: var(--function-color);
   }
-  & > [data-attr]:not(:last-child)::after {
+  > [data-attr]:not(:last-child)::after {
     content: ",";
     color: black;
   }
-  & > [data-attr="r"]::before {
+  > [data-attr="r"]::before {
     content: "(";
     color: black;
   }
-  & > [data-attr="b"]::after {
+  > [data-attr="b"]::after {
     content: ")";
     color: black;
   }
 }
+
 [data-kind="rgba_value"] {
   display: flex;
   &::before {
     content: "rgba";
     color: var(--function-color);
   }
-  & > [data-attr]:not(:last-child)::after {
+  > [data-attr]:not(:last-child)::after {
     content: ",";
     color: black;
   }
-  & > [data-attr="r"]::before {
+  > [data-attr="r"]::before {
     content: "(";
     color: black;
   }
-  & > [data-attr="a"]::after {
+  > [data-attr="a"]::after {
     content: ")";
     color: black;
   }
 }
+
 [data-kind="hex_value"] {
   display: flex;
   &::before {
@@ -134,32 +149,39 @@
     background-color: rgba(0, 0, 255, 0.25);
   }
 }
+
 .css-query-hover {
-  outline: rgba(255, 255, 0, 0.44) solid 2px;
+  outline: 2px solid rgba(255, 255, 0, 0.439);
 }
+
 [data-kind="rem_value"] > [data-attr="value"]::after {
   content: "rem";
   color: black;
 }
+
 [data-kind="em_value"] > [data-attr="value"]::after {
   content: "em";
   color: black;
 }
+
 [data-kind="variable"] > [data-attr="name"] {
   color: var(--variable-color);
   &::before {
     content: "--";
   }
 }
+
 [data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
   content: ":";
 }
+
 [data-kind="pseudo_element_selector"] > [data-attr="name"]::before {
   content: "::";
   color: black;
 }
+
 [data-kind="attribute_selector_no_match"] {
-  & > [data-attr="name"] {
+  > [data-attr="name"] {
     color: var(--attribute-color);
     &::before,
     &::after {
@@ -173,19 +195,20 @@
     }
   }
 }
+
 [data-kind="attribute_selector_equals"] {
   display: flex;
-  & > [data-attr="name"] {
+  > [data-attr="name"] {
     color: var(--attribute-color);
   }
   &::before {
     content: "[";
   }
-  & > [data-attr="name"]::after {
+  > [data-attr="name"]::after {
     color: black;
     content: "=";
   }
-  & > [data-attr="value"] {
+  > [data-attr="value"] {
     color: var(--string-color);
     &::before,
     &::after {
@@ -196,6 +219,7 @@
     content: "]";
   }
 }
+
 [data-kind="var_value"] {
   display: flex;
   &::before {
@@ -205,7 +229,7 @@
   &::after {
     content: ")";
   }
-  & > [data-attr="name"] {
+  > [data-attr="name"] {
     color: var(--variable-color);
     &::before {
       content: "(";
@@ -213,9 +237,11 @@
     }
   }
 }
+
 [data-kind="element_selector"] {
   color: green;
 }
+
 [data-kind="pseudo_selector_with_args"] {
   display: flex;
   color: rgb(137, 68, 68);
@@ -225,30 +251,17 @@
   ::after {
     color: black;
   }
-  & > [data-attr="args"] {
+
+  > [data-attr="args"] {
     display: flex;
   }
   &::before {
     content: ":";
   }
-  & > [data-attr="name"]::after {
+  > [data-attr="name"]::after {
     content: "(";
   }
   &::after {
     content: ")";
   }
-}
-
-.open-in-vscode {
-  display: none;
-}
-[data-kind="declaration"]:hover .open-in-vscode {
-  display: flex;
-}
-.open-in-vscode {
-  font-size: 14px;
-  position: absolute;
-  right: 1rem;
-  background-color: rgba(255, 255, 255, 0.285);
-  padding: 4px;
 }

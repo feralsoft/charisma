@@ -4,3 +4,10 @@ export def call_with(...args) = {
     def Meta:invoke(key) = this.key(...args)
   }
 }
+
+export def match_on(key) = {
+  def Meta:from_entries(entries) = {
+    ...entries
+    def Meta:invoke(object) = this.(object.key)(object)
+  }
+}

@@ -2,12 +2,12 @@ import compile from "@coil-lang/compiler/";
 import { defineConfig } from "vite";
 import fs from "fs/promises";
 import * as prettier from "prettier";
-const fileRegex = /\.(coil)$/;
+
 function coil() {
   return {
     name: "coil-lang",
     transform(src, id) {
-      if (fileRegex.test(id)) {
+      if (id.endsWith(".coil")) {
         return {
           code: compile(src, "@coil-lang/compiler/"),
           map: null,
@@ -17,6 +17,7 @@ function coil() {
   };
 }
 
+// TODO: ignore hot-reload of css file while updating it
 function updateIndexCss() {
   return {
     name: "index-css",
