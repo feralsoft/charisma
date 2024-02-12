@@ -341,7 +341,7 @@ export let parse_value = ParseMap{
   _ => parse_text_value
 }
 
-let parse_rule = Parser[
+export let parse_rule = Parser[
   Init[{kind: :rule}]
   Trim Store[/^(\w|-)+/ :name]
   Trim Skip[":"]

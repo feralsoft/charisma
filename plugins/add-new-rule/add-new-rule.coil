@@ -1,0 +1,38 @@
+import "./add-new-rule.css"
+import {parse_rule} from "../../css-parser.coil"
+import {to_html} from "../../html-ast.coil"
+
+def onclick(e)
+  let new_rule = :div{
+    contenteditable: true
+    class: "unfinished-rule"
+    def :onkeydown(e)
+      if e:key == "Enter"
+        e:preventDefault()
+        let css_rule_text = this:innerText:trim()
+        if !css_rule_text:endsWith(";")
+          css_rule_text = str(css_rule_text ";")
+        end
+        let ast_node = parse_rule([nil css_rule_text]).0
+        let decl = this:closest("[data-kind=declaration]")
+        decl:append(rule())
+        decl.query("[data-attr=rules]"):append(to_html(ast_node))
+        this:remove()
+      end
+    end
+  }
+  this:replaceWith(new_rule)
+  new_rule:focus()
+end
+
+def rule = :button{
+  class: "add-new-rule",
+  children: "+",
+  onclick: onclick
+}
+
+def add_new_rule({signal, root})
+  $$("[data-kind=declaration]").each(|decl| decl:append(rule()))
+end
+
+export default add_new_rule

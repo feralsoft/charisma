@@ -1,0 +1,36 @@
+button.add-new-rule {
+  background-color: white;
+  border: none;
+  border-radius: 2px;
+  padding: 0;
+  line-height: 1;
+  height: 20px;
+  width: 20px;
+  font-size: 20px;
+  margin-left: 1.25rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgb(132, 132, 132);
+    color: white;
+  }
+  &:active {
+    background-color: rgb(77, 77, 77);
+    color: white;
+  }
+}
+
+.unfinished-rule {
+  margin-left: 1rem;
+  background-color: white;
+}
+
+[data-kind="declaration"]:not(:has(.unfinished-rule)) {
+  padding-bottom: 2rem;
+  &::after {
+    content: "}";
+    position: absolute;
+    margin-top: 1.5rem;
+    left: 1.25rem;
+  }
+}
