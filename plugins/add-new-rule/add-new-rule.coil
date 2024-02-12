@@ -32,6 +32,8 @@ def rule(cb) = :button{
   def :onclick(e) = onclick(e, cb)
 }
 
+-- HMM: maybe I should insert into [data-attr=rules]
+-- instead of directly child of [data-kind=declaration]
 def add_new_rule({signal, root, rebuild})
   for decl of $$("[data-kind=declaration]:not(:has(button.add-new-rule))")
     decl:append(rule(|| rebuild(root:closest("[data-kind=declaration]"))))

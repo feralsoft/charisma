@@ -1,7 +1,7 @@
 .--css-edit-editor {
   background-color: lightgray;
   padding: 0.5rem;
-  font-size: 21px;
+  font-size: 19px;
   font-family: monospace;
   --number-color: rgb(0, 128, 0);
   --class-color: rgb(0, 0, 139);
