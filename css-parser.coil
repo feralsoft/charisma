@@ -1,3 +1,5 @@
+-- TODO: rename this to `test` or something, since ? implies
+-- it returns a bool...
 export protocol matches?
 
 def String:prototype.matches?(str)
@@ -43,6 +45,9 @@ def Skip:prototype.invoke([state str])
     this.log({state: state, str: str}) Error[]:stack.log() panic!()
   end
 end
+
+-- I live proudly from where I stand, knowing full well how temporary, and ignorant my worldview is.
+-- still it has much truth & beauty in it and it has to be expressed
 
 export def Store(@pattern @property) end
 def Store:prototype.invoke([state str])
@@ -129,33 +134,31 @@ end
 
 def :trim.run(_, string) = [nil string:trimLeft()]
 
-def :test.run({pattern}, string) = pattern.matches?(string)
+def :test.run({pattern}, string) = [pattern.matches?(string) string]
 
 def* parse_class
   yield chomp(".")
-  let name = yield capture(/^\w+/)
+  let name = yield capture(/^(\w|-)+/)
   return {kind: :class_selector, name: name}
 end
 
 def parse_class_selector([_ string]) = parse_class.run(string)
 
--- def* parse_selector_arg
---   if yield test("odd")
---     yield trim()
---     yield chomp("odd")
---     yield 
---   else if yield test("even")
---   end
--- end
+def* parse_nth_expr_without_plus
+  let lhs = yield capture(/^/)
+  yield chomp("2n")
+  return {kind: :nth_expr_without_plus, value: "2n"}
+end
 
-let parse_odd = Parser[Init[{kind: :odd}] Trim Skip["odd"] Trim]
-let parse_even = Parser[Init[{kind: :even}] Trim Skip["even"] Trim]
+def* parse_nth_expr_with_plus
+  yield chomp("2n+1")
+  return {kind: :nth_expr_with_plus, value: "2n+1"}
+end
 
-def parse_selector_arg(result) = ParseMap{
-  "odd" => parse_odd
-  "even" => parse_even
-  _ => parse_query_step
-}(result)
+let parse_selector_arg = ParseMap{
+  def /^\d+n\+\d+/([_ string]) = parse_nth_expr_with_plus.run(string)
+  def /^\d+n/([_ string]) = parse_nth_expr_without_plus.run(string)
+}
 
 let parse_pseudo_selector_with_args = Parser[
   Init[{kind: :pseudo_selector_with_args}]
@@ -317,10 +320,16 @@ def parse_var_with_default_value(result) = Parser[
   Trim Skip[")"]
 ](result)
 
+let parse_string_value = Parser[
+  Init[{kind: :string_value}]
+  Store[/^".*"/ :value]  
+]
+
 export let parse_value = ParseMap{
   "rgba" => parse_rgba_value
   "rgb" => parse_rgb_value
   "#" => parse_hex_value
+  "\"" => parse_string_value
   digit_regex + /px/ => parse_px_value
   digit_regex + /vw/ => parse_vw_value
   digit_regex + /vh/ => parse_vh_value
@@ -342,7 +351,7 @@ let parse_rule = Parser[
 
 let parse_variable = Parser[
   Init[{kind: :variable}]
-  Trim Skip["--"] Store[/^(\w|-)+/ :name]
+  Trim Store[/^--(\w|-)+/ :name]
   Trim Skip[":"]
   Trim Then[parse_value :value]
   Trim Skip[";"]

@@ -11,17 +11,16 @@ document:styleSheets.0:rules.take(4).zip(0..).map(|[rule idx]| [parse_decl(rule:
 
   css_decl:setAttribute("data-css-index", idx)
   css_decl:setAttribute("data-file-path", relative_path)
-  -- TODO: compute line number by counting rules
-  -- ^ this won't be so easy
   css_decl:prepend(:a{
     href: str("vscode://file" absolute_path),
     children: relative_path,
     class: "open-in-vscode"
   })
-  $(".editor"):append(css_decl)
+  $(".--css-edit-editor"):append(css_decl)
 })
 
 -- warn on unused query
+-- store active keys on editor elements with data attributes
 
 def create_signal() = {
   abort_handlers: []
@@ -37,6 +36,7 @@ def create_signal() = {
   end
 }
 
+-- TODO: toggle this to turn on persisting
 let fetching = true
 
 def init(root)

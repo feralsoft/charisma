@@ -34,7 +34,7 @@ def drag_and_drop({signal, rebuild, root})
       let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
       let new_node = to_html(ast_node)
       draggable:before(new_node)
-      $(".editor .dragging"):remove()
+      $(".--css-edit-editor .dragging"):remove()
       rebuild(new_node)
     })
   end

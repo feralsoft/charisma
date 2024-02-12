@@ -18,20 +18,19 @@ let toggle_compile = {
   def :rem_value({value}) = str(rem_to_px(value) "px")
   def :px_value({value}) = str(px_to_rem(value) "rem")
   def :var_value({name} elem)
-    let rule_name = elem:closest("[data-kind=rule]").query("[data-attr=name]"):innerText:trim()
+    let rule_name = elem:closest("[data-kind=rule]").query("[data-attr=name]"):innerText:trim().as_kw()
     return elem:closest("[data-kind=declaration]")
       .query("[data-attr=query]")
       .to_ast()
       .pipe(compile $$)
-      .map(getComputedStyle Keyword:for(rule_name))
+      .map(getComputedStyle rule_name)
       .:next():value
   end
 }
 
 let enabled_nodes_query = toggle_compile.keys()
   .map(|kind| str("[data-kind=" kind "]"))
-  .join(", ")
-  .pipe(str:fmt(":is(" _ ")"))
+  .pipe(str:fmt(":is(" _.join(", ") ")"))
 
 def toggle_representation({signal, rebuild, root})
   for elem of root.query_all("[data-kind]:has(> [data-value])" enabled_nodes_query)

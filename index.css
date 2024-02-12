@@ -1,7 +1,7 @@
-.editor {
+.--css-edit-editor {
   background-color: lightgray;
   padding: 0.5rem;
-  font-size: 19px;
+  font-size: 21px;
   font-family: monospace;
   --number-color: rgb(0, 128, 0);
   --class-color: rgb(0, 0, 139);
@@ -17,13 +17,13 @@
 [data-kind="declaration"]::after {
   content: "}";
 }
+[data-value]:hover {
+  outline: black solid 1px;
+}
 [data-kind]:hover:not(:has([data-kind]:hover)) {
   outline: black solid 1px;
 }
 [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
-  outline: black solid 1px;
-}
-[data-value]:hover {
   outline: black solid 1px;
 }
 [data-kind="declaration"] > [data-attr="query"] {
@@ -147,9 +147,6 @@
 }
 [data-kind="variable"] > [data-attr="name"] {
   color: var(--variable-color);
-  &::before {
-    content: "--";
-  }
 }
 [data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
   content: ":";
@@ -238,7 +235,6 @@
     content: ")";
   }
 }
-
 .open-in-vscode {
   display: none;
 }
@@ -251,4 +247,7 @@
   right: 1rem;
   background-color: rgba(255, 255, 255, 0.285);
   padding: 4px;
+}
+[data-kind="string_value"] {
+  color: var(--string-color);
 }
