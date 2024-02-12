@@ -2,7 +2,7 @@ import "./add-new-rule.css"
 import {parse_rule} from "../../css-parser.coil"
 import {to_html} from "../../html-ast.coil"
 
-def onclick(e)
+def onclick(e, cb)
   let new_rule = :div{
     contenteditable: true
     class: "unfinished-rule"
@@ -18,21 +18,24 @@ def onclick(e)
         decl:append(rule())
         decl.query("[data-attr=rules]"):append(to_html(ast_node))
         this:remove()
+        cb()
       end
     end
   }
-  this:replaceWith(new_rule)
+  e:target:replaceWith(new_rule)
   new_rule:focus()
 end
 
-def rule = :button{
+def rule(cb) = :button{
   class: "add-new-rule",
   children: "+",
-  onclick: onclick
+  def :onclick(e) = onclick(e, cb)
 }
 
-def add_new_rule({signal, root})
-  $$("[data-kind=declaration]").each(|decl| decl:append(rule()))
+def add_new_rule({signal, root, rebuild})
+  for decl of $$("[data-kind=declaration]:not(:has(button.add-new-rule))")
+    decl:append(rule(|| rebuild(root:closest("[data-kind=declaration]"))))
+  end
 end
 
 export default add_new_rule
