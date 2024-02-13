@@ -11,12 +11,16 @@ let context_map = {
 protocol backspaced
 
 -- IDEA: undo via storing the AST as an persistent immutable map
--- TODO: don't give people ability to backspace all the way to deleting a query
 def delete_node({root, signal, rebuild})
-  for node of root.query_all("[data-kind]")
+  for node of root.query_all("[data-kind=declaration] > [data-attr=rules] *")
     signal:listen(node "keydown" |e| {
       e:stopPropagation()
       if e:key == "Backspace" if node.backspaced
+        if node:parentNode:closest("[data-kind]"):dataset:kind == "declaration"
+          node:remove()
+          rebuild()
+          return
+        end
         let text_node = :div{
           class: "just-deleted-node"
           contenteditable: true
