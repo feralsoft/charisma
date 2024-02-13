@@ -39,8 +39,6 @@ def create_signal() = {
 -- TODO: toggle this to turn on persisting
 let fetching = true
 
--- change direction of drag & drop plop depending where you are going
-
 protocol signals
 
 def destroy_all_signals(root)
