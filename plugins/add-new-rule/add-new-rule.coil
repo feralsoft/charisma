@@ -2,24 +2,38 @@ import "./add-new-rule.css"
 import {parse_rule} from "../../css-parser.coil"
 import {to_html} from "../../html-ast.coil"
 
+protocol map_ctor
+
+def Object:prototype.map_ctor(Ctor, cb)
+  if this instanceof Ctor
+    return cb(this)
+  else
+    return this
+  end
+end
+
 -- warn on parse errors!
 def onclick(e, cb)
   let new_rule = :div{
     contenteditable: true
     class: "unfinished-rule"
     def :onkeydown(e)
+      this:removeAttribute("data-parse-error")
       if e:key == "Enter"
         e:preventDefault()
         let css_rule_text = this:innerText:trim()
         if !css_rule_text:endsWith(";")
           css_rule_text = str(css_rule_text ";")
         end
-        let ast_node = parse_rule([nil css_rule_text]).0
-        let decl = this:closest("[data-kind=declaration]")
-        decl:append(rule())
-        decl.query("[data-attr=rules]"):append(to_html(ast_node))
-        this:remove()
-        cb()
+        if let ast_node = try!(|| parse_rule([nil css_rule_text]).0).map_ctor(Error, |e| nil)
+          let decl = this:closest("[data-kind=declaration]")
+          decl:append(rule())
+          decl.query("[data-attr=rules]"):append(to_html(ast_node))
+          this:remove()
+          cb()
+        else
+          this:setAttribute("data-parse-error", true)
+        end
       end
     end
   }

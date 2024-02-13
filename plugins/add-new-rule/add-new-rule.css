@@ -23,6 +23,17 @@ button.add-new-rule {
 .unfinished-rule {
   margin-left: 1rem;
   background-color: white;
+
+  &[data-parse-error="true"] {
+    border-bottom: 1.5px dashed red;
+    &:hover::before {
+      content: "invalid rule";
+      position: absolute;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      background: rgba(255, 255, 0, 0.343);
+    }
+  }
 }
 
 [data-kind="declaration"]:not(:has(.unfinished-rule)) {
