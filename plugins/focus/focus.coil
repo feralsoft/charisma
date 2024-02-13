@@ -1,0 +1,13 @@
+import "./focus.css"
+
+-- thoughts: should we un-focus after a certain amount of time?
+def focus({root, signal})
+  for node of root.query_all("[data-kind]")
+    signal:listen(node "focus" || {
+      $$(".--css-edit-editor [data-focused=true]").each(|node| node:removeAttribute("data-focused"))
+      node:setAttribute("data-focused", true)
+    })
+  end
+end
+
+export default focus

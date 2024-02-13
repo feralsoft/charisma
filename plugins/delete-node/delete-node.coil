@@ -8,10 +8,12 @@ let context_map = {
   def :rule(text) = parse_value([nil text])
 }
 
+-- TODO: use a data attribute instead of this protocol so we can style it
 protocol backspaced
 
 -- IDEA: undo via storing the AST as an persistent immutable map
 def delete_node({root, signal, rebuild})
+  let interval = nil
   for node of root.query_all("[data-kind=declaration] > [data-attr=rules] *")
     signal:listen(node "keydown" |e| {
       e:stopPropagation()
@@ -41,6 +43,7 @@ def delete_node({root, signal, rebuild})
       end end
       if e:key == "Backspace"
         node.backspaced = true
+        setTimeout(|| node.backspaced = false, 500)
       end
     })
   end

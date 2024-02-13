@@ -5,6 +5,7 @@ import toggle_representation from "./toggle-representation/toggle-representation
 import replace_numeric_with_slider from "./replace-numeric-with-slider/replace-numeric-with-slider.coil";
 import add_new_rule from "./add-new-rule/add-new-rule.coil";
 import delete_node from "./delete-node/delete-node.coil";
+import focus from "./focus/focus.coil";
 
 export default {
   copy_paste,
@@ -14,4 +15,5 @@ export default {
   replace_numeric_with_slider,
   add_new_rule,
   delete_node,
+  focus,
 };
