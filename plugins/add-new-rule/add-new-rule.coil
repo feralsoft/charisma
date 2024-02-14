@@ -12,52 +12,42 @@ def Object:prototype.map_ctor(Ctor, cb)
   end
 end
 
--- warn on parse errors!
-def onclick(e, cb)
-  let new_rule = :div{
-    contenteditable: true
-    class: "unfinished-rule"
-    def :onkeydown(e)
-      this:removeAttribute("data-parse-error")
-      e:stopPropagation()
-      if e:key == "Backspace" if this:innerText == ""
-        this:remove()
-        cb()
-        return
-      end end
-      if e:key == "Enter"
-        e:preventDefault()
-        let css_rule_text = this:innerText:trim()
-        if !css_rule_text:endsWith(";")
-          css_rule_text = str(css_rule_text ";")
-        end
-        if let ast_node = try!(|| parse_rule([nil css_rule_text]).0).map_ctor(Error, |e| nil)
-          let decl = this:closest("[data-kind=declaration]")
-          decl:append(rule())
-          decl.query("[data-attr=rules]"):append(to_html(ast_node))
-          this:remove()
-          cb()
-        else
-          this:setAttribute("data-parse-error", true)
-        end
+def add_new_rule({signal, root, rebuild, scope})
+  for rules of root.query_all("[data-kind=declaration]:not(:has(.plugin_add_new_rule_btn)) [data-attr=rules]")
+    rules:append(:button{
+      class: scope:class(:btn),
+      children: "+",
+      def :onclick(e)
+        let new_rule = :div{
+          contenteditable: true
+          class: scope:class(:unfinished)
+          def :onkeydown(e)
+            this:removeAttribute(scope:data(:error))
+            e:stopPropagation()
+            if e:key == "Backspace"
+              if this:innerText == ""
+                this:remove()
+                rebuild(root:closest("[data-kind=declaration]"))
+              end
+            else if e:key == "Enter"
+              e:preventDefault()
+              let css_rule_text = this:innerText:trim()
+              if !css_rule_text:endsWith(";")
+                css_rule_text = str(css_rule_text ";")
+              end
+              if let ast_node = try!(|| parse_rule([nil css_rule_text]).0).map_ctor(Error, |e| nil)
+                this:replaceWith(to_html(ast_node))
+                rebuild(root:closest("[data-kind=declaration]"))
+              else
+                this:setAttribute(scope:data(:error), true)
+              end
+            end
+          end
+        }
+        e:target:replaceWith(new_rule)
+        new_rule:focus()
       end
-    end
-  }
-  e:target:replaceWith(new_rule)
-  new_rule:focus()
-end
-
-def rule(cb) = :button{
-  class: "add-new-rule",
-  children: "+",
-  def :onclick(e) = onclick(e, cb)
-}
-
--- HMM: maybe I should insert into [data-attr=rules]
--- instead of directly child of [data-kind=declaration]
-def add_new_rule({signal, root, rebuild})
-  for decl of $$("[data-kind=declaration]:not(:has(button.add-new-rule))")
-    decl:append(rule(|| rebuild(root:closest("[data-kind=declaration]"))))
+    })
   end
 end
 

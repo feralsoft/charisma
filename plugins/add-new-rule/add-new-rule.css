@@ -1,4 +1,4 @@
-button.add-new-rule {
+.plugin_add_new_rule_btn {
   background-color: white;
   border: none;
   border-radius: 2px;
@@ -7,7 +7,6 @@ button.add-new-rule {
   height: 20px;
   width: 20px;
   font-size: 20px;
-  margin-left: 1.25rem;
   cursor: pointer;
 
   &:hover {
@@ -20,11 +19,9 @@ button.add-new-rule {
   }
 }
 
-.unfinished-rule {
-  margin-left: 1rem;
+.plugin_add_new_rule_unfinished {
   background-color: white;
-
-  &[data-parse-error="true"] {
+  &[data-plugin_add_new_rule_error="true"] {
     border-bottom: 1.5px dashed red;
     &:hover::before {
       content: "invalid rule";
@@ -33,15 +30,5 @@ button.add-new-rule {
       font-size: 0.75rem;
       background: rgba(255, 255, 0, 0.343);
     }
-  }
-}
-
-[data-kind="declaration"]:not(:has(.unfinished-rule)) {
-  padding-bottom: 2rem;
-  &::after {
-    content: "}";
-    position: absolute;
-    margin-top: 1.5rem;
-    left: 1.25rem;
   }
 }
