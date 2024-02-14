@@ -1,8 +1,9 @@
-.dragover-preceding {
+.plugin_drag-and-drop_dragover-preceding {
   border-top: 2px solid rgba(0, 0, 0, 0.25);
   margin-top: -2px;
 }
-.dragover-following {
+
+.plugin_drag-and-drop_dragover-following {
   border-bottom: 2px solid rgba(0, 0, 0, 0.25);
   margin-bottom: -2px;
 }

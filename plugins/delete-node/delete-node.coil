@@ -11,7 +11,11 @@ let context_map = {
 -- TODO: use a data attribute instead of this protocol so we can style it
 protocol backspaced
 
+-- bug: why does it take 4-6 delete keys to delete a css rule from an already deleted value
+
 -- IDEA: undo via storing the AST as an persistent immutable map
+
+-- How to namespace plugins on some level?
 def delete_node({root, signal, rebuild})
   let interval = nil
   for node of root.query_all("[data-kind=declaration] > [data-attr=rules] *")
