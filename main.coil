@@ -72,7 +72,7 @@ def init(root)
         let html_node = (new_root or root):closest("[data-kind=declaration]")
         let ast_node = html_node.to_ast()
         let idx = html_node:getAttribute("data-css-index").as_num()
-        let [sheet] = document:styleSheets
+        let {sheet} = $("[data-vite-dev-id$=\"" html_node:getAttribute("data-file-path") "\"]")
         sheet:deleteRule(idx)
         sheet:insertRule(compile(ast_node) idx)
         if !fetching
