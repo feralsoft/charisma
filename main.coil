@@ -78,7 +78,7 @@ def init(root)
         if !fetching
           -- make sure
           fetching = true
-          -- TODO: use a websocket, it'll be much faster
+          -- TODO: use a websocket, it'll be much faster probably
           await fetch("http://localhost:5173/update_css", {
             method: "POST",
             body: JSON:stringify({

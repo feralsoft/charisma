@@ -1,18 +1,5 @@
 import {to_ast, to_html} from "../../html-ast.coil"
 import "./drag-and-drop.css"
-import is_object from "./is_object.js"
-
-def json_to_object(raw_obj)
-  if is_object(raw_obj)
-    let out = {}
-    for [key value] of Object:entries(raw_obj)
-      out.key = json_to_object(value)
-    end
-    return out
-  else
-    return raw_obj
-  end
-end
 
 def drag_and_drop({signal, rebuild, root, scope})  
   def remove_dragover_classes(node) =
@@ -39,7 +26,7 @@ def drag_and_drop({signal, rebuild, root, scope})
     })
     signal:listen(draggable "drop" |e| {
       e:preventDefault()
-      let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
+      let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(from_js)
       let new_node = to_html(ast_node)
       if draggable:classList:contains(scope:class(:preceding))
         draggable:before(new_node)
