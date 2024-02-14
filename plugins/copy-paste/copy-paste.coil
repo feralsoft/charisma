@@ -1,7 +1,7 @@
 import {compile, to_ast} from "../../html-ast.coil"
 import "./copy-paste.css"
 
-def copy_paste({signal})
+def copy_paste({signal, scope})
   signal:listen(document "copy" |e| {
     e:preventDefault()
     -- e:target doesn't understand [data-kind=rule] is active
@@ -10,18 +10,18 @@ def copy_paste({signal})
     if let query = elem:closest("[data-attr=query]")
       let code = compile(query.to_ast())
       e:clipboardData:setData("text/plain", code)
-      query:classList:add("copied")
-      return setTimeout(|| query:classList:remove("copied"), 1500)
+      query:classList:add(scope:class(:copied))
+      return setTimeout(|| query:classList:remove(scope:class(:copied)), 1500)
     end if let rule = elem:closest(":is([data-kind=rule], [data-kind=variable])")
       let code = str("\n" compile(rule.to_ast()) ";")
       e:clipboardData:setData("text/plain", code)
-      rule:classList:add("copied")
-      return setTimeout(|| rule:classList:remove("copied"), 1500)
+      rule:classList:add(scope:class(:copied))
+      return setTimeout(|| rule:classList:remove(scope:class(:copied)), 1500)
     end if let decl = elem:closest("[data-kind=declaration]")
       let code = compile(decl.to_ast())
       e:clipboardData:setData("text/plain", code)
-      decl:classList:add("copied")
-      return setTimeout(|| decl:classList:remove("copied"), 1500)
+      decl:classList:add(scope:class(:copied))
+      return setTimeout(|| decl:classList:remove(scope:class(:copied)), 1500)
     end
   })
 end

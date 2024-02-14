@@ -1,41 +1,8 @@
-button.copy-button {
-  display: none;
+.plugin_copy_paste_copied {
+  animation: plugin_copy_paste_fadeout 1s;
 }
 
-[data-kind]:hover > button.copy-button {
-  display: flex;
-  border: none;
-  background: none;
-  font-size: 1.25em;
-  line-height: 0.75;
-  position: absolute;
-  right: 1rem;
-  color: grey;
-  &:hover {
-    color: darkgrey;
-    cursor: pointer;
-  }
-  &:active {
-    color: black;
-  }
-}
-
-.toast {
-  position: absolute;
-  right: 2.4rem;
-  font-size: 11px;
-  line-height: 2;
-  padding: 0.1em;
-  border-radius: 3px;
-  animation: fadeout 2s;
-  font-size: 20px;
-}
-
-.copied {
-  animation: copied-fadeout 1s;
-}
-
-@keyframes copied-fadeout {
+@keyframes plugin_copy_paste_fadeout {
   0% {
     background-color: rgba(218, 212, 41, 0.559);
   }
