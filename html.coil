@@ -6,10 +6,9 @@ end
 
 def Keyword:prototype.(Meta:from_entries)(entries)
   entries = entries.into({})
+  let children = entries:children or []
   let elem = document:createElement(this)
-  for [key val] of entries
-      .reject(0 Set["children"])
-      .reject(|[key _]| key:startsWith("on"))
+  for [key val] of entries.delete!(:children).reject(|[key _]| key:startsWith("on"))
     elem:setAttribute(key val)
   end
   for [event_name f] of entries
@@ -17,7 +16,7 @@ def Keyword:prototype.(Meta:from_entries)(entries)
       .map(|[key f]| [key:split("on").1 f])
     elem:addEventListener(event_name f)
   end
-  elem:append(...(entries:children or []))
+  elem:append(...children)
   return elem
 end
 
