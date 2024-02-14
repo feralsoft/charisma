@@ -1,3 +1,5 @@
-.--css-edit-editor [data-focused="true"]:not(:hover) {
+/* only hide outline when directly hovering the element */
+[data-plugin_focus_active="true"]:not(:hover),
+[data-plugin_focus_active="true"]:hover:has([data-kind]:hover) {
   outline: 1.5px dashed rgba(0, 0, 0, 0.574);
 }
