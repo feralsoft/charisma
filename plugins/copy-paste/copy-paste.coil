@@ -2,26 +2,23 @@ import {compile, to_ast} from "../../html-ast.coil"
 import "./copy-paste.css"
 
 def copy_paste({signal, scope})
+  def copy(e, elem, code)
+    e:clipboardData:setData("text/plain", code)
+    elem:classList:add(scope:class(:copied))
+    return setTimeout(|| elem:classList:remove(scope:class(:copied)), 1500)
+  end
+
   signal:listen(document "copy" |e| {
     e:preventDefault()
     -- e:target doesn't understand [data-kind=rule] is active
     -- even though it has tabindex=0.. not sure why, but this works
     let elem = document:activeElement
     if let query = elem:closest("[data-attr=query]")
-      let code = compile(query.to_ast())
-      e:clipboardData:setData("text/plain", code)
-      query:classList:add(scope:class(:copied))
-      return setTimeout(|| query:classList:remove(scope:class(:copied)), 1500)
+      return copy(e, query, compile(query.to_ast()))
     end if let rule = elem:closest(":is([data-kind=rule], [data-kind=variable])")
-      let code = str("\n" compile(rule.to_ast()) ";")
-      e:clipboardData:setData("text/plain", code)
-      rule:classList:add(scope:class(:copied))
-      return setTimeout(|| rule:classList:remove(scope:class(:copied)), 1500)
+      return copy(e, rule, str("\n" compile(rule.to_ast()) ";"))
     end if let decl = elem:closest("[data-kind=declaration]")
-      let code = compile(decl.to_ast())
-      e:clipboardData:setData("text/plain", code)
-      decl:classList:add(scope:class(:copied))
-      return setTimeout(|| decl:classList:remove(scope:class(:copied)), 1500)
+      return copy(e, decl, compile(decl.to_ast()))
     end
   })
 end
