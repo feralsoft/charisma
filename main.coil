@@ -36,6 +36,12 @@ def create_signal() = {
   end
 }
 
+def scope_helper(plugin_name) = {
+  def :class(name) = str("plugin_" plugin_name "_" name)
+  def :data(name) = str("data-plugin_" plugin_name "_" name)
+  def :attr(name) = str("plugin_" plugin_name "_" name)
+}
+
 -- TODO: toggle this to turn on persisting
 let fetching = true
 
@@ -50,13 +56,14 @@ def init(root)
   destroy_all_signals(root)
   root.signals = []
 
-  for plugin of Object:values(plugins)
+  for [plugin_name, plugin] of Object:entries(plugins)
     -- store signal on the root
     let signal = create_signal()
     root.signals:push(signal)
     let config = {
       root: root
       signal: signal
+      scope: scope_helper(plugin_name)
       def :rebuild(new_root)
         config:eval_css(new_root)
         init(new_root or root)

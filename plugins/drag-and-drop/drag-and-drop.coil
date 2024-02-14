@@ -14,26 +14,22 @@ def json_to_object(raw_obj)
   end
 end
 
-let dragover_preceding = "plugin_drag-and-drop_dragover-preceding"
-let dragover_following = "plugin_drag-and-drop_dragover-following"
-let dragging = "data-plugin_drag-and-drop_dragging"
+def drag_and_drop({signal, rebuild, root, scope})  
+  def remove_dragover_classes(node) =
+    [scope:class(:preceding) scope:class(:following)].each(node:classList:remove)
 
-def remove_dragover_classes(node) =
-  [dragover_preceding dragover_following].each(node:classList:remove)
-
-def drag_and_drop({signal, rebuild, root})
   for draggable of root.query_all(":is([data-kind=rule], [data-kind=variable])")
     draggable:setAttribute("draggable" true)
     signal:listen(draggable "dragstart" |e| {
-      draggable:setAttribute(dragging, true)
+      draggable:setAttribute(scope:data(:dragging), true)
       e:dataTransfer:dropEffect = "move"
       e:dataTransfer:setData("text/json", JSON:stringify(draggable.to_ast()))
     })
     signal:listen(draggable "dragenter" |e| {
-      root.query("[" dragging "]")
+      root.query("[" scope:data(:dragging) "]")
         .:compareDocumentPosition(draggable)
-        .pipe(Map{ Node:DOCUMENT_POSITION_PRECEDING => dragover_preceding
-                   Node:DOCUMENT_POSITION_FOLLOWING => dragover_following }
+        .pipe(Map{ Node:DOCUMENT_POSITION_PRECEDING => scope:class(:preceding)
+                   Node:DOCUMENT_POSITION_FOLLOWING => scope:class(:following) }
               draggable:classList:add)
     })
     signal:listen(draggable "dragleave" |e| remove_dragover_classes(draggable))
@@ -45,13 +41,13 @@ def drag_and_drop({signal, rebuild, root})
       e:preventDefault()
       let ast_node = JSON:parse(e:dataTransfer:getData("text/json")).pipe(json_to_object)
       let new_node = to_html(ast_node)
-      if draggable:classList:contains(dragover_preceding)
+      if draggable:classList:contains(scope:class(:preceding))
         draggable:before(new_node)
       else
         draggable:after(new_node)
       end
       remove_dragover_classes(draggable)
-      $(".--css-edit-editor [" dragging "]"):remove()
+      $(".--css-edit-editor [" scope:data(:dragging) "]"):remove()
       rebuild(new_node)
     })
   end
