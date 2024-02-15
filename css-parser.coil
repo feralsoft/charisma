@@ -101,10 +101,9 @@ def GeneratorFunction:prototype.run(string)
     let {value, done} = gen:next(result)
     if done
       return [value string]
-    else
-      let r = value.run(string)
-      result = r.0
-      string = r.1
+    else if let [r s] = value.run(string)
+      result = r
+      string = s
     end
   end
 end
@@ -112,11 +111,18 @@ end
 def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
 
 def chomp(pattern) = {kind: :chomp, pattern: pattern}
+def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
 def capture(pattern) = {kind: :capture, pattern: pattern}
-def test(pattern) = {kind: :test, pattern: pattern}
+def capture!(pattern) = {kind: :capture!, pattern: pattern}
 def trim = {kind: :trim}
 
 def :chomp.run({pattern}, string)
+  if let {skip} = pattern.matches?(string)
+    return [nil string:slice(skip)]
+  end
+end
+
+def :chomp!.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
     return [nil string:slice(skip)]
   else
@@ -127,6 +133,12 @@ end
 def :capture.run({pattern}, string)
   if let {result skip} = pattern.matches?(string)
     return [result string:slice(skip)]
+  end
+end
+
+def :capture!.run({pattern}, string)
+  if let {result skip} = pattern.matches?(string)
+    return [result string:slice(skip)]
   else
     this.log(string) Error[]:stack.log() panic!()
   end
@@ -134,26 +146,30 @@ end
 
 def :trim.run(_, string) = [nil string:trimLeft()]
 
-def :test.run({pattern}, string) = [pattern.matches?(string) string]
-
 def* parse_class
-  yield chomp(".")
-  let name = yield capture(/^(\w|-)+/)
+  yield chomp!(".")
+  let name = yield capture!(/^(\w|-)+/)
   return {kind: :class_selector, name: name}
 end
 
 def parse_class_selector([_ string]) = parse_class.run(string)
 
 def* parse_nth_expr_without_plus
-  let lhs = yield capture(/^/)
-  yield chomp("2n")
+  yield chomp!("2n")
   return {kind: :nth_expr_without_plus, value: "2n"}
 end
 
 def* parse_nth_expr_with_plus
-  yield chomp("2n+1")
+  yield chomp!("2n+1")
   return {kind: :nth_expr_with_plus, value: "2n+1"}
 end
+
+
+def* t_parse_selector_arg
+  
+end
+
+-- parse_test.run("2n+1")
 
 let parse_selector_arg = ParseMap{
   def /^\d+n\+\d+/([_ string]) = parse_nth_expr_with_plus.run(string)
