@@ -10,12 +10,15 @@ def String:prototype.matches?(str)
   end
 end
 
-def RegExp:prototype.matches?(str)
+def RegExp:prototype.matches?(str, group)
+  if !group 
+    group = 0
+  end
   let result = str:match(this)
   if result.nil?() or result:index != 0
     return false
   else
-    return {result: result.0, skip: result.0.:length}
+    return {result: result.group, skip: result.0.:length}
   end
 end
 
@@ -101,7 +104,7 @@ def GeneratorFunction:prototype.run(string)
     let {value, done} = gen:next(result)
     if done
       return [value string]
-    else if let [r s] = value.run(string)
+    else if let [r s] = value.run(string, result)
       result = r
       string = s
     end
@@ -112,13 +115,16 @@ def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
 
 def chomp(pattern) = {kind: :chomp, pattern: pattern}
 def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
-def capture(pattern) = {kind: :capture, pattern: pattern}
-def capture!(pattern) = {kind: :capture!, pattern: pattern}
+def capture(pattern, group) = {kind: :capture, pattern: pattern, group: group or 0}
+def capture!(pattern, group) = {kind: :capture!, pattern: pattern, group: group or 0}
 def trim = {kind: :trim}
+def debug = {kind: :debug}
 
 def :chomp.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
-    return [nil string:slice(skip)]
+    return [true string:slice(skip)]
+  else
+    return [false string]
   end
 end
 
@@ -130,14 +136,16 @@ def :chomp!.run({pattern}, string)
   end
 end
 
-def :capture.run({pattern}, string)
-  if let {result skip} = pattern.matches?(string)
+def :capture.run({pattern, group}, string)
+  if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
+  else
+    return [nil string]
   end
 end
 
-def :capture!.run({pattern}, string)
-  if let {result skip} = pattern.matches?(string)
+def :capture!.run({pattern, group}, string)
+  if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
   else
     this.log(string) Error[]:stack.log() panic!()
@@ -145,6 +153,8 @@ def :capture!.run({pattern}, string)
 end
 
 def :trim.run(_, string) = [nil string:trimLeft()]
+
+def :debug.run(_, string, state) = [[state string], string]
 
 def* parse_class
   yield chomp!(".")
@@ -165,25 +175,34 @@ def* parse_nth_expr_with_plus
 end
 
 
-def* t_parse_selector_arg
-  
+def* parse_selector_arg
+  if let factor = yield capture(/^(\d)+n/, 1)
+    yield trim()
+    if yield chomp("+")
+      yield trim()
+      let offset = yield capture!(/^\d+/)
+      return {kind: :nth_expr_with_plus, factor: factor, offset: offset}
+    else
+      return {kind: :nth_expr_without_plus, factor: factor}
+    end
+  end
 end
 
--- parse_test.run("2n+1")
+def parse_selector_arg_entry([_ string]) = parse_selector_arg.run(string)
 
-let parse_selector_arg = ParseMap{
-  def /^\d+n\+\d+/([_ string]) = parse_nth_expr_with_plus.run(string)
-  def /^\d+n/([_ string]) = parse_nth_expr_without_plus.run(string)
-}
+def* t_parse_pseudo_selector_with_args
+  yield chomp!(":")
+  let name = yield capture!(/^(\w|-)+/)
+  yield chomp!("(")
+  let args = []
+  while !yield chomp(")")
+    args:push(yield* parse_selector_arg())
+  end
+  return {kind: :pseudo_selector_with_args, name: name, args: args}
+end
 
-let parse_pseudo_selector_with_args = Parser[
-  Init[{kind: :pseudo_selector_with_args}]
-  Skip[":"]
-  Store[/^(\w|-)+/ :name]
-  Skip["("]
-  Trim Until[")" parse_selector_arg :args]
-  Trim Skip[")"]
-]
+def parse_pseudo_selector_with_args([_ string]) = 
+  t_parse_pseudo_selector_with_args.run(string)
 
 let parse_pseudo_selector_without_args = Parser[
   Init[{kind: :pseudo_selector_without_args}]

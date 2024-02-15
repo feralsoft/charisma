@@ -1,7 +1,7 @@
 .--css-edit-editor {
   background-color: lightgray;
   padding: 0.5rem;
-  font-size: 19px;
+  font-size: 17px;
   font-family: monospace;
   --number-color: rgb(0, 128, 0);
   --class-color: rgb(0, 0, 139);
@@ -17,8 +17,8 @@
 [data-kind="declaration"]::after {
   content: "}";
 }
-[data-value]:hover {
-  outline: black solid 1px;
+[data-value]:nth-child(even) {
+  /* outline: black solid 1px; */
 }
 [data-kind]:hover:not(:has([data-kind]:hover)) {
   outline: black solid 1px;
@@ -250,4 +250,46 @@
 }
 [data-kind="string_value"] {
   color: var(--string-color);
+}
+:root {
+  height: 200vh;
+}
+
+[data-kind="nth_expr_with_plus"]:has(
+    > [data-attr="factor"][data-value="2"],
+    > [data-attr="offset"][data-value="1"]
+  ) {
+  * {
+    display: none;
+  }
+  &::after {
+    content: "odd";
+    color: rgb(186, 156, 36);
+  }
+}
+
+[data-kind="nth_expr_without_plus"]:has(
+    > [data-attr="factor"][data-value="2"]
+  ) {
+  * {
+    display: none;
+  }
+  &::after {
+    content: "even";
+    color: rgb(186, 156, 36);
+  }
+}
+
+[data-kind="nth_expr_with_plus"] {
+  display: flex;
+  & > [data-attr="factor"]::after {
+    content: "n+";
+  }
+}
+
+[data-kind="nth_expr_without_plus"] {
+  display: flex;
+  & > [data-attr="factor"]::after {
+    content: "n";
+  }
 }
