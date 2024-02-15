@@ -17,8 +17,8 @@
 [data-kind="declaration"]::after {
   content: "}";
 }
-[data-value]:nth-child(even) {
-  /* outline: black solid 1px; */
+[data-value]:hover {
+  outline: black solid 1px;
 }
 [data-kind]:hover:not(:has([data-kind]:hover)) {
   outline: black solid 1px;
@@ -251,10 +251,6 @@
 [data-kind="string_value"] {
   color: var(--string-color);
 }
-:root {
-  height: 200vh;
-}
-
 [data-kind="nth_expr_with_plus"]:has(
     > [data-attr="factor"][data-value="2"],
     > [data-attr="offset"][data-value="1"]
@@ -267,7 +263,6 @@
     color: rgb(186, 156, 36);
   }
 }
-
 [data-kind="nth_expr_without_plus"]:has(
     > [data-attr="factor"][data-value="2"]
   ) {
@@ -279,14 +274,12 @@
     color: rgb(186, 156, 36);
   }
 }
-
 [data-kind="nth_expr_with_plus"] {
   display: flex;
   & > [data-attr="factor"]::after {
     content: "n+";
   }
 }
-
 [data-kind="nth_expr_without_plus"] {
   display: flex;
   & > [data-attr="factor"]::after {

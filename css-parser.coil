@@ -117,12 +117,18 @@ def chomp(pattern) = {kind: :chomp, pattern: pattern}
 def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
 def capture(pattern, group) = {kind: :capture, pattern: pattern, group: group or 0}
 def capture!(pattern, group) = {kind: :capture!, pattern: pattern, group: group or 0}
+def trimmed(parser) = {kind: :trimmed, parser: parser}
 def trim = {kind: :trim}
 def debug = {kind: :debug}
 
+def :trimmed.run({parser}, string)
+  let [result s] = parser.run(string:trimLeft())
+  return [result s:trimLeft()]
+end
+
 def :chomp.run({pattern}, string)
-  if let {skip} = pattern.matches?(string)
-    return [true string:slice(skip)]
+  if pattern.matches?(string)
+    return [true string]
   else
     return [false string]
   end
@@ -132,13 +138,13 @@ def :chomp!.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
     return [nil string:slice(skip)]
   else
-    this.log(string) Error[]:stack.log() panic!()
+    this.log({pattern: pattern}, string) Error[]:stack.log() panic!()
   end
 end
 
 def :capture.run({pattern, group}, string)
   if let {result skip} = pattern.matches?(string, group)
-    return [result string:slice(skip)]
+    return [result string]
   else
     return [nil string]
   end
@@ -148,7 +154,7 @@ def :capture!.run({pattern, group}, string)
   if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
   else
-    this.log(string) Error[]:stack.log() panic!()
+    this.log({pattern: pattern, group: group}, string) Error[]:stack.log() panic!()
   end
 end
 
@@ -156,13 +162,11 @@ def :trim.run(_, string) = [nil string:trimLeft()]
 
 def :debug.run(_, string, state) = [[state string], string]
 
-def* parse_class
+def* parse_class_selector
   yield chomp!(".")
   let name = yield capture!(/^(\w|-)+/)
   return {kind: :class_selector, name: name}
 end
-
-def parse_class_selector([_ string]) = parse_class.run(string)
 
 def* parse_nth_expr_without_plus
   yield chomp!("2n")
@@ -174,12 +178,9 @@ def* parse_nth_expr_with_plus
   return {kind: :nth_expr_with_plus, value: "2n+1"}
 end
 
-
 def* parse_selector_arg
   if let factor = yield capture(/^(\d)+n/, 1)
-    yield trim()
-    if yield chomp("+")
-      yield trim()
+    if yield trimmed(chomp("+"))
       let offset = yield capture!(/^\d+/)
       return {kind: :nth_expr_with_plus, factor: factor, offset: offset}
     else
@@ -188,9 +189,7 @@ def* parse_selector_arg
   end
 end
 
-def parse_selector_arg_entry([_ string]) = parse_selector_arg.run(string)
-
-def* t_parse_pseudo_selector_with_args
+def* parse_pseudo_selector_with_args
   yield chomp!(":")
   let name = yield capture!(/^(\w|-)+/)
   yield chomp!("(")
@@ -201,52 +200,60 @@ def* t_parse_pseudo_selector_with_args
   return {kind: :pseudo_selector_with_args, name: name, args: args}
 end
 
-def parse_pseudo_selector_with_args([_ string]) = 
-  t_parse_pseudo_selector_with_args.run(string)
+def* parse_pseudo_selector_without_args
+  yield chomp!(":")
+  let name = yield capture!(/^(\w|-)+/)
+  return {kind: :pseudo_selector_without_args, name: name}
+end  
 
-let parse_pseudo_selector_without_args = Parser[
-  Init[{kind: :pseudo_selector_without_args}]
-  Skip[":"]
-  Store[/^(\w|-)+/ :name]
-]
+def* parse_pseudo_element_selector
+  yield chomp!("::")
+  let name = yield capture!(/^(\w|-)+/)
+  return {kind: :pseudo_element_selector, name: name}
+end
 
-let parse_pseudo_element_selector = Parser[
-  Init[{kind: :pseudo_element_selector}]
-  Skip["::"]
-  Store[/^(\w|-)+/ :name]
-]
-let parse_attribute_selector_no_match = Parser[
-  Init[{kind: :attribute_selector_no_match}]
-  Skip["["]
-  Store[/^(\w|-)+/ :name]
-  Skip["]"]
-]
+def* parse_attribute_selector_no_match
+  yield chomp!("[")
+  let name = yield capture!(/^(\w|-)+/)
+  yield chomp!("]")
+  return {kind: :attribute_selector_no_match, name: name}
+end
 
-let parse_attribute_selector_equals = Parser[
-  Init[{kind: :attribute_selector_equals}]
-  Skip["["]
-  Store[/^(\w|-)+/ :name]
-  Trim Skip["="]
-  Trim Skip["\""]
-  Store[/^((?!").)+/ :value]
-  Skip["\""]
-  Trim Skip["]"]
-]
+def* parse_attribute_selector_equals
+  yield chomp!("[")
+  let name = yield capture!(/^(\w|-)+/)
+  yield trimmed(chomp!("="))
+  yield chomp!("\"")
+  let value = yield capture!(/^((?!").)+/)
+  yield chomp!("\"")
+  yield trimmed(chomp!("]"))
+  return {kind: :attribute_selector_equals, name: name, value: value}
+end
 
-let parse_element_selector = Parser[
-  Init[{kind: :element_selector}]
-  Store[/^(\w|-)+/ :name]
-]
+def* parse_element_selector
+  let name = yield capture!(/^(\w|-)+/)
+  return {kind: :element_selector, name: name}
+end
 
-def parse_query_step(result) = ParseMap{
-  "." => parse_class_selector
-  "::" => parse_pseudo_element_selector
-  /^(\w|-)+/ => parse_element_selector
-  /^:(\w|-)+\(/ => parse_pseudo_selector_with_args
-  ":" => parse_pseudo_selector_without_args
-  /^\[(\w|-)+=".*"\]/ => parse_attribute_selector_equals
-  /^\[(\w|-)+\]/ => parse_attribute_selector_no_match
-}(result)
+def* t_parse_query_step
+  if yield chomp(".")
+    return yield* parse_class_selector()
+  else if yield chomp("::")
+    return yield* parse_pseudo_element_selector()
+  else if yield chomp(":")
+    return yield* parse_pseudo_selector_without_args()
+  else if yield chomp(/^(\w|-)+/)
+    return yield* parse_element_selector()
+  else if yield chomp(/^:(\w|-)+\(/)
+    return yield* parse_pseudo_selector_with_args()
+  else if yield chomp(/^\[(\w|-)+=".*"\]/)
+    return yield* parse_attribute_selector_equals()
+  else if yield chomp(/^\[(\w|-)+\]/)
+    return yield* parse_attribute_selector_no_match()
+  end
+end
+
+def parse_query_step([_ string]) = t_parse_query_step.run(string)
 
 def parse_query([_ s])
   let [query str] = parse_query_step([nil s])
