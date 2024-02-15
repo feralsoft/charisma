@@ -95,7 +95,7 @@ def RegExp:prototype.+(regex) = RegExp[this:source + regex:source]
 def* generator end
 let GeneratorFunction = generator:constructor
 
-protocol run
+export protocol run
 
 def GeneratorFunction:prototype.run(string)
   let gen = this()
@@ -272,55 +272,67 @@ def parse_query([_ s])
   return [query str]
 end
 
-let parse_px_value = Parser[
-  Init[{kind: :px_value}]
-  Store[digit_regex :value]
-  Skip["px"]
-]
+def* t_parse_px_value
+  let value = yield capture!(digit_regex)
+  yield chomp!("px")
+  return {kind: :px_value, value: value}
+end
 
-let parse_vw_value = Parser[
-  Init[{kind: :vw_value}]
-  Store[digit_regex :value]
-  Skip["vw"]
-]
+def parse_px_value([_ s]) = t_parse_px_value.run(s)
 
-let parse_vh_value = Parser[
-  Init[{kind: :vh_value}]
-  Store[digit_regex :value]
-  Skip["vh"]
-]
+def* t_parse_vw_value
+  let value = yield capture!(digit_regex)
+  yield chomp!("vw")
+  return {kind: :vw_value, value: value}
+end
 
-let parse_pct_value = Parser[
-  Init[{kind: :pct_value}]
-  Store[digit_regex :value]
-  Skip["%"]
-]
+def parse_vw_value([_ s]) = t_parse_vw_value.run(s)
 
-let parse_rgb_value = Parser[
-  Init[{kind: :rgb_value}]
-  Skip["rgb"]
-  Trim Skip["("]
-  Trim Store[digit_regex :r]
-  Trim Skip[","]
-  Trim Store[digit_regex :g]
-  Trim Skip[","]
-  Trim Store[digit_regex :b]
-  Trim Skip[")"]
-]
+def* t_parse_vh_value
+  let value = yield capture!(digit_regex)
+  yield chomp!("vh")
+  return {kind: :vh_value, value: value}
+end
 
-let parse_rgba_value = Parser[
-  Init[{kind: :rgba_value}]
-  Skip["rgba"]
-  Trim Skip["("]
-  Trim Store[digit_regex :r]
-  Trim Skip[","]
-  Trim Store[digit_regex :g]
-  Trim Skip[","]
-  Trim Store[digit_regex :b]
-  Trim Skip[","]
-  Trim Store[digit_regex :a]
-  Trim Skip[")"]
-]
+def parse_vh_value([_ s]) = t_parse_vh_value.run(s)
+
+def* t_parse_pct_value
+  let value = yield capture!(digit_regex)
+  yield chomp!("%")
+  return {kind: :pct_value, value: value}
+end
+
+def parse_pct_value([_ s]) = t_parse_pct_value.run(s)
+
+def* t_parse_rgb_value
+  yield chomp!("rgb")
+  yield trimmed(chomp!("("))
+  let r = yield capture!(digit_regex)
+  yield trimmed(chomp!(","))
+  let g = yield capture!(digit_regex)
+  yield trimmed(chomp!(","))
+  let b = yield capture!(digit_regex)
+  yield trimmed(chomp!(")"))
+  return {kind: :rgb_value, r: r, g: g, b: b}
+end
+
+def parse_rgb_value([_ s]) = t_parse_rgb_value.run(s)
+
+def* t_parse_rgba_value
+  yield chomp!("rgba")
+  yield trimmed(chomp!("("))
+  let r = yield capture!(digit_regex)
+  yield trimmed(chomp!(","))
+  let g = yield capture!(digit_regex)
+  yield trimmed(chomp!(","))
+  let b = yield capture!(digit_regex)
+  yield trimmed(chomp!(","))
+  let a = yield capture!(digit_regex)
+  yield trimmed(chomp!(")"))
+  return {kind: :rgba_value, r: r, g: g, b: b, a: a}
+end
+
+def parse_rgba_value([_ s]) = t_parse_rgba_value.run(s)
 
 let parse_hex_value = Parser[
   Init[{kind: :hex_value}]
