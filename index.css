@@ -237,7 +237,7 @@
   }
   & > [data-attr="args"] {
     display: flex;
-    > [data-kind]:not(:last-child)::after {
+    & > [data-kind]:not(:last-child)::after {
       content: ",";
     }
   }

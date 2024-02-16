@@ -37,10 +37,8 @@ let GeneratorFunction = generator:constructor
 export protocol run
 
 def GeneratorFunction:prototype.run(string)
-  let gen = this()
-  let result = nil
-  while true
-    let {value, done} = gen:next(result)
+  let [gen result] = [this() nil]
+  while let {value, done} = gen:next(result)
     if done
       return [value string]
     else if let [r s] = value.run(string, result)
@@ -51,10 +49,8 @@ def GeneratorFunction:prototype.run(string)
 end
 
 def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
-
 def test(pattern) = {kind: :test, pattern: pattern}
 def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
-def capture(pattern, group) = {kind: :capture, pattern: pattern, group: group or 0}
 def capture!(pattern, group) = {kind: :capture!, pattern: pattern, group: group or 0}
 def trimmed(parser) = {kind: :trimmed, parser: parser}
 def trim = {kind: :trim}
@@ -65,28 +61,13 @@ def :trimmed.run({parser}, string)
   return [result s:trimLeft()]
 end
 
-def :test.run({pattern}, string)
-  if pattern.matches?(string)
-    return [true string]
-  else
-    return [false string]
-  end
-end
+def :test.run({pattern}, string) = [pattern.matches?(string).as_bool(), string]
 
 def :chomp!.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
     return [nil string:slice(skip)]
   else
-    this.log({pattern: pattern}, string) Error[]:stack.log() panic!()
-  end
-end
-
-def :capture.run({pattern, group}, string)
-  if let {result skip} = pattern.matches?(string, group)
-    -- I think this is broken!
-    return [result string]
-  else
-    return [nil string]
+    this.log({pattern: pattern}, string) panic!()
   end
 end
 
@@ -94,7 +75,7 @@ def :capture!.run({pattern, group}, string)
   if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
   else
-    this.log({pattern: pattern, group: group}, string) Error[]:stack.log() panic!()
+    this.log({pattern: pattern, group: group}, string) panic!()
   end
 end
 
@@ -109,7 +90,8 @@ def* parse_class_selector
 end
 
 def* parse_selector_arg
-  if let factor = yield capture(/^(\d)+n/, 1)
+  if yield test(/^\d+n/)
+    let factor = yield capture!(/^(\d)+n/, 1)
     if yield trimmed(test("+"))
       let offset = yield capture!(/^\d+/)
       return {kind: :nth_expr_with_plus, factor: factor, offset: offset}
