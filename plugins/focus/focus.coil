@@ -2,10 +2,17 @@ import "./focus.css"
 
 -- thoughts: should we un-focus after a certain amount of time?
 def focus({root, signal, scope})
+  def unfocus_all = 
+    $$(".--css-edit-editor [" scope:data(:active) "]").each(|node| node:removeAttribute(scope:data(:active)))
   for node of root.query_all("[data-kind]")
-    signal:listen(node "focus" || {
-      $$(".--css-edit-editor [" scope:data(:active) "]").each(|node| node:removeAttribute(scope:data(:active)))
-      node:setAttribute(scope:data(:active), true)
+    signal:listen(node "click" |e| {
+      e:stopPropagation()  
+      if node:hasAttribute(scope:data(:active))
+        unfocus_all()
+      else
+        unfocus_all()
+        node:setAttribute(scope:data(:active), true)
+      end
     })
   end
 end
