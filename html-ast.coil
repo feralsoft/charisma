@@ -7,7 +7,7 @@ export let compile = match_on(:kind){
   -- TODO: handle no rules case
   def :declaration({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
   def :rule({name value}) = str(name ": " compile(value))
-  def :variable({name value}) = str("--" name ": " compile(value))
+  def :variable({name value}) = str(name ": " compile(value))
   def :pct_value({value}) = str(value "%")
   def :vh_value({value}) = str(value "vh")
   def :vw_value({value}) = str(value "vw")

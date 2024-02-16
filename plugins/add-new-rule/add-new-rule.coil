@@ -21,7 +21,7 @@ def add_new_rule({signal, root, rebuild, scope})
         let new_rule = :div{
           contenteditable: true
           class: scope:class(:unfinished)
-          def :onkeydown(e)
+          async def :onkeydown(e)
             this:removeAttribute(scope:data(:error))
             e:stopPropagation()
             if e:key == "Backspace"
@@ -37,7 +37,7 @@ def add_new_rule({signal, root, rebuild, scope})
               end
               if let ast_node = try!(|| parse_rule([nil css_rule_text]).0).map_ctor(Error, |e| nil)
                 this:replaceWith(to_html(ast_node))
-                rebuild(root:closest("[data-kind=declaration]"))
+                await rebuild(root:closest("[data-kind=declaration]"))
               else
                 this:setAttribute(scope:data(:error), true)
               end

@@ -64,12 +64,14 @@ def init(root)
       root: root
       signal: signal
       scope: scope_helper(plugin_name)
-      def :rebuild(new_root)
-        config:eval_css(new_root)
+      async def :rebuild(new_root)
+        await config:eval_css(new_root)
         init(new_root or root)
       end
       async def :eval_css(new_root)
-        let html_node = (new_root or root):closest("[data-kind=declaration]")
+        new_root = new_root or root
+        -- root might be .--css-edit-editor or <body>.. not sure if this is gonna cause issues later or not
+        let html_node = new_root:closest("[data-kind=declaration]") or new_root.query("[data-kind=declaration]")
         let ast_node = html_node.to_ast()
         let idx = html_node:getAttribute("data-css-index").as_num()
         let {sheet, attributes} = $("[data-vite-dev-id$=\"" html_node:getAttribute("data-file-path") "\"]")
