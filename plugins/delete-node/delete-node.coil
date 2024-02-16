@@ -1,11 +1,11 @@
-import {parse_rule, parse_value} from "../../css-parser.coil"
+import {parse_rule, parse_value, run} from "../../css-parser.coil"
 import {to_html} from "../../html-ast.coil"
 import "./delete-node.css"
 
 let context_map = {
-  def :declaration(text) = parse_rule([nil text])
-  def :variable(text) = parse_value([nil text])
-  def :rule(text) = parse_value([nil text])
+  def :declaration(text) = parse_rule.run(text)
+  def :variable(text) = parse_value.run(text)
+  def :rule(text) = parse_value.run(text)
 } 
 
 -- TODO: use a data attribute instead of this protocol so we can style it

@@ -1,5 +1,5 @@
 import "./add-new-rule.css"
-import {parse_rule} from "../../css-parser.coil"
+import {parse_rule, run} from "../../css-parser.coil"
 import {to_html} from "../../html-ast.coil"
 
 protocol map_ctor
@@ -35,7 +35,7 @@ def add_new_rule({signal, root, rebuild, scope})
               if !css_rule_text:endsWith(";")
                 css_rule_text = str(css_rule_text ";")
               end
-              if let ast_node = try!(|| parse_rule([nil css_rule_text]).0).map_ctor(Error, |e| nil)
+              if let ast_node = try!(|| parse_rule.run(css_rule_text).0).map_ctor(Error, |e| nil)
                 this:replaceWith(to_html(ast_node))
                 await rebuild(root:closest("[data-kind=declaration]"))
               else

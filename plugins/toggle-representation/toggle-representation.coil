@@ -1,8 +1,8 @@
 import {call_with} from "../../utils.coil"
 import {to_ast, to_html, compile} from "../../html-ast.coil"
-import {parse_value} from "../../css-parser.coil"
+import {parse_value, run} from "../../css-parser.coil"
 
-def parse_val(str) = parse_value([nil str]).0
+def parse_val(str) = parse_value.run(str).0
 
 def rem_font_size() = getComputedStyle(document:documentElement)
   .:fontSize:split("px").0.pipe(parseInt)
