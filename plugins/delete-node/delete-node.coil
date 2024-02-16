@@ -6,7 +6,7 @@ let context_map = {
   def :declaration(text) = parse_rule([nil text])
   def :variable(text) = parse_value([nil text])
   def :rule(text) = parse_value([nil text])
-}
+} 
 
 -- TODO: use a data attribute instead of this protocol so we can style it
 protocol backspaced
@@ -14,9 +14,7 @@ protocol backspaced
 -- bug: why does it take 4-6 delete keys to delete a css rule from an already deleted value
 
 -- IDEA: undo via storing the AST as an persistent immutable map
-
--- How to namespace plugins on some level?
-def delete_node({root, signal, rebuild})
+def delete_node({root, signal, rebuild, scope})
   let interval = nil
   for node of root.query_all("[data-kind=declaration] > [data-attr=rules] *")
     signal:listen(node "keydown" |e| {
@@ -28,13 +26,12 @@ def delete_node({root, signal, rebuild})
           return
         end
         let text_node = :div{
-          class: "just-deleted-node"
+          class: scope:class(:deleted)
           contenteditable: true
           "data-context" => node:parentNode:closest("[data-kind]"):dataset:kind
           def :onkeydown(e)
             if e:key == "Enter"
               let ast_node = context_map.(this:dataset:context)(this:innerText:trim()).0
-                .log()
               this:replaceWith(to_html(ast_node))
               rebuild(root:closest("[data-kind=declaration]"))
             end
