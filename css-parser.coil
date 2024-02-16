@@ -128,6 +128,9 @@ def* parse_pseudo_selector_with_args
   let args = []
   while !yield test(")")
     args:push(yield* parse_selector_arg())
+    if !yield test(")")
+      yield trimmed(chomp!(","))
+    end
   end
   yield chomp!(")")
   return {kind: :pseudo_selector_with_args, name: name, args: args}
