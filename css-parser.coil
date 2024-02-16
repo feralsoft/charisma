@@ -168,16 +168,6 @@ def* parse_class_selector
   return {kind: :class_selector, name: name}
 end
 
-def* parse_nth_expr_without_plus
-  yield chomp!("2n")
-  return {kind: :nth_expr_without_plus, value: "2n"}
-end
-
-def* parse_nth_expr_with_plus
-  yield chomp!("2n+1")
-  return {kind: :nth_expr_with_plus, value: "2n+1"}
-end
-
 def* parse_selector_arg
   if let factor = yield capture(/^(\d)+n/, 1)
     if yield trimmed(chomp("+"))
