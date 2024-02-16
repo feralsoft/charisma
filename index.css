@@ -26,6 +26,9 @@
 [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
   outline: black solid 1px;
 }
+[data-kind="rule"] > [data-attr="name"] {
+  color: var(--rule-name-color);
+}
 [data-kind="declaration"] > [data-attr="query"] {
   display: flex;
   gap: 0.25em;
@@ -35,9 +38,6 @@
   [data-attr="name"] {
     width: max-content;
   }
-}
-[data-kind="rule"] > [data-attr="name"] {
-  color: var(--rule-name-color);
 }
 [data-kind="declaration"] > [data-attr="rules"] {
   padding-left: 1em;
@@ -287,5 +287,17 @@
   display: flex;
   & > [data-attr="factor"]::after {
     content: "n";
+  }
+}
+
+[data-kind="direct_descendent"] {
+  display: flex;
+  gap: 0.5rem;
+  > [data-attr="lhs"] {
+    display: flex;
+    gap: 0.5rem;
+    &::after {
+      content: ">";
+    }
   }
 }
