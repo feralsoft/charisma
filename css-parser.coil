@@ -52,7 +52,7 @@ end
 
 def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
 
-def chomp(pattern) = {kind: :chomp, pattern: pattern}
+def test(pattern) = {kind: :test, pattern: pattern}
 def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
 def capture(pattern, group) = {kind: :capture, pattern: pattern, group: group or 0}
 def capture!(pattern, group) = {kind: :capture!, pattern: pattern, group: group or 0}
@@ -65,7 +65,7 @@ def :trimmed.run({parser}, string)
   return [result s:trimLeft()]
 end
 
-def :chomp.run({pattern}, string)
+def :test.run({pattern}, string)
   if pattern.matches?(string)
     return [true string]
   else
@@ -110,12 +110,14 @@ end
 
 def* parse_selector_arg
   if let factor = yield capture(/^(\d)+n/, 1)
-    if yield trimmed(chomp("+"))
+    if yield trimmed(test("+"))
       let offset = yield capture!(/^\d+/)
       return {kind: :nth_expr_with_plus, factor: factor, offset: offset}
     else
       return {kind: :nth_expr_without_plus, factor: factor}
     end
+  else
+    return yield* parse_query(/^\s*(,|\))/)
   end
 end
 
@@ -124,9 +126,10 @@ def* parse_pseudo_selector_with_args
   let name = yield capture!(/^(\w|-)+/)
   yield chomp!("(")
   let args = []
-  while !yield chomp(")")
+  while !yield test(")")
     args:push(yield* parse_selector_arg())
   end
+  yield chomp!(")")
   return {kind: :pseudo_selector_with_args, name: name, args: args}
 end
 
@@ -166,36 +169,41 @@ def* parse_element_selector
 end
 
 def* parse_query_step
-  if yield chomp(".")
+  if yield test(".")
     return yield* parse_class_selector()
-  else if yield chomp("::")
+  else if yield test("::")
     return yield* parse_pseudo_element_selector()
-  else if yield chomp(":")
-    return yield* parse_pseudo_selector_without_args()
-  else if yield chomp(/^(\w|-)+/)
+  else if yield test(/^(\w|-)+/)
     return yield* parse_element_selector()
-  else if yield chomp(/^:(\w|-)+\(/)
+  else if yield test(/^:(\w|-)+\(/)
     return yield* parse_pseudo_selector_with_args()
-  else if yield chomp(/^\[(\w|-)+=".*"\]/)
+  else if yield test(":")
+    return yield* parse_pseudo_selector_without_args()
+  else if yield test(/^\[(\w|-)+=".*"\]/)
     return yield* parse_attribute_selector_equals()
-  else if yield chomp(/^\[(\w|-)+\]/)
+  else if yield test(/^\[(\w|-)+\]/)
     return yield* parse_attribute_selector_no_match()
   else
-    panic!((yield debug()).1)
+    (yield debug()).log()
+    panic!("parse fail")
   end
 end
 
-def* parse_query
+def* parse_query(end_pattern)
   let query = yield* parse_query_step()
-  while !yield chomp(/^\s*{/)
-    if yield chomp(" ")
+  while !yield test(end_pattern)
+    let kind = nil
+    if yield trimmed(test(">"))
+      yield trimmed(chomp!(">"))
+      kind = :direct_descendent
+    else if yield test(" ")
       yield trim()
-      let rhs = yield* parse_query_step()
-      query = {kind: :child_selector, lhs: query, rhs: rhs}
+      kind = :child_selector
     else
-      let rhs = yield* parse_query_step()
-      query = {kind: :selector_modifier, lhs: query, rhs: rhs}
+      kind = :selector_modifier
     end
+    let rhs = yield* parse_query_step()
+    query = {kind: kind, lhs: query, rhs: rhs}
   end
   return query
 end
@@ -299,29 +307,29 @@ def* parse_string_value
 end
 
 export def* parse_value
-  if yield chomp("rgba")
+  if yield test("rgba")
     return yield* parse_rgba_value()
-  else if yield chomp("rgb")
+  else if yield test("rgb")
     return yield* parse_rgb_value()
-  else if yield chomp("#")
+  else if yield test("#")
     return yield* parse_hex_value()
-  else if yield chomp("\"")
+  else if yield test("\"")
     return yield* parse_string_value()
-  else if yield chomp(digit_regex + /px/)
+  else if yield test(digit_regex + /px/)
     return yield* parse_px_value()
-  else if yield chomp(digit_regex + /vw/)
+  else if yield test(digit_regex + /vw/)
     return yield* parse_vw_value()
-  else if yield chomp(digit_regex + /vh/)
+  else if yield test(digit_regex + /vh/)
     return yield* parse_vh_value()
-  else if yield chomp(digit_regex + /rem/)
+  else if yield test(digit_regex + /rem/)
     return yield* parse_rem_value()
-  else if yield chomp(digit_regex + /em/)
+  else if yield test(digit_regex + /em/)
     return yield* parse_em_value()
-  else if yield chomp(digit_regex + /%/)
+  else if yield test(digit_regex + /%/)
     return yield* parse_pct_value()
-  else if yield chomp(/^var\(--(\w|-)+\)/)
+  else if yield test(/^var\(--(\w|-)+\)/)
     return yield* parse_var_value()
-  else if yield chomp("var")
+  else if yield test("var")
     return yield* parse_var_with_default_value()
   else
     return yield* parse_text_value()
@@ -345,7 +353,7 @@ def* parse_variable
 end
 
 def* parse_statement
-  if yield chomp("--")
+  if yield test("--")
     return yield* parse_variable()
   else
     return yield* parse_rule()
@@ -354,10 +362,10 @@ end
 
 export def* parse_declaration
   yield trim()
-  let query = yield* parse_query()
+  let query = yield* parse_query(/^\s*{/)
   yield trimmed(chomp!("{"))
   let rules = []
-  while !yield trimmed(chomp("}"))
+  while !yield trimmed(test("}"))
     rules:push(yield* parse_statement())
   end
   yield trimmed(chomp!("}"))
