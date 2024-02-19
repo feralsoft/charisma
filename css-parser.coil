@@ -271,6 +271,8 @@ export def* parse_decl
   let query = yield* parse_query(/^\s*{/)
   yield trimmed(chomp!("{"))
   let rules = []
+  -- TODO: this is trimming actively, this isn't a bug
+  -- but it could be confusing
   while !yield trimmed(test("}"))
     rules:push(yield* parse_statement())
   end

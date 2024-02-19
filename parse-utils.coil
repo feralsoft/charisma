@@ -60,7 +60,12 @@ export def debug = {kind: :debug}
 
 def :trimmed.run({parser}, string)
   let [result s] = parser.run(string:trimLeft())
-  return [result s:trimLeft()]
+  -- TODO: don't hardcode this
+  if parser:kind == :test
+    return [result string]
+  else
+    return [result s:trimLeft()]
+  end
 end
 
 def :test.run({pattern}, string) = [pattern.matches?(string).as_bool(), string]

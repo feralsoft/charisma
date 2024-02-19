@@ -32,7 +32,12 @@ def* parse_separator(lhs)
     let rhs = yield* parse()
     yield chomp!(")")
     return {t: :has, lhs, rhs}
+  else if yield trimmed(test("~"))
+    yield trimmed(chomp!("~"))
+    let rhs = yield* parse()
+    return {t: :sibling, lhs, rhs}
   else if yield test(" ")
+    "here".log()
     yield trim()
     let rhs = yield* parse_step()
     return {t: :child, lhs, rhs}
@@ -50,6 +55,7 @@ end
 export let compile = match_on(:t){
   def :child({lhs, rhs}) = str(compile(lhs) " " compile(rhs))
   def :has({lhs, rhs}) = str(compile(lhs) ":has(" compile(rhs) ")")
+  def :sibling({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
   def :value({value}) = str("[data-value=\"" value "\"]")
   def :contains({value}) = str("[data-value*=\"" value "\"]")
   def :attr({attr}) = str("[data-attr=\"" attr "\"]")
