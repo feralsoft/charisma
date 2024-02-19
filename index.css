@@ -36,11 +36,11 @@
   display: flex;
   gap: 0.25em;
 }
-[data-kind="rem_value"] > [data-attr="value"]::after {
+[data-kind="rem"] > [data-attr="value"]::after {
   content: "rem";
   color: black;
 }
-[data-kind="em_value"] > [data-attr="value"]::after {
+[data-kind="em"] > [data-attr="value"]::after {
   content: "em";
   color: black;
 }
@@ -70,7 +70,7 @@
   background-color: rgba(255, 255, 255, 0.285);
   padding: 4px;
 }
-[data-kind="string_value"] {
+[data-kind="string"] {
   color: var(--string-color);
 }
 [data-kind="decl"] > [data-attr="query"] {
@@ -102,7 +102,7 @@
     }
   }
 }
-[data-kind="px_value"] {
+[data-kind="px"] {
   display: flex;
   &::after {
     color: black;
@@ -117,7 +117,7 @@
     content: ".";
   }
 }
-[data-kind="rgb_value"] {
+[data-kind="rgb"] {
   display: flex;
   &::before {
     content: "rgb";
@@ -136,7 +136,7 @@
     color: black;
   }
 }
-[data-kind="rgba_value"] {
+[data-kind="rgba"] {
   display: flex;
   &::before {
     content: "rgba";
@@ -155,7 +155,7 @@
     color: black;
   }
 }
-[data-kind="hex_value"] {
+[data-kind="hex"] {
   display: flex;
   &::before {
     content: "#";
@@ -209,7 +209,7 @@
     content: "]";
   }
 }
-[data-kind="var_value"] {
+[data-kind="var"] {
   display: flex;
   &::before {
     color: var(--function-color);
