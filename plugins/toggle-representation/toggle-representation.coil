@@ -1,6 +1,7 @@
 import {call_with} from "../../utils.coil"
 import {to_ast, to_html, compile} from "../../html-ast.coil"
-import {parse_value, run} from "../../css-parser.coil"
+import {parse_value} from "../../css-parser.coil"
+import {run} from "../../parse-utils.coil"
 
 def parse_val(str) = parse_value.run(str).0
 

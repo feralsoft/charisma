@@ -1,5 +1,6 @@
 import "./add-new-rule.css"
-import {parse_rule, run} from "../../css-parser.coil"
+import {parse_rule} from "../../css-parser.coil"
+import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 
 protocol map_ctor

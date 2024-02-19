@@ -1,0 +1,63 @@
+import {test, capture!, chomp!, trimmed, trim, debug, run} from "./parse-utils.coil"
+import {match_on} from "./utils.coil"
+
+def* parse_step
+  if yield test("#")
+    yield chomp!("#")
+    let kind = yield capture!(/^(\w|_)+/)
+    return {t: :kind, kind}
+  else if yield test("@")
+    yield chomp!("@")
+    let attr = yield capture!(/^(\w|_)+/)
+    if yield test("=")
+      yield chomp!("=")
+      let value = yield capture!(/[^ )]*/)
+      return {t: :attr_eq, attr, value}
+    else
+      return {t: :attr, attr}
+    end
+  else if yield test("*")
+    yield chomp!("*")
+    let value = yield capture!(/[^ )]*/)
+    return {t: :contains, value}
+  else
+    let value = yield capture!(/[^ )]*/)
+    return {t: :value, value}
+  end
+end
+
+def* parse_separator(lhs)
+  if yield test("(")
+    yield chomp!("(")
+    let rhs = yield* parse()
+    yield chomp!(")")
+    return {t: :has, lhs, rhs}
+  else if yield test(" ")
+    yield trim()
+    let rhs = yield* parse_step()
+    return {t: :child, lhs, rhs}
+  end
+end
+
+export def* parse
+  let result = yield* parse_step()
+  while let r = yield* parse_separator(result)
+    result = r
+  end
+  return result
+end
+
+export let compile = match_on(:t){
+  def :child({lhs, rhs}) = str(compile(lhs) " " compile(rhs))
+  def :has({lhs, rhs}) = str(compile(lhs) ":has(" compile(rhs) ")")
+  def :value({value}) = str("[data-value=\"" value "\"]")
+  def :contains({value}) = str("[data-value*=\"" value "\"]")
+  def :attr({attr}) = str("[data-attr=\"" attr "\"]")
+  def :attr_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value=\"" value "\"]")
+  def :kind({kind}) = str("[data-kind=\"" kind "\"]")
+}
+
+-- let ast = parse.run("#decl(@query --css-edit-editor) monospace").0
+
+export def parse_cx_query(str) = try!(|| parse.run(str).0.pipe(compile))
+  

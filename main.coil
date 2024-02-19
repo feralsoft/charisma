@@ -1,6 +1,8 @@
 import "./html.coil"
-import {parse_decl, run} from "./css-parser.coil"
+import {parse_decl} from "./css-parser.coil"
+import {run} from "./parse-utils.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
+import {parse_cx_query} from "./cx-parser.coil"
 import plugins from "./plugins"
 
 document:styleSheets.0:rules.take(19).zip(0..).map(|[rule idx]| [parse_decl.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {  
@@ -41,6 +43,27 @@ def scope_helper(plugin_name) = {
   def :data(name) = str("data-plugin_" plugin_name "_" name)
   def :attr(name) = str("plugin_" plugin_name "_" name)
 }
+
+window:addEventListener("keydown" |e| {
+  if e:key == "s" if e:ctrlKey if !$("[type=search]")
+    let search = :input{
+      type: "search",
+      class: "search",
+      placeholder: "search..."
+      def :oninput(e)
+        $$(".searched").each(|elem| elem:classList:remove("searched"))
+        $$(parse_cx_query(e:target:value:trim()))
+          .each(|elem| elem:classList:add("searched"))
+      end
+    }
+    $(".--css-edit-editor"):prepend(search)
+    search:focus()
+  end end end
+  if e:key == "Escape"
+    $$(".searched").each(|elem| elem:classList:remove("searched"))
+    $(".--css-edit-editor [type=search]"):remove()
+  end
+})
 
 -- TODO: toggle this to turn on persisting
 let fetching = true

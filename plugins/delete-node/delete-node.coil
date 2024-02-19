@@ -1,4 +1,5 @@
-import {parse_rule, parse_value, run} from "../../css-parser.coil"
+import {parse_rule, parse_value} from "../../css-parser.coil"
+import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 import "./delete-node.css"
 
