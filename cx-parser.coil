@@ -37,7 +37,6 @@ def* parse_separator(lhs)
     let rhs = yield* parse()
     return {t: :sibling, lhs, rhs}
   else if yield test(" ")
-    "here".log()
     yield trim()
     let rhs = yield* parse_step()
     return {t: :child, lhs, rhs}
