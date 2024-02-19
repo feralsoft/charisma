@@ -19,7 +19,7 @@ let toggle_compile = {
   def :px_value({value}) = str(px_to_rem(value) "rem")
   def :var_value({name} elem)
     let rule_name = elem:closest("[data-kind=rule]").query("[data-attr=name]"):innerText:trim().as_kw()
-    return elem:closest("[data-kind=declaration]")
+    return elem:closest("[data-kind=decl]")
       .query("[data-attr=query]")
       .to_ast()
       .pipe(compile $$)

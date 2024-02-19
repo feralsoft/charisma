@@ -193,7 +193,7 @@ def* parse_query(end_pattern)
       kind = :selector_modifier
     end
     let rhs = yield* parse_query_step()
-    query = {kind: kind, lhs: query, rhs}
+    query = {kind, lhs: query, rhs}
   end
   return query
 end
@@ -350,7 +350,7 @@ def* parse_statement
   end
 end
 
-export def* parse_declaration
+export def* parse_decl
   yield trim()
   let query = yield* parse_query(/^\s*{/)
   yield trimmed(chomp!("{"))
@@ -359,5 +359,5 @@ export def* parse_declaration
     rules:push(yield* parse_statement())
   end
   yield trimmed(chomp!("}"))
-  return {kind: :declaration, query, rules}
+  return {kind: :decl, query, rules}
 end

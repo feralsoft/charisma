@@ -14,7 +14,7 @@
 [data-numeric="true"] {
   color: var(--number-color);
 }
-[data-kind="declaration"]::after {
+[data-kind="decl"]::after {
   content: "}";
 }
 [data-value]:hover {
@@ -60,7 +60,7 @@
 .open-in-vscode {
   display: none;
 }
-[data-kind="declaration"]:hover .open-in-vscode {
+[data-kind="decl"]:hover .open-in-vscode {
   display: flex;
 }
 .open-in-vscode {
@@ -73,7 +73,7 @@
 [data-kind="string_value"] {
   color: var(--string-color);
 }
-[data-kind="declaration"] > [data-attr="query"] {
+[data-kind="decl"] > [data-attr="query"] {
   display: flex;
   gap: 0.25em;
   &::after {
@@ -83,7 +83,7 @@
     width: max-content;
   }
 }
-[data-kind="declaration"] > [data-attr="rules"] {
+[data-kind="decl"] > [data-attr="rules"] {
   padding-left: 1em;
   & > [data-kind] {
     display: flex;

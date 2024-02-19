@@ -3,7 +3,7 @@ import {to_html} from "../../html-ast.coil"
 import "./delete-node.css"
 
 let context_map = {
-  def :declaration(text) = parse_rule.run(text)
+  def :decl(text) = parse_rule.run(text)
   def :variable(text) = parse_value.run(text)
   def :rule(text) = parse_value.run(text)
 } 
@@ -16,11 +16,11 @@ protocol backspaced
 -- IDEA: undo via storing the AST as an persistent immutable map
 def delete_node({root, signal, rebuild, scope})
   let interval = nil
-  for node of root.query_all("[data-kind=declaration] > [data-attr=rules] *")
+  for node of root.query_all("[data-kind=decl] > [data-attr=rules] *")
     signal:listen(node "keydown" |e| {
       e:stopPropagation()
       if e:key == "Backspace" if node.backspaced
-        if node:parentNode:closest("[data-kind]"):dataset:kind == "declaration"
+        if node:parentNode:closest("[data-kind]"):dataset:kind == "decl"
           node:remove()
           rebuild()
           return
@@ -33,7 +33,7 @@ def delete_node({root, signal, rebuild, scope})
             if e:key == "Enter"
               let ast_node = context_map.(this:dataset:context)(this:innerText:trim()).0
               this:replaceWith(to_html(ast_node))
-              rebuild(root:closest("[data-kind=declaration]"))
+              rebuild(root:closest("[data-kind=decl]"))
             end
           end
         }

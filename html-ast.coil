@@ -5,7 +5,7 @@ export let compile = match_on(:kind){
   def :class_selector({name}) = str("." name)
   def :selector_modifier({lhs rhs}) = str(compile(lhs) compile(rhs))
   -- TODO: handle no rules case
-  def :declaration({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
+  def :decl({query rules}) = str(compile(query) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
   def :rule({name value}) = str(name ": " compile(value))
   def :variable({name value}) = str(name ": " compile(value))
   def :pct_value({value}) = str(value "%")
