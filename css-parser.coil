@@ -2,6 +2,10 @@
 -- it returns a bool...
 export protocol matches?
 
+-- I just a vision of a code editor that understands many languages
+-- built on hypermedia in which languages understand each other
+-- uhh.... so much work, but so beautiful
+
 def String:prototype.matches?(str)
   if str:startsWith(this)
     return {result: this, skip: this.len()}
@@ -49,10 +53,10 @@ def GeneratorFunction:prototype.run(string)
 end
 
 def ObjectLiteral:prototype.run(string) = this:kind.run(this, string)
-def test(pattern) = {kind: :test, pattern: pattern}
-def chomp!(pattern) = {kind: :chomp!, pattern: pattern}
-def capture!(pattern, group) = {kind: :capture!, pattern: pattern, group: group or 0}
-def trimmed(parser) = {kind: :trimmed, parser: parser}
+def test(pattern) = {kind: :test, pattern}
+def chomp!(pattern) = {kind: :chomp!, pattern}
+def capture!(pattern, group) = {kind: :capture!, pattern, group: group or 0}
+def trimmed(parser) = {kind: :trimmed, parser}
 def trim = {kind: :trim}
 def debug = {kind: :debug}
 
@@ -67,7 +71,7 @@ def :chomp!.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
     return [nil string:slice(skip)]
   else
-    this.log({pattern: pattern}, string) panic!()
+    this.log({pattern}, string) panic!()
   end
 end
 
@@ -75,10 +79,11 @@ def :capture!.run({pattern, group}, string)
   if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
   else
-    this.log({pattern: pattern, group: group}, string) panic!()
+    this.log({pattern, group}, string) panic!()
   end
 end
 
+-- what if the coil compiler ignored _ when they are an assign_expr? 
 def :trim.run(_, string) = [nil string:trimLeft()]
 
 def :debug.run(_, string, state) = [[state string], string]
@@ -86,7 +91,7 @@ def :debug.run(_, string, state) = [[state string], string]
 def* parse_class_selector
   yield chomp!(".")
   let name = yield capture!(/^(\w|-)+/)
-  return {kind: :class_selector, name: name}
+  return {kind: :class_selector, name}
 end
 
 def* parse_selector_arg
@@ -94,9 +99,9 @@ def* parse_selector_arg
     let factor = yield capture!(/^(\d)+n/, 1)
     if yield trimmed(test("+"))
       let offset = yield capture!(/^\d+/)
-      return {kind: :nth_expr_with_plus, factor: factor, offset: offset}
+      return {kind: :nth_expr_with_plus, factor, offset}
     else
-      return {kind: :nth_expr_without_plus, factor: factor}
+      return {kind: :nth_expr_without_plus, factor}
     end
   else
     return yield* parse_query(/^\s*(,|\))/)
@@ -115,26 +120,26 @@ def* parse_pseudo_selector_with_args
     end
   end
   yield chomp!(")")
-  return {kind: :pseudo_selector_with_args, name: name, args: args}
+  return {kind: :pseudo_selector_with_args, name, args}
 end
 
 def* parse_pseudo_selector_without_args
   yield chomp!(":")
   let name = yield capture!(/^(\w|-)+/)
-  return {kind: :pseudo_selector_without_args, name: name}
+  return {kind: :pseudo_selector_without_args, name}
 end  
 
 def* parse_pseudo_element_selector
   yield chomp!("::")
   let name = yield capture!(/^(\w|-)+/)
-  return {kind: :pseudo_element_selector, name: name}
+  return {kind: :pseudo_element_selector, name}
 end
 
 def* parse_attribute_selector_no_match
   yield chomp!("[")
   let name = yield capture!(/^(\w|-)+/)
   yield chomp!("]")
-  return {kind: :attribute_selector_no_match, name: name}
+  return {kind: :attribute_selector_no_match, name}
 end
 
 def* parse_attribute_selector_equals
@@ -145,12 +150,12 @@ def* parse_attribute_selector_equals
   let value = yield capture!(/^((?!").)+/)
   yield chomp!("\"")
   yield trimmed(chomp!("]"))
-  return {kind: :attribute_selector_equals, name: name, value: value}
+  return {kind: :attribute_selector_equals, name, value}
 end
 
 def* parse_element_selector
   let name = yield capture!(/^(\w|-)+/)
-  return {kind: :element_selector, name: name}
+  return {kind: :element_selector, name}
 end
 
 def* parse_query_step
@@ -188,7 +193,7 @@ def* parse_query(end_pattern)
       kind = :selector_modifier
     end
     let rhs = yield* parse_query_step()
-    query = {kind: kind, lhs: query, rhs: rhs}
+    query = {kind: kind, lhs: query, rhs}
   end
   return query
 end
@@ -196,25 +201,25 @@ end
 def* parse_px_value
   let value = yield capture!(digit_regex)
   yield chomp!("px")
-  return {kind: :px_value, value: value}
+  return {kind: :px_value, value}
 end
 
 def* parse_vw_value
   let value = yield capture!(digit_regex)
   yield chomp!("vw")
-  return {kind: :vw_value, value: value}
+  return {kind: :vw_value, value}
 end
 
 def* parse_vh_value
   let value = yield capture!(digit_regex)
   yield chomp!("vh")
-  return {kind: :vh_value, value: value}
+  return {kind: :vh_value, value}
 end
 
 def* parse_pct_value
   let value = yield capture!(digit_regex)
   yield chomp!("%")
-  return {kind: :pct_value, value: value}
+  return {kind: :pct_value, value}
 end
 
 def* parse_rgb_value
@@ -226,7 +231,7 @@ def* parse_rgb_value
   yield trimmed(chomp!(","))
   let b = yield capture!(digit_regex)
   yield trimmed(chomp!(")"))
-  return {kind: :rgb_value, r: r, g: g, b: b}
+  return {kind: :rgb_value, r, g, b}
 end
 
 def* parse_rgba_value
@@ -240,7 +245,7 @@ def* parse_rgba_value
   yield trimmed(chomp!(","))
   let a = yield capture!(digit_regex)
   yield trimmed(chomp!(")"))
-  return {kind: :rgba_value, r: r, g: g, b: b, a: a}
+  return {kind: :rgba_value, r, g, b, a}
 end
 
 def* parse_hex_value
@@ -248,24 +253,24 @@ def* parse_hex_value
   let r = yield trimmed(capture!(/^[a-fA-F0-9]{2}/))
   let g = yield trimmed(capture!(/^[a-fA-F0-9]{2}/))
   let b = yield trimmed(capture!(/^[a-fA-F0-9]{2}/))
-  return {kind: :hex_value, r: r, g: g, b: b}
+  return {kind: :hex_value, r, g, b}
 end
 
 def* parse_text_value
   let value = yield capture!(/^((?!;).)*/)
-  return {kind: :plain_text_value, value: value}
+  return {kind: :plain_text_value, value}
 end
 
 def* parse_rem_value
   let value = yield capture!(digit_regex)
   yield chomp!("rem")
-  return {kind: :rem_value, value: value}
+  return {kind: :rem_value, value}
 end
 
 def* parse_em_value
   let value = yield capture!(digit_regex)
   yield chomp!("em")
-  return {kind: :em_value, value: value}
+  return {kind: :em_value, value}
 end
 
 def* parse_var_value
@@ -273,7 +278,7 @@ def* parse_var_value
   yield trimmed(chomp!("("))
   let name = yield capture!(/^--(\w|-)+/)
   yield trimmed(chomp!(")"))
-  return {kind: :var_value, name: name}
+  return {kind: :var_value, name}
 end
 
 def* parse_var_with_default_value
@@ -283,12 +288,12 @@ def* parse_var_with_default_value
   yield trimmed(chomp!(","))
   let default_value = yield* t_parse_value()
   yield trimmed(chomp!(")"))
-  return {kind: :var_with_default_value, name: name, default_value: default_value}
+  return {kind: :var_with_default_value, name, default_value}
 end
 
 def* parse_string_value
   let value = yield capture!(/^".*"/)
-  return {kind: :string_value, value: value}
+  return {kind: :string_value, value}
 end
 
 export def* parse_value
@@ -326,7 +331,7 @@ export def* parse_rule
   yield trimmed(chomp!(":"))
   let value = yield* parse_value()
   yield trimmed(chomp!(";"))
-  return {kind: :rule, name: name, value: value}
+  return {kind: :rule, name, value}
 end
 
 def* parse_variable
@@ -334,7 +339,7 @@ def* parse_variable
   yield trimmed(chomp!(":"))
   let value = yield* parse_value()
   yield trimmed(chomp!(";"))
-  return {kind: :variable, name: name, value: value}
+  return {kind: :variable, name, value}
 end
 
 def* parse_statement
@@ -354,5 +359,5 @@ export def* parse_declaration
     rules:push(yield* parse_statement())
   end
   yield trimmed(chomp!("}"))
-  return {kind: :declaration, query: query, rules: rules}
+  return {kind: :declaration, query, rules}
 end
