@@ -60,4 +60,5 @@ export let compile = match_on(:t){
 -- let ast = parse.run("#decl(@query --css-edit-editor) monospace").0
 
 export def parse_cx_query(str) = try!(|| parse.run(str).0.pipe(compile))
-  
+
+def window:cx(...strs) = str(...strs).pipe(parse_cx_query $$)

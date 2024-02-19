@@ -245,17 +245,17 @@ end
 export def* parse_rule
   let name = yield trimmed(capture!(/^(\w|-)+/))
   yield trimmed(chomp!(":"))
-  let value = yield* parse_value()
+  let expr = yield* parse_value()
   yield trimmed(chomp!(";"))
-  return {kind: :rule, name, value}
+  return {kind: :rule, name, expr}
 end
 
 def* parse_variable
   let name = yield trimmed(capture!(/^--(\w|-)+/))
   yield trimmed(chomp!(":"))
-  let value = yield* parse_value()
+  let expr = yield* parse_value()
   yield trimmed(chomp!(";"))
-  return {kind: :variable, name, value}
+  return {kind: :variable, name, expr}
 end
 
 def* parse_statement
