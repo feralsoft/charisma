@@ -2,6 +2,10 @@
 
 ## Demos
 
+# Semantic search!
+<img width="537" alt="Screenshot 2024-02-19 at 7 04 10 PM" src="https://github.com/marcellerusu/css-edit/assets/7607387/1e37c99a-16ca-4ac1-976d-ceac8f86c0de">
+
+
 
 https://github.com/marcellerusu/css-edit/assets/7607387/27863977-ba38-4289-b78f-806a4726a5cc
 
