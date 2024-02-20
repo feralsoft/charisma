@@ -55,17 +55,18 @@ export def test(pattern) = {kind: :test, pattern}
 export def chomp!(pattern) = {kind: :chomp!, pattern}
 export def capture!(pattern, group) = {kind: :capture!, pattern, group: group or 0}
 export def trimmed(parser) = {kind: :trimmed, parser}
+export def trimmed!(parser) = {kind: :trimmed!, parser}
 export def trim = {kind: :trim}
 export def debug = {kind: :debug}
 
 def :trimmed.run({parser}, string)
   let [result s] = parser.run(string:trimLeft())
-  -- TODO: don't hardcode this
-  if parser:kind == :test
-    return [result string]
-  else
-    return [result s:trimLeft()]
-  end
+  return [result string]
+end
+
+def :trimmed!.run({parser}, string)
+  let [result s] = parser.run(string:trimLeft())
+  return [result s:trimLeft()]
 end
 
 def :test.run({pattern}, string) = [pattern.matches?(string).as_bool(), string]

@@ -1,4 +1,4 @@
-import {test, capture!, chomp!, trimmed, trim, debug, run} from "./parse-utils.coil"
+import {test, capture!, chomp!, trimmed, trimmed!, trim, debug, run} from "./parse-utils.coil"
 import {match_on} from "./utils.coil"
 
 def* parse_step
@@ -33,7 +33,7 @@ def* parse_separator(lhs)
     yield chomp!(")")
     return {t: :has, lhs, rhs}
   else if yield trimmed(test("~"))
-    yield trimmed(chomp!("~"))
+    yield trimmed!(chomp!("~"))
     let rhs = yield* parse()
     return {t: :sibling, lhs, rhs}
   else if yield test(" ")
