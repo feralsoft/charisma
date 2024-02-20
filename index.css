@@ -311,4 +311,7 @@ input[type="search"] {
 
 .searched {
   background-color: rgba(10, 197, 10, 0.182);
+  &.focused {
+    outline: 2px solid green;
+  }
 }

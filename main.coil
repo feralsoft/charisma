@@ -44,20 +44,61 @@ def scope_helper(plugin_name) = {
   def :attr(name) = str("plugin_" plugin_name "_" name)
 }
 
+def scroll_to(elem)
+  $$(".searched.focused").each(|elem| elem:classList:remove("focused"))
+  elem:scrollIntoView({block: :center})
+  elem:classList:add("focused")
+end
+
 window:addEventListener("keydown" |e| {
-  if e:key == "s" and e:ctrlKey and !$("[type=search]")
-    let search = :input{
-      type: "search",
-      class: "search",
-      placeholder: "search..."
-      def :oninput(e)
-        $$(".searched").each(|elem| elem:classList:remove("searched"))
-        $$(parse_cx_query(e:target:value:trim()))
-          .each(|elem| elem:classList:add("searched"))
-      end
-    }
-    $(".--css-edit-editor"):prepend(search)
-    search:focus()
+  if e:key.pipe(Set["s" "r"]) and e:ctrlKey
+    if !$("[type=search]")
+      let search = :input{
+        type: "search",
+        class: "search",
+        placeholder: "search..."
+        def :onkeyup(e)
+          if e:key == "s" and e:ctrlKey
+            let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
+            if let elem = $("[data-search-idx=\"" prev_idx + 1 "\"]")
+              scroll_to(elem)
+              $(".--css-edit-editor"):setAttribute("data-current-search-idx" prev_idx + 1)
+            else
+              scroll_to($("[data-search-idx=\"0\"]"))
+              $(".--css-edit-editor"):setAttribute("data-current-search-idx" 0)
+            end
+          else if e:key == "r" and e:ctrlKey
+            let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
+            if let elem = $("[data-search-idx=\"" prev_idx - 1 "\"]")
+              scroll_to(elem)
+              $(".--css-edit-editor"):setAttribute("data-current-search-idx" prev_idx - 1)
+            else
+              let {currentSearchLastIdx} = $(".--css-edit-editor"):dataset
+              scroll_to($("[data-search-idx=\"" currentSearchLastIdx "\"]"))
+              $(".--css-edit-editor"):setAttribute("data-current-search-idx" currentSearchLastIdx)
+            end
+          end
+        end
+        def :oninput(e)
+          $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+          $$(".searched").each(|elem| elem:classList:remove("searched"))
+          $(".--css-edit-editor"):setAttribute("data-current-search-idx" 0)
+          let search_results = $$(parse_cx_query(e:target:value:trim()))
+          $(".--css-edit-editor"):setAttribute("data-current-search-last-idx" search_results:length - 1)
+          for [elem idx] of search_results.zip(0..)
+            elem:classList:add("searched")
+            elem:setAttribute("data-search-idx", idx)
+          end
+          if let first_result = $("[data-search-idx=\"0\"]")
+            scroll_to(first_result)
+          end
+        end
+      }
+      $(".--css-edit-editor"):prepend(search)
+      search:focus()
+    else
+      $("[type=search]"):focus()
+    end
   end
   if e:key == "Escape"
     $$(".searched").each(|elem| elem:classList:remove("searched"))
