@@ -24,7 +24,6 @@ def add_new_rule({signal, root, rebuild, scope})
           class: scope:class(:unfinished)
           async def :onkeydown(e)
             this:removeAttribute(scope:data(:error))
-            e:stopPropagation()
             if e:key == "Backspace"
               if this:innerText == ""
                 this:remove()

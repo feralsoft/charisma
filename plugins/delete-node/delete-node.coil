@@ -19,7 +19,6 @@ def delete_node({root, signal, rebuild, scope})
   let interval = nil
   for node of root.query_all("[data-kind=decl] > [data-attr=rules] *")
     signal:listen(node "keydown" |e| {
-      e:stopPropagation()
       if e:key == "Backspace" and node.backspaced
         if node:parentNode:closest("[data-kind]"):dataset:kind == "decl"
           node:remove()
