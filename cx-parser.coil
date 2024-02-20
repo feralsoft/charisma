@@ -4,12 +4,20 @@ import {match_on} from "./utils.coil"
 def* parse_step
   if yield test("#")
     yield chomp!("#")
-    let kind = yield capture!(/^(\w|_)+/)
-    return {t: :kind, kind}
+    let kinds = [yield capture!(/^(\w|_)+/)]
+    while yield test("|")
+      yield chomp!("|")
+      kinds:push(yield capture!(/^(\w|_)+/))
+    end
+    return {t: :kind, kinds}
   else if yield test("@")
     yield chomp!("@")
     let attr = yield capture!(/^(\w|_)+/)
-    if yield test("=")
+    if yield test("*=")
+      yield chomp!("*=")
+      let value = yield capture!(/[^ )]*/)
+      return {t: :attr_contains_eq, attr, value}
+    else if yield test("=")
       yield chomp!("=")
       let value = yield capture!(/[^ )]*/)
       return {t: :attr_eq, attr, value}
@@ -59,7 +67,8 @@ export let compile = match_on(:t){
   def :contains({value}) = str("[data-value*=\"" value "\"]")
   def :attr({attr}) = str("[data-attr=\"" attr "\"]")
   def :attr_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value=\"" value "\"]")
-  def :kind({kind}) = str("[data-kind=\"" kind "\"]")
+  def :attr_contains_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value*=\"" value "\"]")
+  def :kind({kinds}) = kinds.map(str:fmt("[data-kind=\"" _ "\"]")).join(", ").pipe(str:fmt("[data-kind]:is(" _ ")"))
 }
 
 -- let ast = parse.run("#decl(@query --css-edit-editor) monospace").0
