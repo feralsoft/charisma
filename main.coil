@@ -103,6 +103,10 @@ window:addEventListener("keydown" |e| {
   if e:key == "Escape"
     $$(".searched").each(|elem| elem:classList:remove("searched"))
     $(".--css-edit-editor [type=search]"):remove()
+    let editor = $(".--css-edit-editor")
+    editor:removeAttribute("data-current-search-idx")
+    editor:removeAttribute("data-current-search-last-idx")
+    $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
   end
 })
 
