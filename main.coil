@@ -45,7 +45,7 @@ def scope_helper(plugin_name) = {
 }
 
 window:addEventListener("keydown" |e| {
-  if e:key == "s" if e:ctrlKey if !$("[type=search]")
+  if e:key == "s" and e:ctrlKey and !$("[type=search]")
     let search = :input{
       type: "search",
       class: "search",
@@ -58,7 +58,7 @@ window:addEventListener("keydown" |e| {
     }
     $(".--css-edit-editor"):prepend(search)
     search:focus()
-  end end end
+  end
   if e:key == "Escape"
     $$(".searched").each(|elem| elem:classList:remove("searched"))
     $(".--css-edit-editor [type=search]"):remove()
