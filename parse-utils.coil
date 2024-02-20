@@ -59,6 +59,8 @@ export def trimmed!(parser) = {kind: :trimmed!, parser}
 export def trim = {kind: :trim}
 export def debug = {kind: :debug}
 
+window:DEBUG_PARSER = false
+
 def :trimmed.run({parser}, string)
   let [result s] = parser.run(string:trimLeft())
   return [result string]
@@ -73,17 +75,21 @@ def :test.run({pattern}, string) = [pattern.matches?(string).as_bool(), string]
 
 def :chomp!.run({pattern}, string)
   if let {skip} = pattern.matches?(string)
-    return [nil string:slice(skip)]
-  else
-    this.log({pattern}, string) panic!()
+    return [true string:slice(skip)]
+  end
+  if window:DEBUG_PARSER
+    this.log({pattern}, string)
+    panic!()
   end
 end
 
 def :capture!.run({pattern, group}, string)
   if let {result skip} = pattern.matches?(string, group)
     return [result string:slice(skip)]
-  else
-    this.log({pattern, group}, string) panic!()
+  end
+  if window:DEBUG_PARSER
+    this.log({pattern, group}, string)
+    panic!()
   end
 end
 
