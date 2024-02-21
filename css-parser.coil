@@ -167,10 +167,15 @@ let hex_part_regex = /^[a-fA-F0-9]{2}/
 
 def* parse_hex_value
   yield chomp!("#")
-  let r = yield trimmed!(capture!(hex_part_regex))
-  let g = yield trimmed!(capture!(hex_part_regex))
-  let b = yield trimmed!(capture!(hex_part_regex))
-  return {kind: :hex, r, g, b}
+  let r = yield capture!(hex_part_regex)
+  let g = yield capture!(hex_part_regex)
+  let b = yield capture!(hex_part_regex)
+  if yield test(hex_part_regex)
+    let a = yield capture!(hex_part_regex)
+    return {kind: :hex_a, r, g, b, a}
+  else
+    return {kind: :hex, r, g, b}
+  end
 end
 
 def* parse_text_value

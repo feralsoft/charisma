@@ -1,30 +1,28 @@
+:root {
+  background-color: rgb(31, 31, 31);
+}
+
 .--css-edit-editor {
-  background-color: lightgray;
+  background-color: rgb(31, 31, 31);
   padding: 0.5rem;
-  font-size: 17px;
-  font-family: monospace;
-  --number-color: rgb(0, 128, 0);
-  --class-color: rgb(0, 0, 139);
-  --function-color: rgb(139, 0, 0);
-  --rule-name-color: rgb(32, 123, 156);
-  --variable-color: rgba(1, 45, 148, 0.647);
-  --string-color: rgb(165, 42, 42);
-  --attribute-color: rgba(0, 0, 255, 0.557);
+  font-size: 20px;
+  font-family: Berkeley Mono;
+  --foreground-color: #cccccc;
+  color: var(--foreground-color);
+  --outline-color: #ffffff17;
+  --number-color: #b5cea8;
+  --class-color: #d7ba7d;
+  --function-color: #dcdcaa;
+  --rule-name-color: #569cd6;
+  --variable-color: #569cd6;
+  --string-color: #ce9178;
+  --attribute-color: var(--rule-name-color);
 }
 [data-numeric="true"] {
   color: var(--number-color);
 }
 [data-kind="decl"]::after {
   content: "}";
-}
-[data-value]:hover {
-  outline: black solid 1px;
-}
-[data-kind]:hover:not(:has([data-kind]:hover)) {
-  outline: black solid 1px;
-}
-[data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
-  outline: black solid 1px;
 }
 [data-kind="rule"] > [data-attr="name"] {
   color: var(--rule-name-color);
@@ -36,23 +34,36 @@
   display: flex;
   gap: 0.25em;
 }
+[data-value]:hover {
+  outline: var(--outline-color) solid 0.1em;
+}
+[data-kind]:hover:not(:has([data-kind]:hover)) {
+  outline: var(--outline-color) solid 0.1em;
+}
+[data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
+  outline: var(--outline-color) solid 0.1em;
+}
 [data-kind="rem"] > [data-attr="value"]::after {
   content: "rem";
-  color: black;
+  color: var(--function-color);
 }
 [data-kind="em"] > [data-attr="value"]::after {
   content: "em";
-  color: black;
+  color: var(--function-color);
 }
 [data-kind="variable"] > [data-attr="name"] {
   color: var(--variable-color);
 }
 [data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
+  color: var(--foreground-color);
   content: ":";
 }
-[data-kind="pseudo_element_selector"] > [data-attr="name"]::before {
-  content: "::";
-  color: black;
+[data-kind="pseudo_element_selector"] > [data-attr="name"] {
+  color: var(--function-color);
+  &::before {
+    color: var(--foreground-color);
+    content: "::";
+  }
 }
 [data-kind="element_selector"] {
   color: green;
@@ -60,15 +71,16 @@
 .open-in-vscode {
   display: none;
 }
-[data-kind="decl"]:hover .open-in-vscode {
+/* [data-kind="decl"]:hover .open-in-vscode {
   display: flex;
-}
+} */
 .open-in-vscode {
   font-size: 14px;
   position: absolute;
   right: 1rem;
   background-color: rgba(255, 255, 255, 0.285);
-  padding: var(--x);
+  padding: 0.25em;
+  color: var(--foreground-color);
 }
 [data-kind="string"] {
   color: var(--string-color);
@@ -92,20 +104,20 @@
       width: max-content;
       &::after {
         content: ":";
-        color: black;
+        color: var(--foreground-color);
       }
     }
     &::after {
       margin-left: -0.25em;
       content: ";";
-      color: black;
+      color: var(--foreground-color);
     }
   }
 }
 [data-kind="px"] {
   display: flex;
   &::after {
-    color: black;
+    color: var(--function-color);
     content: "px";
   }
 }
@@ -113,7 +125,7 @@
   display: flex;
   color: var(--class-color);
   &::before {
-    color: black;
+    color: var(--function-color);
     content: ".";
   }
 }
@@ -125,15 +137,15 @@
   }
   & > [data-attr]:not(:last-child)::after {
     content: ",";
-    color: black;
+    color: #a0a0a0;
   }
   & > [data-attr="r"]::before {
     content: "(";
-    color: black;
+    color: #a0a0a0;
   }
   & > [data-attr="b"]::after {
     content: ")";
-    color: black;
+    color: #a0a0a0;
   }
 }
 [data-kind="rgba"] {
@@ -144,15 +156,15 @@
   }
   & > [data-attr]:not(:last-child)::after {
     content: ",";
-    color: black;
+    color: var(--foreground-color);
   }
   & > [data-attr="r"]::before {
     content: "(";
-    color: black;
+    color: var(--foreground-color);
   }
   & > [data-attr="a"]::after {
     content: ")";
-    color: black;
+    color: var(--foreground-color);
   }
 }
 [data-kind="hex"] {
@@ -160,6 +172,9 @@
   &::before {
     content: "#";
     color: var(--function-color);
+  }
+  [data-attr] {
+    color: var(--foreground-color);
   }
   [data-attr="r"] {
     background-color: rgba(255, 0, 0, 0.25);
@@ -171,12 +186,35 @@
     background-color: rgba(0, 0, 255, 0.25);
   }
 }
+
+[data-kind="hex_a"] {
+  display: flex;
+  &::before {
+    content: "#";
+    color: var(--function-color);
+  }
+  [data-attr] {
+    color: var(--foreground-color);
+  }
+  [data-attr="r"] {
+    background-color: rgba(255, 0, 0, 0.25);
+  }
+  [data-attr="g"] {
+    background-color: rgba(0, 255, 0, 0.25);
+  }
+  [data-attr="b"] {
+    background-color: rgba(0, 0, 255, 0.25);
+  }
+  [data-attr="a"] {
+    background-color: var(--outline-color);
+  }
+}
 [data-kind="attribute_selector_no_match"] {
   & > [data-attr="name"] {
     color: var(--attribute-color);
     &::before,
     &::after {
-      color: black;
+      color: #d8a90c;
     }
     &::before {
       content: "[";
@@ -191,11 +229,15 @@
   & > [data-attr="name"] {
     color: var(--attribute-color);
   }
+  &::before,
+  &::after {
+    color: #d8a90c;
+  }
   &::before {
     content: "[";
   }
   & > [data-attr="name"]::after {
-    color: black;
+    color: var(--foreground-color);
     content: "=";
   }
   & > [data-attr="value"] {
@@ -217,12 +259,13 @@
   }
   &::after {
     content: ")";
+    color: var(--foreground-color);
   }
   & > [data-attr="name"] {
     color: var(--variable-color);
     &::before {
       content: "(";
-      color: black;
+      color: var(--foreground-color);
     }
   }
 }
@@ -233,7 +276,7 @@
   &::after,
   ::before,
   ::after {
-    color: black;
+    color: var(--foreground-color);
   }
   & > [data-attr="args"] {
     display: flex;
@@ -243,6 +286,7 @@
   }
   &::before {
     content: ":";
+    color: var(--foreground-color);
   }
   & > [data-attr="name"]::after {
     content: "(";
@@ -310,8 +354,12 @@ input[type="search"] {
 }
 
 .searched {
-  background-color: rgba(10, 197, 10, 0.182);
+  background-color: #9e6a0355;
   &.focused {
-    outline: 2px solid green;
+    outline: 0.1em solid #9e6a03;
   }
+}
+:is([data-kind="decl"])::before,
+:is([data-kind="decl"])::after {
+  color: #d8a90c;
 }
