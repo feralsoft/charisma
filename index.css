@@ -1,20 +1,24 @@
 :root {
   background-color: rgb(31, 31, 31);
+  padding-top: 1em;
 }
-
 .--css-edit-editor {
+  --spacing: 0.25em;
   background-color: rgb(31, 31, 31);
   padding: 0.5rem;
-  font-size: 20px;
+  font-size: 21px;
   font-family: Berkeley Mono;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
   --foreground-color: #cccccc;
   color: var(--foreground-color);
   --outline-color: #ffffff17;
   --number-color: #b5cea8;
   --class-color: #d7ba7d;
   --function-color: #dcdcaa;
-  --rule-name-color: #569cd6;
-  --variable-color: #569cd6;
+  --rule-name-color: #9cdcfe;
+  --variable-color: #9cdcfe;
   --string-color: #ce9178;
   --attribute-color: var(--rule-name-color);
 }
@@ -55,14 +59,15 @@
 [data-kind="variable"] > [data-attr="name"] {
   color: var(--variable-color);
 }
-[data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
-  color: var(--foreground-color);
-  content: ":";
+[data-kind="pseudo_selector_without_args"] > [data-attr="name"] {
+  color: var(--class-color);
+  &::before {
+    content: ":";
+  }
 }
 [data-kind="pseudo_element_selector"] > [data-attr="name"] {
-  color: var(--function-color);
+  color: var(--class-color);
   &::before {
-    color: var(--foreground-color);
     content: "::";
   }
 }
@@ -101,6 +106,11 @@
 }
 [data-kind="decl"] > [data-attr="rules"] {
   padding-left: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  padding-top: var(--spacing);
+  padding-bottom: var(--spacing);
   & > [data-kind] {
     display: flex;
     gap: 0.25em;
@@ -129,7 +139,6 @@
   display: flex;
   color: var(--class-color);
   &::before {
-    color: var(--function-color);
     content: ".";
   }
 }
@@ -261,14 +270,14 @@
     color: var(--function-color);
     content: "var";
   }
-  &::after {
-    content: ")";
-    color: var(--foreground-color);
-  }
   & > [data-attr="name"] {
     color: var(--variable-color);
     &::before {
       content: "(";
+      color: var(--foreground-color);
+    }
+    &::after {
+      content: ")";
       color: var(--foreground-color);
     }
   }
@@ -290,7 +299,7 @@
   }
   &::before {
     content: ":";
-    color: var(--foreground-color);
+    color: var(--class-color);
   }
   & > [data-attr="name"]::after {
     content: "(";
@@ -385,4 +394,13 @@ input[type="search"] {
       content: ",";
     }
   }
+}
+[data-attr="name"][data-value*="color"] ~ [data-attr] [data-kind]::after {
+  content: " ";
+  background-color: var(--raw-css);
+  width: 0.8em;
+  height: 0.8em;
+  margin: 0.2em;
+  margin-left: 0.5em;
+  outline: 0.1em solid rgba(255, 255, 255, 0.145);
 }
