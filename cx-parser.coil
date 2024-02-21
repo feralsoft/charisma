@@ -1,6 +1,8 @@
 import {test, capture!, chomp!, trimmed, trimmed!, trim, debug, run} from "./parse-utils.coil"
 import {match_on} from "./utils.coil"
 
+let value_regex = /[^, )]*/
+
 def* parse_step
   if yield test("#")
     yield chomp!("#")
@@ -15,22 +17,33 @@ def* parse_step
     let attr = yield capture!(/^(\w|_)+/)
     if yield test("*=")
       yield chomp!("*=")
-      let value = yield capture!(/[^ )]*/)
+      let value = yield capture!(value_regex)
       return {t: :attr_contains_eq, attr, value}
     else if yield test("=")
       yield chomp!("=")
-      let value = yield capture!(/[^ )]*/)
+      let value = yield capture!(value_regex)
       return {t: :attr_eq, attr, value}
     else
       return {t: :attr, attr}
     end
-  else if yield test("*")
-    yield chomp!("*")
-    let value = yield capture!(/[^ )]*/)
-    return {t: :contains, value}
+  else if yield test("=")
+    yield chomp!("=")
+    let value = yield capture!(value_regex)
+    return {t: :direct_match, value}
+  else if yield test("(") -- -> is:(a, b) will be represented as (a, b)
+    yield chomp!("(")
+    let queries = []
+    while !yield trimmed(test(")"))
+      queries:push(yield* parse())
+      if !yield trimmed(test(")"))
+        yield trimmed!(chomp!(","))
+      end
+    end
+    yield trimmed!(chomp!(")"))
+    return {t: :either, queries}
   else
-    let value = yield capture!(/[^ )]*/)
-    return {t: :value, value}
+    let value = yield capture!(value_regex)
+    return {t: :contains, value}
   end
 end
 
@@ -63,16 +76,23 @@ export let compile = match_on(:t){
   def :child({lhs, rhs}) = str(compile(lhs) " " compile(rhs))
   def :has({lhs, rhs}) = str(compile(lhs) ":has(" compile(rhs) ")")
   def :sibling({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
-  def :value({value}) = str("[data-value=\"" value "\"]")
+  def :direct_match({value}) = str("[data-value=\"" value "\"]")
   def :contains({value}) = str("[data-value*=\"" value "\"]")
   def :attr({attr}) = str("[data-attr=\"" attr "\"]")
   def :attr_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value=\"" value "\"]")
   def :attr_contains_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value*=\"" value "\"]")
   def :kind({kinds}) = kinds.map(str:fmt("[data-kind=\"" _ "\"]")).join(", ").pipe(str:fmt("[data-kind]:is(" _ ")"))
+  def :either({queries}) = queries.map(compile).join(", ").pipe(str:fmt(":is(" _ ")"))
 }
 
 -- let ast = parse.run("#decl(@query --css-edit-editor) monospace").0
 
-export def parse_cx_query(str) = try!(|| parse.run(str).0.pipe(compile))
+export def parse_cx_query(str) = try!(|| parse.run(str).0.pipe(compile).log())
 
 def window:cx(...strs) = str(...strs).pipe(parse_cx_query $$)
+
+-- macros !!!!
+-- !deref(#var @name) = #variable @name=^name ~ @expr
+-- *color ~ @expr #var .replace_by !deref
+
+-- :is <-> (*color, *red) 
