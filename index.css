@@ -34,7 +34,8 @@
   display: flex;
   gap: 0.25em;
 }
-[data-value]:hover {
+[data-value]:hover,
+[data-value]:focus {
   outline: var(--outline-color) solid 0.1em;
 }
 [data-kind]:hover:not(:has([data-kind]:hover)) {
@@ -89,6 +90,9 @@
   display: flex;
   gap: 0.25em;
   &::after {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
     content: "{";
   }
   [data-attr="name"] {
@@ -177,13 +181,13 @@
     color: var(--foreground-color);
   }
   [data-attr="r"] {
-    background-color: rgba(255, 0, 0, 0.25);
+    background-color: rgba(255, 0, 0, 0.1);
   }
   [data-attr="g"] {
-    background-color: rgba(0, 255, 0, 0.25);
+    background-color: rgba(0, 255, 0, 0.1);
   }
   [data-attr="b"] {
-    background-color: rgba(0, 0, 255, 0.25);
+    background-color: rgba(0, 0, 255, 0.1);
   }
 }
 
@@ -197,13 +201,13 @@
     color: var(--foreground-color);
   }
   [data-attr="r"] {
-    background-color: rgba(255, 0, 0, 0.25);
+    background-color: rgba(255, 0, 0, 0.1);
   }
   [data-attr="g"] {
-    background-color: rgba(0, 255, 0, 0.25);
+    background-color: rgba(0, 255, 0, 0.1);
   }
   [data-attr="b"] {
-    background-color: rgba(0, 0, 255, 0.25);
+    background-color: rgba(0, 0, 255, 0.1);
   }
   [data-attr="a"] {
     background-color: var(--outline-color);
@@ -271,7 +275,7 @@
 }
 [data-kind="pseudo_selector_with_args"] {
   display: flex;
-  color: rgb(137, 68, 68);
+  color: var(--class-color);
   &::before,
   &::after,
   ::before,
@@ -359,7 +363,26 @@ input[type="search"] {
     outline: 0.1em solid #9e6a03;
   }
 }
-:is([data-kind="decl"])::before,
-:is([data-kind="decl"])::after {
+[data-kind="decl"]::after,
+[data-kind="decl"] > [data-attr="query"]::after {
   color: #d8a90c;
+}
+
+[data-kind="multi_part_value"] > [data-attr="parts"] {
+  display: flex;
+  gap: 0.5em;
+}
+
+*:focus {
+  outline: none;
+}
+[data-kind="or"] {
+  display: flex;
+  flex-direction: column;
+  > [data-attr="lhs"] {
+    display: flex;
+    &::after {
+      content: ",";
+    }
+  }
 }

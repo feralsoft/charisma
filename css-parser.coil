@@ -104,6 +104,10 @@ def* parse_query(end_pattern)
     else if yield test(" ")
       yield trim()
       kind = :child_selector
+    else if yield trimmed(test(","))
+      yield trimmed!(chomp!(","))
+      let rhs = yield* parse_query(end_pattern)
+      return {kind: :or, lhs: query, rhs}
     else
       kind = :selector_modifier
     end
@@ -179,7 +183,7 @@ def* parse_hex_value
 end
 
 def* parse_text_value
-  let value = yield capture!(/^((?!;).)*/)
+  let value = yield capture!(/^[^; ]+/)
   return {kind: :plain_text, value}
 end
 
@@ -208,7 +212,7 @@ def* parse_var_with_default_value
   yield trimmed!(chomp!("("))
   let name = yield capture!(/^--(\w|-)+/)
   yield trimmed!(chomp!(","))
-  let default_value = yield* t_parse_value()
+  let default_value = yield* parse_value()
   yield trimmed!(chomp!(")"))
   return {kind: :var_with_default, name, default_value}
 end
@@ -218,7 +222,7 @@ def* parse_string_value
   return {kind: :string, value}
 end
 
-export def* parse_value
+def* parse_value_step
   if yield test("rgba")
     return yield* parse_rgba_value()
   else if yield test("rgb")
@@ -248,10 +252,31 @@ export def* parse_value
   end
 end
 
+export def* parse_value(rule_name)
+  -- fonts can have spaces in them, but other values shouldn't
+  if rule_name == "font-family"
+    let value = yield capture!(/^((?!;).)*/)
+    return {kind: :plain_text, value}
+  end
+
+  let parts = [yield* parse_value_step()]
+  -- TODO ; or }
+  while !yield trimmed(test(";"))
+    yield trim()
+    parts:push(yield* parse_value_step())
+  end
+
+  if parts.len() == 1
+    return parts.0
+  else
+    return {kind: :multi_part_value, parts}
+  end
+end
+
 export def* parse_rule
   let name = yield trimmed!(capture!(/^(\w|-)+/))
   yield trimmed!(chomp!(":"))
-  let expr = yield* parse_value()
+  let expr = yield* parse_value(name)
   yield trimmed!(chomp!(";"))
   return {kind: :rule, name, expr}
 end
