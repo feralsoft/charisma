@@ -1,13 +1,24 @@
 export def call_with(...args) = {
   def Meta:from_entries(entries) = {
     ...entries
-    def Meta:invoke(key) = this.key(...args)
+    def Meta:invoke(key)
+      if !this.has?(key)
+        panic!(str("key not found: `" key "`"))
+      end
+      return this.key(...args)
+    end
   }
 }
 
 export def match_on(key) = {
   def Meta:from_entries(entries) = {
     ...entries
-    def Meta:invoke(object) = this.(object.key)(object)
+    def Meta:invoke(object)
+      if !this.has?(object.key)
+        object.log()
+        panic!(str("key not found: `" object.key "`"))
+      end
+      return this.(object.key)(object)
+    end
   }
 }

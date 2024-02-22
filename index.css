@@ -48,6 +48,11 @@
 [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
   outline: var(--outline-color) solid 0.1em;
 }
+[data-kind="rem"],
+[data-kind="em"] {
+  display: flex;
+}
+
 [data-kind="rem"] > [data-attr="value"]::after {
   content: "rem";
   color: var(--function-color);
@@ -130,7 +135,7 @@
 }
 [data-kind="px"] {
   display: flex;
-  &::after {
+  > [data-attr="value"]::after {
     color: var(--function-color);
     content: "px";
   }
@@ -395,12 +400,37 @@ input[type="search"] {
     }
   }
 }
-[data-attr="name"][data-value*="color"] ~ [data-attr] [data-kind]::after {
+
+[data-attr="name"]:is(
+    [data-value*="gap"],
+    [data-value*="size"],
+    [data-value*="padding"]
+  )
+  ~ [data-attr]
+  > [data-kind]::after,
+:is([data-kind="rem"], [data-kind="em"], [data-kind="px"])::after {
+  content: " ";
+  width: var(--raw-css);
+  background-color: #cccccc1f;
+  border-left: 1px solid var(--foreground-color);
+  border-right: 1px solid var(--foreground-color);
+  height: 0.75em;
+  margin: 0.25em;
+}
+
+[data-attr="name"][data-value*="color"]
+  ~ [data-attr]
+  > :is(
+    [data-kind="hex"],
+    [data-kind="hex_a"],
+    [data-kind="rgb"],
+    [data-kind="rgba"]
+  )::after {
   content: " ";
   background-color: var(--raw-css);
   width: 0.8em;
   height: 0.8em;
   margin: 0.2em;
   margin-left: 0.5em;
-  outline: 0.1em solid rgba(255, 255, 255, 0.145);
+  outline: 0.1em solid rgba(255, 255, 255, 0.1);
 }
