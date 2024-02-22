@@ -9,6 +9,8 @@ let context_map = {
   def :rule(text) = parse_value.run(text)
 } 
 
+-- show warning when backspaced!!
+
 -- TODO: use a data attribute instead of this protocol so we can style it
 protocol backspaced
 
