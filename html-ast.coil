@@ -20,6 +20,7 @@ export let compile = match_on(:kind){
   def :rgb({r g b}) = str("rgb(" r ", " g ", " b ")")
   def :hex({r g b}) = str("#" r  g  b)
   def :hex_a({r g b a}) = str("#" r  g  b a)
+  def :hex_short({r g b}) = str("#" r  g  b)
   def :rgba({r g b a}) = str("rgba(" r ", " g ", " b ", " a ")")
   def :plain_text({value}) = value
   def :rem({value}) = str(value "rem")
