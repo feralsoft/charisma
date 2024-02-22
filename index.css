@@ -417,14 +417,17 @@ input[type="search"] {
   height: 0.75em;
   margin: 0.25em;
 }
-
+[data-kind="plain_text"] {
+  display: flex;
+}
 [data-attr="name"][data-value*="color"]
   ~ [data-attr]
   > :is(
     [data-kind="hex"],
     [data-kind="hex_a"],
     [data-kind="rgb"],
-    [data-kind="rgba"]
+    [data-kind="rgba"],
+    [data-kind="plain_text"]
   )::after {
   content: " ";
   background-color: var(--raw-css);
