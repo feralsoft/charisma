@@ -8,6 +8,12 @@ def* parse_class_selector
   return {kind: :class_selector, name}
 end
 
+def* parse_id_selector
+  yield chomp!("#")
+  let name = yield capture!(/^(\w|-)+/)
+  return {kind: :id_selector, name}
+end
+
 def* parse_selector_arg
   if yield test(/^\d+n/)
     let factor = yield capture!(/^(\d)+n/, 1)
@@ -76,6 +82,8 @@ end
 def* parse_query_step
   if yield test(".")
     return yield* parse_class_selector()
+  else if yield test("#")
+    return yield* parse_id_selector()
   else if yield test("::")
     return yield* parse_pseudo_element_selector()
   else if yield test(/^(\w|-)+/)
@@ -108,6 +116,12 @@ def* parse_query(end_pattern)
       yield trimmed!(chomp!(","))
       let rhs = yield* parse_query(end_pattern)
       return {kind: :or, lhs: query, rhs}
+    else if yield trimmed(test("~"))
+      yield trimmed!(chomp!("~"))
+      kind = :sibling_selector
+    else if yield trimmed(test("+"))
+      yield trimmed!(chomp!("+"))
+      kind = :adjacent_sibling_selector
     else
       kind = :selector_modifier
     end

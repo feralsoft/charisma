@@ -4,7 +4,10 @@ import {match_on} from "./utils.coil"
 let value_regex = /[^, )]*/
 
 def* parse_step
-  if yield test("#")
+  if yield test("*")
+    yield chomp!("*")
+    return {t: :wildcard}
+  else if yield test("#")
     yield chomp!("#")
     let kinds = [yield capture!(/^(\w|_)+/)]
     while yield test("|")
@@ -57,6 +60,10 @@ def* parse_separator(lhs)
     yield trimmed!(chomp!("~"))
     let rhs = yield* parse()
     return {t: :sibling, lhs, rhs}
+  else if yield trimmed(test("+"))
+    yield trimmed!(chomp!("+"))
+    let rhs = yield* parse()
+    return {t: :adjacent_sibling, lhs, rhs}
   else if yield test(" ")
     yield trim()
     let rhs = yield* parse_step()
@@ -76,6 +83,8 @@ export let compile = match_on(:t){
   def :child({lhs, rhs}) = str(compile(lhs) " " compile(rhs))
   def :has({lhs, rhs}) = str(compile(lhs) ":has(" compile(rhs) ")")
   def :sibling({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
+  def :adjacent_sibling({lhs, rhs}) = str(compile(lhs) " + " compile(rhs))
+  def :wildcard = "*"
   def :direct_match({value}) = str("[data-value=\"" value "\"]")
   def :contains({value}) = str("[data-value*=\"" value "\"]")
   def :attr({attr}) = str("[data-attr=\"" attr "\"]")
