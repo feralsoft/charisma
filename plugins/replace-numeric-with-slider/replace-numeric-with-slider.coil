@@ -1,3 +1,5 @@
+import {compile, to_ast, to_html} from "../../html-ast.coil"
+
 def replace_numeric_with_slider({eval_css, signal, root})
   let original_value = nil
   let start_y = nil
@@ -15,6 +17,8 @@ def replace_numeric_with_slider({eval_css, signal, root})
       let new_value = original_value - (e:clientY - start_y)
       active_elem:setAttribute("data-value" new_value)
       active_elem:replaceChildren(new_value)
+      let expr_node = active_elem:closest("[data-attr=\"expr\"]")
+      expr_node:style:setProperty("--raw-css", compile(expr_node.to_ast()))
       eval_css(active_elem)
     end
   })

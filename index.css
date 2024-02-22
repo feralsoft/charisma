@@ -52,7 +52,6 @@
 [data-kind="em"] {
   display: flex;
 }
-
 [data-kind="rem"] > [data-attr="value"]::after {
   content: "rem";
   color: var(--function-color);
