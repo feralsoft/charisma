@@ -34,6 +34,9 @@ export let compile = match_on(:kind){
 export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}
   for [key val] of ast_node.delete!(:kind, :nid)
+    if val.nil?()
+      continue
+    end
     let attr_elem = :div{"data-attr" => key}
     -- this is temporary, this should be done as a plugin :|
     if Set["variable" "rule"](elem:dataset:kind) and key == "expr"

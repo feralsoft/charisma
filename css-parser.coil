@@ -25,7 +25,8 @@ def* parse_selector_arg
       return {kind: :nth_expr_without_plus, factor}
     end
   else
-    return yield* parse_query(/^\s*(,|\))/)
+    let skip_step = yield test(/(>|~| )/)
+    return yield* parse_query(/^\s*(,|\))/, skip_step)
   end
 end
 
@@ -74,13 +75,27 @@ def* parse_attribute_selector_equals
   return {kind: :attribute_selector_equals, name, value}
 end
 
+def* parse_attribute_selector_contains
+  yield chomp!("[")
+  let name = yield capture!(/^(\w|-)+/)
+  yield trimmed!(chomp!("*="))
+  yield chomp!("\"")
+  let value = yield capture!(/^((?!").)+/)
+  yield chomp!("\"")
+  yield trimmed!(chomp!("]"))
+  return {kind: :attribute_selector_contains, name, value}
+end
+
 def* parse_element_selector
   let name = yield capture!(/^(\w|-)+/)
   return {kind: :element_selector, name}
 end
 
 def* parse_query_step
-  if yield test(".")
+  if yield test("*")
+    yield chomp!("*")
+    return {kind: :wildcard}
+  else if yield test(".")
     return yield* parse_class_selector()
   else if yield test("#")
     return yield* parse_id_selector()
@@ -94,6 +109,8 @@ def* parse_query_step
     return yield* parse_pseudo_selector_without_args()
   else if yield test(/^\[(\w|-)+=".*"\]/)
     return yield* parse_attribute_selector_equals()
+  else if yield test(/^\[(\w|-)+\*=".*"\]/)
+    return yield* parse_attribute_selector_contains()
   else if yield test(/^\[(\w|-)+\]/)
     return yield* parse_attribute_selector_no_match()
   else
@@ -102,8 +119,16 @@ def* parse_query_step
   end
 end
 
-def* parse_query(end_pattern)
-  let query = yield* parse_query_step()
+def* parse_query(end_pattern, skip_step)
+  let query = nil
+  -- this is a fucking mess, please unify this with self_sub_decl
+  if yield trimmed(test("&"))
+    yield trim()
+    yield chomp!("&")
+    query = {kind: :self_query, value: yield* parse_query_step()}
+  else if !skip_step
+    query = yield* parse_query_step()
+  end
   while !yield test(end_pattern)
     let kind = nil
     if yield trimmed(test(">"))
@@ -313,7 +338,8 @@ end
 
 def* parse_self_sub_decl
   yield chomp!("&")
-  let query = yield* parse_query(/^\s*{/)
+  let skip_part = yield test(" ")
+  let query = yield* parse_query(/^\s*{/, skip_part)
   yield trimmed!(chomp!("{"))
   let rules = []
   while !yield trimmed(test("}"))
@@ -328,13 +354,31 @@ def* parse_self_sub_decl
   }
 end
 
+def* parse_sub_decl
+  let query = yield* parse_query(/^\s*{/)
+  yield trimmed!(chomp!("{"))
+  let rules = []
+  while !yield trimmed(test("}"))
+    rules:push(yield* parse_statement())
+  end
+  yield trimmed!(chomp!("}"))
+  return {
+    kind: :decl,
+    query,
+    rules,
+    sub_decl: {attr_only: true, value: true}
+  }
+end
+
 def* parse_statement
   if yield test("--")
     return yield* parse_variable()
   else if yield test("&")
     return yield* parse_self_sub_decl()
-  else
+  else if yield test(/^(\w|-)+\s*:/)
     return yield* parse_rule()
+  else
+    return yield* parse_sub_decl()
   end
 end
 

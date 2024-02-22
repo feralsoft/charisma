@@ -67,6 +67,7 @@
   color: var(--class-color);
   &::before {
     content: ":";
+    color: var(--class-color);
   }
 }
 [data-kind="pseudo_element_selector"] > [data-attr="name"] {
@@ -76,7 +77,7 @@
   }
 }
 [data-kind="element_selector"] {
-  color: green;
+  color: var(--class-color);
 }
 .open-in-vscode {
   display: none;
@@ -95,8 +96,18 @@
 [data-kind="string"] {
   color: var(--string-color);
 }
-[data-kind="decl"][data-self_sub_decl="true"] > [data-attr="query"]::before {
+
+[data-kind="decl"][data-self_sub_decl="true"]
+  > [data-attr="query"]
+  > [data-kind]::before {
   content: "&";
+}
+
+[data-kind="decl"][data-self_sub_decl="true"]
+  > [data-attr="query"]
+  > [data-kind="class_selector"]::before {
+  /* TODO: this is gross */
+  content: "&.";
 }
 [data-kind="decl"] > [data-attr="query"] {
   display: flex;
@@ -244,7 +255,10 @@
     }
   }
 }
-[data-kind="attribute_selector_equals"] {
+:is(
+    [data-kind="attribute_selector_equals"],
+    [data-kind="attribute_selector_contains"]
+  ) {
   display: flex;
   & > [data-attr="name"] {
     color: var(--attribute-color);
@@ -256,15 +270,20 @@
   &::before {
     content: "[";
   }
-  & > [data-attr="name"]::after {
+  &[data-kind="attribute_selector_equals"] > [data-attr="name"]::after {
     color: var(--foreground-color);
     content: "=";
+  }
+  &[data-kind="attribute_selector_contains"] > [data-attr="name"]::after {
+    color: var(--foreground-color);
+    content: "*=";
   }
   & > [data-attr="value"] {
     color: var(--string-color);
     &::before,
     &::after {
       content: '"';
+      color: var(--string-color);
     }
   }
   &::after {
@@ -353,11 +372,16 @@
 
 [data-kind="direct_descendent"] {
   display: flex;
-  gap: 0.5rem;
-  > [data-attr="lhs"] {
+  gap: 0.25em;
+  /* & > ... */
+  &:not(:has(> [data-attr="lhs"])) > [data-attr="rhs"] {
+    margin-left: 0.25em;
+  }
+  > [data-attr="rhs"] {
     display: flex;
-    gap: 0.5rem;
-    &::after {
+    gap: 0.25em;
+    &::before {
+      display: flex;
       content: ">";
     }
   }
@@ -396,7 +420,6 @@ input[type="search"] {
 }
 [data-kind="or"] {
   display: flex;
-  flex-direction: column;
   > [data-attr="lhs"] {
     display: flex;
     &::after {
@@ -441,4 +464,27 @@ input[type="search"] {
   margin: 0.2em;
   margin-left: 0.5em;
   outline: 0.1em solid rgba(255, 255, 255, 0.1);
+}
+[data-kind="self_query"] {
+  display: flex;
+  &::before {
+    content: "&";
+  }
+}
+[data-kind="pseudo_element_selector"] {
+  display: flex;
+}
+[data-kind="wildcard"]::before {
+  content: "*";
+}
+[data-kind="sibling_selector"] {
+  display: flex;
+  gap: 0.25em;
+  & > [data-attr="rhs"] {
+    display: flex;
+    gap: 0.25em;
+    &::before {
+      content: "~";
+    }
+  }
 }
