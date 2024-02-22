@@ -1,6 +1,5 @@
 :root {
   background-color: rgb(31, 31, 31);
-  padding-top: 1em;
 }
 .--css-edit-editor {
   --spacing: 0.25em;
@@ -367,7 +366,9 @@ input[type="search"] {
   width: 100%;
   font-size: 17px;
   outline: none;
-  background: rgba(255, 255, 255, 0.904);
+  background-color: rgba(56, 56, 56, 0.9);
+  color: var(--foreground-color);
+  border-color: var(--outline-color);
 }
 
 .searched {
