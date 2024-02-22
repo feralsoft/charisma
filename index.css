@@ -5,13 +5,14 @@
   --spacing: 0.25em;
   background-color: rgb(31, 31, 31);
   padding: 0.5rem;
-  font-size: 21px;
+  font-size: 18px;
   font-family: Berkeley Mono;
   display: flex;
   flex-direction: column;
   gap: var(--spacing);
   --foreground-color: #ccc;
   color: var(--foreground-color);
+  --brace-color: #d8a90c;
   --outline-color: #ffffff17;
   --number-color: #b5cea8;
   --class-color: #d7ba7d;
@@ -94,6 +95,9 @@
 [data-kind="string"] {
   color: var(--string-color);
 }
+[data-kind="decl"][data-self_sub_decl="true"] > [data-attr="query"]::before {
+  content: "&";
+}
 [data-kind="decl"] > [data-attr="query"] {
   display: flex;
   gap: 0.25em;
@@ -114,7 +118,7 @@
   gap: var(--spacing);
   padding-top: var(--spacing);
   padding-bottom: var(--spacing);
-  & > [data-kind] {
+  & > :is([data-kind="rule"], [data-kind="variable"]) {
     display: flex;
     gap: 0.25em;
     & > [data-attr="name"] {
@@ -230,7 +234,7 @@
     color: var(--attribute-color);
     &::before,
     &::after {
-      color: #d8a90c;
+      color: var(--brace-color);
     }
     &::before {
       content: "[";

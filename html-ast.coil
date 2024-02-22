@@ -39,7 +39,9 @@ export def to_html(ast_node)
     if Set["variable" "rule"](elem:dataset:kind) and key == "expr"
       attr_elem:style:setProperty("--raw-css", compile(ast_node:expr))
     end
-    if type_of(val) == "string"
+    if val:attr_only
+      elem:setAttribute(str("data-" key), val:value)
+    else if type_of(val) == "string"
       attr_elem:setAttribute("data-value" val)
       attr_elem:setAttribute("contenteditable", true)
       attr_elem:style:setProperty("--value" val)
