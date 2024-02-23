@@ -1,10 +1,13 @@
 .plugin_add_new_rule_btn {
   background-color: #313131;
   color: var(--foreground-color);
-  border: none;
+  border: 1px solid #cccccc99;
   border-radius: 2px;
   padding: 0;
-  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  line-height: 1.1;
   height: 1em;
   width: 1em;
   font-size: 1em;

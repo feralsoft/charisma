@@ -322,6 +322,9 @@
     & > [data-kind]:not(:last-child)::after {
       content: ",";
     }
+    & > [data-kind*="attribute_selector"]:not(:last-child)::after {
+      content: "],";
+    }
   }
   &::before {
     content: ":";
@@ -331,6 +334,9 @@
     content: "(";
   }
   &::after {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
     content: ")";
   }
 }
@@ -435,14 +441,20 @@ input[type="search"] {
   )
   ~ [data-attr]
   > [data-kind]::after,
-:is([data-kind="rem"], [data-kind="em"], [data-kind="px"])::after {
-  content: " ";
-  width: var(--raw-css);
-  background-color: #cccccc1f;
-  border-left: 1px solid var(--foreground-color);
-  border-right: 1px solid var(--foreground-color);
-  height: 0.75em;
-  margin: 0.25em;
+:is([data-kind="rem"], [data-kind="em"], [data-kind="px"]) {
+  &:has(> [data-value*="-"])::after {
+    background-color: rgba(255, 0, 0, 0.2);
+    width: calc(var(--raw-css) * -1);
+  }
+  &::after {
+    content: " ";
+    width: var(--raw-css);
+    background-color: #cccccc1f;
+    border-left: 1px solid var(--foreground-color);
+    border-right: 1px solid var(--foreground-color);
+    height: 0.75em;
+    margin: 0.25em;
+  }
 }
 [data-kind="plain_text"] {
   display: flex;
@@ -487,4 +499,61 @@ input[type="search"] {
       content: "~";
     }
   }
+}
+[data-kind="adjacent_sibling_selector"] {
+  display: flex;
+  gap: 0.25em;
+  & > [data-attr="rhs"] {
+    display: flex;
+    gap: 0.25em;
+    &::before {
+      content: "+";
+    }
+  }
+}
+[data-kind] {
+  width: max-content;
+}
+[data-attr="name"][data-value="margin"]
+  + [data-attr="expr"]
+  > [data-kind="multi_part_value"]
+  > [data-attr="parts"]:has(:nth-child(4)) {
+  > ::before {
+    font-size: 0.8em;
+    margin: 0.2em;
+    color: var(--rule-name-color);
+    opacity: 0.8;
+  }
+  > :nth-child(1)::before {
+    content: "top:";
+  }
+  > :nth-child(2)::before {
+    content: "right:";
+  }
+  > :nth-child(3)::before {
+    content: "bottom:";
+  }
+  > :nth-child(4)::before {
+    content: "left:";
+  }
+}
+
+[data-kind="em"] [data-attr="value"]:not([data-value*="."])::after {
+  content: ".0em";
+}
+[data-kind="rem"] [data-attr="value"]:not([data-value*="."])::after {
+  content: ".0rem";
+}
+
+[data-kind="decl"] {
+  padding: 0.25em;
+  background-color: rgb(35, 35, 35);
+}
+
+[data-kind="decl"] [data-kind="decl"] {
+  background-color: rgb(40, 40, 40);
+}
+
+[data-kind="decl"] [data-kind="decl"] [data-kind="decl"] {
+  background-color: rgb(45, 45, 45);
 }

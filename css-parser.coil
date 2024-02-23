@@ -2,6 +2,8 @@ import {test, capture!, chomp!, trimmed, trimmed!, trim, debug} from "./parse-ut
 
 let digit_regex = /^[+-]?([0-9]*[.])?[0-9]+/
 
+def attr(value) = {attr_only: true, value}
+
 def* parse_class_selector
   yield chomp!(".")
   let name = yield capture!(/^(\w|-)+/)
@@ -346,12 +348,7 @@ def* parse_self_sub_decl
     rules:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {
-    kind: :decl,
-    query,
-    rules,
-    self_sub_decl: {attr_only: true, value: true}
-  }
+  return {kind: :decl, query, rules, self_sub_decl: attr(true)}
 end
 
 def* parse_sub_decl
@@ -362,12 +359,7 @@ def* parse_sub_decl
     rules:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {
-    kind: :decl,
-    query,
-    rules,
-    sub_decl: {attr_only: true, value: true}
-  }
+  return {kind: :decl, query, rules, sub_decl: attr(true)}
 end
 
 def* parse_statement
