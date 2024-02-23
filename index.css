@@ -537,23 +537,47 @@ input[type="search"] {
     content: "left:";
   }
 }
-
 [data-kind="em"] [data-attr="value"]:not([data-value*="."])::after {
   content: ".0em";
 }
 [data-kind="rem"] [data-attr="value"]:not([data-value*="."])::after {
   content: ".0rem";
 }
-
 [data-kind="decl"] {
   padding: 0.25em;
   background-color: rgb(40, 40, 40);
 }
-
 [data-kind="decl"] [data-kind="decl"] {
   background-color: rgb(50, 50, 50);
 }
-
 [data-kind="decl"] [data-kind="decl"] [data-kind="decl"] {
   background-color: rgb(60, 60, 60);
+}
+[data-kind="calc"] {
+  display: flex;
+  &::before {
+    content: "calc";
+    display: flex;
+    color: var(--function-color);
+  }
+  > [data-attr="expr"] {
+    display: flex;
+    &::before {
+      content: "(";
+    }
+    &::after {
+      content: ")";
+    }
+  }
+}
+[data-kind="multiply"] {
+  display: flex;
+  gap: 0.5em;
+  > [data-attr="lhs"] {
+    display: flex;
+    gap: 0.5em;
+    &::after {
+      content: "*";
+    }
+  }
 }

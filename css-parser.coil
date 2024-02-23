@@ -271,6 +271,29 @@ def* parse_string_value
   return {kind: :string, value}
 end
 
+def* parse_calc_value
+  yield chomp!("calc")
+  yield trimmed!(chomp!("("))
+  let expr = yield* parse_value_step()
+  while !yield trimmed(test(")"))
+    if yield trimmed(test("*"))
+      yield trimmed!(chomp!("*"))
+      expr = {kind: :multiply, lhs: expr, rhs: yield* parse_value_step()}
+    else
+      expr.log()
+      (yield debug()).log()
+      panic!("invalid operator")
+    end
+  end
+  yield trimmed!(chomp!(")"))
+  return {kind: :calc, expr}
+end
+
+def* parse_num_value
+  let value = yield capture!(digit_regex)
+  return {kind: :num, value}
+end
+
 def* parse_value_step
   if yield test("rgba")
     return yield* parse_rgba_value()
@@ -294,8 +317,13 @@ def* parse_value_step
     return yield* parse_pct_value()
   else if yield test(/^var\(--(\w|-)+\)/)
     return yield* parse_var_value()
+  else if yield test(digit_regex)
+    return yield* parse_num_value()
   else if yield test("var")
+    -- .. this should probably just be done in parse_var_value
     return yield* parse_var_with_default_value()
+  else if yield test("calc")
+    return yield* parse_calc_value()
   else
     return yield* parse_text_value()
   end

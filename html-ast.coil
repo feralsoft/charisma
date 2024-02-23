@@ -25,6 +25,9 @@ export let compile = match_on(:kind){
   def :plain_text({value}) = value
   def :rem({value}) = str(value "rem")
   def :em({value}) = str(value "em")
+  def :calc({expr}) = str("calc(" compile(expr) ")")
+  def :num({value}) = value
+  def :multiply({lhs, rhs}) = str(compile(lhs) " * " compile(rhs))
   def :attribute_selector_no_match({name}) = str("[" name "]")
   def :attribute_selector_equals({name value}) = str("[" name "=\"" value"\"]")
   def :string({value}) = str("\"" value "\"")
