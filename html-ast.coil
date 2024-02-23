@@ -32,6 +32,11 @@ export let compile = match_on(:kind){
   def :attribute_selector_equals({name value}) = str("[" name "=\"" value"\"]")
   def :string({value}) = str("\"" value "\"")
   def :multi_part_value({parts}) = parts.map(compile).join(" ")
+  def :direct_descendent({lhs, rhs}) = str(compile(lhs) " > " compile(rhs))
+  def :sibling_selector({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
+  def :adjacent_sibling_selector({lhs, rhs}) = str(compile(lhs) " + " compile(rhs))
+  def :or({lhs, rhs}) = str(compile(lhs) " , " compile(rhs))
+  def :element_selector({name}) = name
 }
 
 export def to_html(ast_node)
@@ -39,15 +44,16 @@ export def to_html(ast_node)
   for [key val] of ast_node.delete!(:kind, :nid)
     if val.nil?()
       continue
+    end if val:attr_only
+      elem:setAttribute(str("data-" key), val:value)
+      continue
     end
     let attr_elem = :div{"data-attr" => key}
     -- this is temporary, this should be done as a plugin :|
     if Set["variable" "rule"](elem:dataset:kind) and key == "expr"
       attr_elem:style:setProperty("--raw-css", compile(ast_node:expr))
     end
-    if val:attr_only
-      elem:setAttribute(str("data-" key), val:value)
-    else if type_of(val) == "string"
+    if type_of(val) == "string"
       let child = :div{
         "data-value" => val
         "data-numeric" => Number(val).pipe(Number:isNaN !_)
@@ -83,17 +89,14 @@ def Underscore:prototype.to_ast = this:insert(to_ast)
 def HTMLElement:prototype.to_ast()
   if let kind = this:getAttribute("data-kind")
     let node = {kind: kind}
-    for elem of this:children.filter(|elem| elem:hasAttribute("data-attr"))
+    for elem of this.query_all(":scope > [data-attr]")
       node.(elem:getAttribute("data-attr")) = elem.to_ast()
     end
     return node
-  end
-  if this:children.filter(|elem| elem:hasAttribute("data-attr")).count() == 0
+  end if this.query(":scope > [data-value]")
     return this:textContent
   else if this:getAttribute("data-array") == "true"
-    return this:children
-      .filter(|elem| elem:hasAttribute("data-kind"))
-      .map(|node| node.to_ast()).into([])
+    return this.query_all(":scope > [data-kind]").map(_.to_ast()).into([])
   else
     return this:children.0.to_ast()
   end

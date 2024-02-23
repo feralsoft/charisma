@@ -15,7 +15,7 @@ export def match_on(key) = {
     ...entries
     def Meta:invoke(object)
       if !this.has?(object.key)
-        object.log()
+        object.log(key)
         panic!(str("key not found: `" object.key "`"))
       end
       return this.(object.key)(object)

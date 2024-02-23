@@ -400,8 +400,8 @@ input[type="search"] {
   border-color: var(--outline-color);
 }
 
-.searched {
-  background-color: #9e6a0355;
+.--css-edit-editor .searched {
+  background-color: #9e6a032f;
   &.focused {
     outline: 0.1em solid #9e6a03;
   }
@@ -437,7 +437,7 @@ input[type="search"] {
   ~ [data-attr]
   > [data-kind]::after,
 :is([data-kind="rem"], [data-kind="em"], [data-kind="px"]) {
-  &:has(> [data-value*="-"])::after {
+  &:has([data-value*="-"])::after {
     background-color: rgba(255, 0, 0, 0.2);
     width: calc(var(--raw-css) * -1);
   }
@@ -454,7 +454,7 @@ input[type="search"] {
 [data-kind="plain_text"] {
   display: flex;
 }
-[data-attr="name"][data-value*="color"]
+[data-attr="name"]:has([data-value*="color"])
   ~ [data-attr]
   > :is(
     [data-kind="hex"],
@@ -580,4 +580,7 @@ input[type="search"] {
   max-width: 100%;
   width: 100%;
   overflow-y: scroll;
+}
+[data-kind="pct"] > [data-attr="value"]::after {
+  content: "%";
 }
