@@ -48,16 +48,26 @@ export def to_html(ast_node)
     if val:attr_only
       elem:setAttribute(str("data-" key), val:value)
     else if type_of(val) == "string"
-      attr_elem:setAttribute("data-value" val)
-      attr_elem:setAttribute("contenteditable", true)
+      let child = :div{
+        "data-value" => val
+        "data-numeric" => Number(val).pipe(Number:isNaN !_)
+        contenteditable: true
+        children: val
+      }
       attr_elem:style:setProperty("--value" val)
-      if Number(val).pipe(Number:isNaN !_)
-        attr_elem:setAttribute("data-numeric", true)
-      end
-      attr_elem:append(val)
+      attr_elem:append(child)
     else if val instanceof Array
       attr_elem:setAttribute("data-array" true)
       attr_elem:append(...val.map(to_html))
+    else if type_of(val) == "number"
+      let child = :div{
+        "data-value" => val
+        "data-numeric" => true
+        contenteditable: true
+        children: val
+      }
+      attr_elem:style:setProperty("--value" val)
+      attr_elem:append(val)
     else
       attr_elem:append(to_html(val))
     end
@@ -78,7 +88,7 @@ def HTMLElement:prototype.to_ast()
     end
     return node
   end
-  if this:childElementCount == 0
+  if this:children.filter(|elem| elem:hasAttribute("data-attr")).count() == 0
     return this:textContent
   else if this:getAttribute("data-array") == "true"
     return this:children
