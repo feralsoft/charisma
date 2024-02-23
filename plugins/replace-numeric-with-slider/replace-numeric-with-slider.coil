@@ -12,7 +12,7 @@ def replace_numeric_with_slider({eval_css, signal, root})
   let start_y = nil
   let active_elem = nil
   let factor = nil
-  for elem of root.query_all("[data-numeric]")
+  for elem of root.query_all("[data-numeric=true]")
     signal:listen(elem "mousedown" |e| {
       e:preventDefault()
       start_y = e:clientY
