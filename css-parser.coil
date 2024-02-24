@@ -150,6 +150,7 @@ def* parse_query(end_pattern, skip_step)
       yield trimmed!(chomp!("+"))
       kind = :adjacent_sibling_selector
     else
+      -- this should be handled separately!!
       kind = :selector_modifier
     end
     let rhs = yield* parse_query_step()

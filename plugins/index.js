@@ -5,6 +5,7 @@ import replace_numeric_with_slider from "./replace-numeric-with-slider/replace-n
 import add_new_rule from "./add-new-rule/add-new-rule.coil";
 import delete_node from "./delete-node/delete-node.coil";
 import focus from "./focus/focus.coil";
+import toggle_query_wrapping from "./toggle-query-wrapping/toggle-query-wrapping.coil";
 
 export default {
   copy_paste,
@@ -14,4 +15,5 @@ export default {
   add_new_rule,
   delete_node,
   focus,
+  toggle_query_wrapping,
 };

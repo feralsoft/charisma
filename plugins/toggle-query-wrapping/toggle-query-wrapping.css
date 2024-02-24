@@ -1,0 +1,18 @@
+[data-wrap] {
+  background: rgba(31, 31, 31, 0.5);
+  flex-direction: column;
+  &[data-kind="pseudo_selector_with_args"] > [data-attr="args"] {
+    flex-direction: column;
+    margin-left: 1em;
+  }
+  > [data-attr="rhs"] {
+    display: flex;
+    margin-left: 1em;
+    [data-kind] {
+      height: unset;
+    }
+  }
+}
+[data-wrap] [data-wrap] > [data-attr="rhs"] {
+  margin-left: 0;
+}

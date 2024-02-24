@@ -76,7 +76,7 @@
 }
 [data-kind="pseudo_element_selector"] > [data-attr="name"] {
   color: var(--class-color);
-  &::before {
+  [data-value]::before {
     content: "::";
   }
 }
@@ -100,10 +100,10 @@
 [data-kind="string"] {
   color: var(--string-color);
 }
-[data-kind="decl"][data-self_sub_decl="true"]
-  > [data-attr="query"]
-  > [data-kind]::before {
+/* this is a hack :( */
+[data-kind="decl"][data-self_sub_decl="true"] > [data-attr="query"]::before {
   content: "&";
+  margin-right: -2px;
   color: var(--foreground-color);
 }
 [data-kind="decl"] > [data-attr="query"] {
@@ -321,7 +321,7 @@
       content: ",";
     }
   }
-  &::before {
+  > [data-attr="name"] > [data-value]::before {
     content: ":";
     color: var(--class-color);
   }
@@ -480,6 +480,8 @@ input[type="search"] {
 }
 [data-kind="pseudo_element_selector"] {
   display: flex;
+  flex-direction: column;
+  justify-content: end;
 }
 [data-kind="wildcard"]::before {
   content: "*";
@@ -583,4 +585,7 @@ input[type="search"] {
 }
 [data-kind="pct"] > [data-attr="value"]::after {
   content: "%";
+}
+[data-kind] {
+  height: min-content;
 }

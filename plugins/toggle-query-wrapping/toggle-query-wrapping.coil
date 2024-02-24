@@ -1,0 +1,20 @@
+import "./toggle-query-wrapping.css"
+
+let combinators = [
+  :or
+  :direct_descendent
+  :pseudo_selector_with_args
+  :sibling_selector
+]
+
+def toggle_query_wrapping({signal})
+  for combinator of $$(combinators.map(str:fmt("[data-kind=" _ "]")).join(", "))
+    signal:listen(combinator "dblclick" |e| {
+      e:stopPropagation()
+      e:preventDefault()
+      combinator:toggleAttribute("data-wrap")
+    })
+  end
+end
+
+export default toggle_query_wrapping
