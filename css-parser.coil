@@ -1,4 +1,4 @@
-import {test, capture!, chomp!, trimmed, trimmed!, trim, debug} from "./parse-utils.coil"
+import {test capture! chomp! trimmed trimmed! trim_before! trim debug run} from "./parse-utils.coil"
 
 let digit_regex = /^[+-]?([0-9]*[.])?[0-9]+/
 
@@ -43,7 +43,7 @@ def* parse_pseudo_selector_with_args
       yield trimmed!(chomp!(","))
     end
   end
-  yield trimmed!(chomp!(")"))
+  yield trim_before!(chomp!(")"))
   return {kind: :pseudo_selector_with_args, name, args}
 end
 
@@ -73,7 +73,7 @@ def* parse_attribute_selector_equals
   yield chomp!("\"")
   let value = yield capture!(/^((?!").)+/)
   yield chomp!("\"")
-  yield trimmed!(chomp!("]"))
+  yield trim_before!(chomp!("]"))
   return {kind: :attribute_selector_equals, name, value}
 end
 
@@ -84,7 +84,7 @@ def* parse_attribute_selector_contains
   yield chomp!("\"")
   let value = yield capture!(/^((?!").)+/)
   yield chomp!("\"")
-  yield trimmed!(chomp!("]"))
+  yield trim_before!(chomp!("]"))
   return {kind: :attribute_selector_contains, name, value}
 end
 
@@ -136,9 +136,6 @@ def* parse_query(end_pattern, skip_step)
     if yield trimmed(test(">"))
       yield trimmed!(chomp!(">"))
       kind = :direct_descendent
-    else if yield test(" ")
-      yield trim()
-      kind = :child_selector
     else if yield trimmed(test(","))
       yield trimmed!(chomp!(","))
       let rhs = yield* parse_query(end_pattern)
@@ -149,6 +146,9 @@ def* parse_query(end_pattern, skip_step)
     else if yield trimmed(test("+"))
       yield trimmed!(chomp!("+"))
       kind = :adjacent_sibling_selector
+    else if yield test(" ")
+      yield trim()
+      kind = :child_selector
     else
       -- this should be handled separately!!
       kind = :selector_modifier
@@ -280,6 +280,9 @@ def* parse_calc_value
     if yield trimmed(test("*"))
       yield trimmed!(chomp!("*"))
       expr = {kind: :multiply, lhs: expr, rhs: yield* parse_value_step()}
+    else if yield trimmed(test("-"))
+      yield trimmed!(chomp!("-"))
+      expr = {kind: :subtract, lhs: expr, rhs: yield* parse_value_step()}
     else
       expr.log()
       (yield debug()).log()

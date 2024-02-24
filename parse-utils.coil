@@ -40,8 +40,8 @@ let GeneratorFunction = generator:constructor
 
 export protocol run
 
-def GeneratorFunction:prototype.run(string)
-  let [gen result] = [this() nil]
+def GeneratorFunction:prototype.run(string, ...args)
+  let [gen result] = [this(...args) nil]
   while let {value, done} = gen:next(result)
     if done
       return [value string]
@@ -58,6 +58,7 @@ export def chomp!(pattern) = {kind: :chomp!, pattern}
 export def capture!(pattern, group) = {kind: :capture!, pattern, group: group or 0}
 export def trimmed(parser) = {kind: :trimmed, parser}
 export def trimmed!(parser) = {kind: :trimmed!, parser}
+export def trim_before!(parser) = {kind: :trim_before!, parser}
 export def trim = {kind: :trim}
 export def debug = {kind: :debug}
 
@@ -71,6 +72,11 @@ end
 def :trimmed!.run({parser}, string)
   let [result s] = parser.run(string:trimLeft())
   return [result s:trimLeft()]
+end
+
+def :trim_before!.run({parser}, string)
+  let [result s] = parser.run(string:trimLeft())
+  return [result s]
 end
 
 def :test.run({pattern}, string) = [pattern.matches?(string).as_bool(), string]

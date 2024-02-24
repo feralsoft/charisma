@@ -415,6 +415,30 @@ input[type="search"] {
   display: flex;
   gap: 0.5em;
 }
+[data-attr="name"]:has([data-value*="color"])
+  ~ [data-attr]
+  > :is(
+    [data-kind="hex"],
+    [data-kind="hex_a"],
+    [data-kind="hex_short"],
+    [data-kind="rgb"],
+    [data-kind="rgba"],
+    [data-kind="plain_text"]
+  )::after {
+  content: " ";
+  background-color: var(--raw-css);
+  width: 0.8em;
+  height: 0.8em;
+  margin: 0.2em;
+  margin-left: 0.5em;
+  outline: 0.1em solid rgba(255, 255, 255, 0.1);
+}
+[data-kind="self_query"] {
+  display: flex;
+  &::before {
+    content: "&";
+  }
+}
 
 *:focus {
   outline: none;
@@ -454,30 +478,6 @@ input[type="search"] {
 [data-kind="plain_text"] {
   display: flex;
 }
-[data-attr="name"]:has([data-value*="color"])
-  ~ [data-attr]
-  > :is(
-    [data-kind="hex"],
-    [data-kind="hex_a"],
-    [data-kind="hex_short"],
-    [data-kind="rgb"],
-    [data-kind="rgba"],
-    [data-kind="plain_text"]
-  )::after {
-  content: " ";
-  background-color: var(--raw-css);
-  width: 0.8em;
-  height: 0.8em;
-  margin: 0.2em;
-  margin-left: 0.5em;
-  outline: 0.1em solid rgba(255, 255, 255, 0.1);
-}
-[data-kind="self_query"] {
-  display: flex;
-  &::before {
-    content: "&";
-  }
-}
 [data-kind="pseudo_element_selector"] {
   display: flex;
   flex-direction: column;
@@ -511,7 +511,7 @@ input[type="search"] {
 [data-kind] {
   width: max-content;
 }
-[data-attr="name"][data-value="margin"]
+[data-attr="name"]:has([data-value="margin"])
   + [data-attr="expr"]
   > [data-kind="multi_part_value"]
   > [data-attr="parts"]:has(:nth-child(4)) {
@@ -588,4 +588,17 @@ input[type="search"] {
 }
 [data-kind] {
   height: min-content;
+}
+[data-kind="decl"] {
+  width: calc(99% - 1em);
+}
+[data-kind="subtract"] {
+  display: flex;
+  gap: 0.25em;
+  > [data-attr="lhs"] {
+    gap: 0.25em;
+    &::after {
+      content: "-";
+    }
+  }
 }
