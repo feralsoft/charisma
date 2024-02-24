@@ -7,7 +7,7 @@ export let compile = match_on(:kind){
   def :decl({query rules self_sub_decl kind})
     if self_sub_decl
       if query:rhs and !query:lhs
-        if kind != "direct_descendent"
+        if kind != :direct_descendent
           panic!("ahhhh")
         end
         return str(compile(query:rhs) " {\n  " rules.map(compile).join(";\n  ") ";\n}")
@@ -107,7 +107,7 @@ def Underscore:prototype.to_ast = this:insert(to_ast)
 
 def HTMLElement:prototype.to_ast()
   if let kind = this:getAttribute("data-kind")
-    let node = {kind: kind}
+    let node = {kind: kind.as_kw()}
     for elem of this.query_all(":scope > [data-attr]")
       node.(elem:getAttribute("data-attr")) = elem.to_ast()
     end
