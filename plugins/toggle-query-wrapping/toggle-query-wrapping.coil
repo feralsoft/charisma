@@ -7,8 +7,8 @@ let combinators = [
   :sibling_selector
 ]
 
-def toggle_query_wrapping({signal})
-  for combinator of $$(combinators.map(str:fmt("[data-kind=" _ "]")).join(", "))
+def toggle_query_wrapping({root, signal})
+  for combinator of root.query_all(combinators.map(str:fmt("[data-kind=" _ "]")).join(", "))
     signal:listen(combinator "dblclick" |e| {
       e:stopPropagation()
       e:preventDefault()
