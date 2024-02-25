@@ -163,7 +163,7 @@
     content: "rgb";
     color: var(--function-color);
   }
-  & > [data-attr]:not(:last-child)::after {
+  & > [data-attr]:not(:last-of-type)::after {
     content: ",";
     color: #a0a0a0;
   }

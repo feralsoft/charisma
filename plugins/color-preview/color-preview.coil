@@ -14,7 +14,7 @@ def preview(value, oninput)
     -- TODO: why does this go to shit when I do :oninput? :(
     def :onchange(e) = oninput(parse_value_step.run(e:target:value).0)
   }
-  return :div{
+  return :button{
     class: "color-preview"
     children: [color_picker]
     style: {"--color" => value}
