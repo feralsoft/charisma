@@ -415,31 +415,12 @@ input[type="search"] {
   display: flex;
   gap: 0.5em;
 }
-[data-attr="name"]:has([data-value*="color"])
-  ~ [data-attr]
-  > :is(
-    [data-kind="hex"],
-    [data-kind="hex_a"],
-    [data-kind="hex_short"],
-    [data-kind="rgb"],
-    [data-kind="rgba"],
-    [data-kind="plain_text"]
-  )::after {
-  content: " ";
-  background-color: var(--raw-css);
-  width: 0.8em;
-  height: 0.8em;
-  margin: 0.2em;
-  margin-left: 0.5em;
-  outline: 0.1em solid rgba(255, 255, 255, 0.1);
-}
 [data-kind="self_query"] {
   display: flex;
   &::before {
     content: "&";
   }
 }
-
 *:focus {
   outline: none;
 }

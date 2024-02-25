@@ -1,0 +1,37 @@
+import "./color-preview.css"
+import {to_ast, compile, to_html} from "../../html-ast.coil"
+import {parse_value_step} from "../../css-parser.coil"
+import {run} from "../../parse-utils.coil"
+
+let kinds = [:hex :hex_a :hex_short :rgb :rgba]
+
+let query = kinds.map(str:fmt("[data-kind=\"" _ "\"]")).join(", ")
+
+def preview(value, oninput)
+  let color_picker = :input{
+    type: :color,
+    value,
+    def :onchange(e) = oninput(parse_value_step.run(e:target:value).0)
+  }
+  return :div{
+    class: "color-preview"
+    children: [color_picker]
+    style: {"--color" => value}
+    def :onclick = color_picker:showPicker()
+  }
+end
+
+def color_preview({root rebuild})
+  $$(".color-preview").each(|node| node:remove())
+  for color of root.query_all(query)
+    let node = color.to_ast()
+    let elem = preview(compile(node) |node| {
+      let new_color = to_html(node)
+      color:replaceWith(new_color)
+      rebuild(color)
+    })
+    color:append(elem)
+  end
+end
+
+export default color_preview

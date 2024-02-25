@@ -7,6 +7,7 @@ import delete_node from "./delete-node/delete-node.coil";
 import focus from "./focus/focus.coil";
 import toggle_query_wrapping from "./toggle-query-wrapping/toggle-query-wrapping.coil";
 import size_preview from "./size-preview/size-preview.coil";
+import color_preview from "./color-preview/color-preview.coil";
 
 export default {
   copy_paste,
@@ -18,4 +19,5 @@ export default {
   focus,
   toggle_query_wrapping,
   size_preview,
+  color_preview,
 };

@@ -1,0 +1,13 @@
+.color-preview {
+  display: flex;
+  background-color: var(--color);
+  width: 0.8em;
+  height: 0.8em;
+  margin: 0.2em;
+  margin-left: 0.5em;
+  outline: 0.1em solid rgba(255, 255, 255, 0.1);
+}
+
+.color-preview input[type="color"] {
+  display: none;
+}

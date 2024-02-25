@@ -298,7 +298,7 @@ def* parse_num_value
   return {kind: :num, value}
 end
 
-def* parse_value_step
+export def* parse_value_step
   if yield test("rgba")
     return yield* parse_rgba_value()
   else if yield test("rgb")

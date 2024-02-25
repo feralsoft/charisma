@@ -8,7 +8,10 @@ def Keyword:prototype.(Meta:from_entries)(entries)
   entries = entries.into({})
   let children = entries:children or []
   let elem = document:createElement(this)
-  for [key val] of entries.delete!(:children).reject(|[key _]| key:startsWith("on"))
+  for [key val] of entries:style
+    elem:style:setProperty(key, val)
+  end
+  for [key val] of entries.delete!(:children :style).reject(|[key _]| key:startsWith("on"))
     elem:setAttribute(key val)
   end
   for [event_name f] of entries

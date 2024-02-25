@@ -3,16 +3,16 @@ import {to_ast, compile} from "../../html-ast.coil"
 import {match_on} from "../../utils.coil"
 
 let create_nodes = match_on(:kind){
-  def :rem({value})
-    let elem = :div{class: "size-preview", "data-original-value" => value}
-    elem:style:setProperty("--size", str(value "rem"))
-    return [elem]
-  end
-  def :px({value})
-    let elem = :div{class: "size-preview", "data-original-value" => value}
-    elem:style:setProperty("--size", str(value "px"))
-    return [elem]
-  end
+  def :rem({value}) = [:div{
+    class: "size-preview",
+    style: {"--size" => str(value "rem")}
+    "data-original-value" => value
+  }]
+  def :px({value}) = [:div{
+    style: { "--size" => str(value "px") }
+    class: "size-preview",
+    "data-original-value" => value
+  }]
   def :em({value}, get_query)
     let query = get_query()
     if query.has?("::")
@@ -21,10 +21,11 @@ let create_nodes = match_on(:kind){
     end
     let out = []
     for size of $$(get_query()).map(getComputedStyle :fontSize).reject(_.empty?()).into(Set[])
-      let elem = :div{class: "size-preview", "data-original-value" => value}
-      elem:style:setProperty("--size", size)
-      elem:style:setProperty("--factor", value)
-      out:push(elem)
+      out:push(:div{
+        class: "size-preview",
+        style: {"--size" => size, "--factor" => value}
+        "data-original-value" => value
+      })
     end
 
     return out
