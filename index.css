@@ -259,7 +259,7 @@
   display: flex;
   [data-value]::before,
   [data-value]::after {
-    color: #d8a90c;
+    color: var(--brace-color);
   }
   & > [data-attr="name"] {
     color: var(--attribute-color);
@@ -408,7 +408,7 @@ input[type="search"] {
 }
 [data-kind="decl"]::after,
 [data-kind="decl"] > [data-attr="query"]::after {
-  color: #d8a90c;
+  color: var(--brace-color);
 }
 
 [data-kind="multi_part_value"] > [data-attr="parts"] {

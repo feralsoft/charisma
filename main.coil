@@ -145,10 +145,10 @@ def init(root)
         let {sheet, attributes} = $("[data-vite-dev-id$=\"" html_node:getAttribute("data-file-path") "\"]")
         sheet:deleteRule(idx)
         sheet:insertRule(compile(ast_node) idx)
+        -- TODO: pull this out into a function or something
         if !fetching
-          -- make sure
           fetching = true
-          -- TODO: use a websocket, it'll be much faster probably
+          -- TODO: look into using a websocket
           await fetch("http://localhost:5173/update_css", {
             method: "POST",
             body: JSON:stringify({

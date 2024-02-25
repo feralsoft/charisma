@@ -11,6 +11,7 @@ def preview(value, oninput)
   let color_picker = :input{
     type: :color,
     value,
+    -- TODO: why does this go to shit when I do :oninput? :(
     def :onchange(e) = oninput(parse_value_step.run(e:target:value).0)
   }
   return :div{
@@ -22,13 +23,13 @@ def preview(value, oninput)
 end
 
 def color_preview({root rebuild})
-  $$(".color-preview").each(|node| node:remove())
+  root.query_all(".color-preview").each(|node| node:remove())
   for color of root.query_all(query)
     let node = color.to_ast()
     let elem = preview(compile(node) |node| {
       let new_color = to_html(node)
       color:replaceWith(new_color)
-      rebuild(color)
+      rebuild(new_color)
     })
     color:append(elem)
   end
