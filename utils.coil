@@ -13,12 +13,12 @@ export def call_with(...args) = {
 export def match_on(key) = {
   def Meta:from_entries(entries) = {
     ...entries
-    def Meta:invoke(object)
+    def Meta:invoke(object, ...args)
       if !this.has?(object.key)
         object.log(key)
         panic!(str("key not found: `" object.key "`"))
       end
-      return this.(object.key)(object)
+      return this.(object.key)(object, ...args)
     end
   }
 }

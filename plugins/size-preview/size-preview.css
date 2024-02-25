@@ -1,0 +1,13 @@
+.size-preview {
+  display: flex;
+  width: calc(var(--size) * var(--factor, 1));
+  background-color: #cccccc1f;
+  border-left: 1px solid var(--foreground-color);
+  border-right: 1px solid var(--foreground-color);
+  height: 0.75em;
+  margin: 0.25em;
+  &[data-original-value*="-"] {
+    background-color: #ff000033;
+    width: calc(var(--size) * -1 * var(--factor, 1));
+  }
+}

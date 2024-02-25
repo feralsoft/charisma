@@ -7,7 +7,7 @@ let increment_factor = {
   :px => 1
 }
 
-def replace_numeric_with_slider({eval_css, signal, root})
+def replace_numeric_with_slider({rebuild, signal, root})
   let original_value = nil
   let start_y = nil
   let active_elem = nil
@@ -29,7 +29,7 @@ def replace_numeric_with_slider({eval_css, signal, root})
       active_elem:replaceChildren(new_value)
       let expr_node = active_elem:closest("[data-attr=\"expr\"]")
       expr_node:style:setProperty("--raw-css", compile(expr_node.query("[data-kind]").to_ast()))
-      eval_css(expr_node)
+      rebuild(expr_node)
     end
   })
   signal:listen(window "mouseup" |e| active_elem = nil)

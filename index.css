@@ -453,28 +453,6 @@ input[type="search"] {
   }
 }
 
-[data-attr="name"]:is(
-    [data-value*="gap"],
-    [data-value*="size"],
-    [data-value*="padding"]
-  )
-  ~ [data-attr]
-  > [data-kind]::after,
-:is([data-kind="rem"], [data-kind="em"], [data-kind="px"]) {
-  &:has([data-value*="-"])::after {
-    background-color: rgba(255, 0, 0, 0.2);
-    width: calc(var(--raw-css) * -1);
-  }
-  &::after {
-    content: " ";
-    width: var(--raw-css);
-    background-color: #cccccc1f;
-    border-left: 1px solid var(--foreground-color);
-    border-right: 1px solid var(--foreground-color);
-    height: 0.75em;
-    margin: 0.25em;
-  }
-}
 [data-kind="plain_text"] {
   display: flex;
 }

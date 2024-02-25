@@ -6,6 +6,7 @@ import add_new_rule from "./add-new-rule/add-new-rule.coil";
 import delete_node from "./delete-node/delete-node.coil";
 import focus from "./focus/focus.coil";
 import toggle_query_wrapping from "./toggle-query-wrapping/toggle-query-wrapping.coil";
+import size_preview from "./size-preview/size-preview.coil";
 
 export default {
   copy_paste,
@@ -16,4 +17,5 @@ export default {
   delete_node,
   focus,
   toggle_query_wrapping,
+  size_preview,
 };
