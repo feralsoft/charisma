@@ -1,0 +1,28 @@
+import "./flex-preview.css"
+import {parse_rule} from "../../css-parser.coil"
+import {run} from "../../parse-utils.coil"
+import {to_html} from "../../html-ast.coil"
+
+def direction(elem) = :div{
+  class: "flex-direction"
+  def :onclick
+    if this:classList:contains("flipped")
+      elem:closest("[data-attr=rules]")
+        .query("[data-kind=rule]:has(> [data-attr=name] [data-value=\"flex-direction\"])")
+        .:remove()
+      this:classList:remove("flipped")
+    else
+      elem:closest("[data-attr=rules]").query("[data-kind]:last-of-type")
+        .:after(parse_rule.run("flex-direction: column;").0.pipe(to_html))
+      this:classList:add("flipped")
+    end
+  end
+}
+
+def flex_preview({root})
+  for flex_rule of root.query_all("[data-kind=rule]:has(> [data-attr=name] > [data-value=display]) > [data-attr=expr] [data-kind]:has([data-value=flex])")
+    flex_rule:append(direction(flex_rule))
+  end
+end
+
+export default flex_preview

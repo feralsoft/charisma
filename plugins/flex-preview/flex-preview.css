@@ -1,0 +1,42 @@
+:has(> .flex-direction) {
+  display: flex;
+  gap: 0.25em;
+}
+
+.flex-direction {
+  cursor: pointer;
+  --color: #ccccccbb;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 1px;
+  &.flipped {
+    margin-left: 0.25em;
+    width: 0.5em;
+    height: 1em;
+    border-top: 2px solid var(--color);
+    border-bottom: 2px solid var(--color);
+    &::after {
+      content: " ";
+      outline: 1px solid var(--color);
+      position: absolute;
+      height: 1em;
+      margin-left: 0.25em;
+    }
+  }
+  &:not(.flipped) {
+    margin-top: 0.4em;
+    width: 1em;
+    height: 0.5em;
+    border: none;
+    border-left: 2px solid var(--color);
+    border-right: 2px solid var(--color);
+    &::after {
+      content: " ";
+      outline: 1px solid var(--color);
+      position: absolute;
+      width: 1em;
+      height: 0;
+      margin-top: 0.25em;
+      margin-left: 0;
+    }
+  }
+}

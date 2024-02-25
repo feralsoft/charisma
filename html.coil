@@ -55,3 +55,10 @@ def Node:prototype.query_all(...strs)
   end
   return results
 end
+
+def window:assert__b(cond, msg, ...printables)
+  if !cond
+    console:log(printables)
+    panic(msg)
+  end
+end
