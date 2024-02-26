@@ -2,7 +2,6 @@ import "./update-text.css"
 
 def update_text({root, signal, rebuild})
   for editable of root.query_all("[data-value][contenteditable]")
-    signal:listen(editable "click" |e| e:target:focus())
     signal:listen(editable "blur" |e| {
       e:target:classList:add("edited")
       setTimeout(|| e:target:classList:remove("edited") 2000)

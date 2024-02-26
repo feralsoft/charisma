@@ -72,7 +72,7 @@ export def to_html(ast_node)
         "data-value" => val
         "data-numeric" => Number(val).pipe(Number:isNaN !_)
         contenteditable: true
-        children: val
+        children: [val]
       }
       attr_elem:style:setProperty("--value" val)
       attr_elem:append(child)

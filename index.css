@@ -130,7 +130,7 @@
     display: flex;
     gap: 0.25em;
     & > [data-attr="name"] {
-      width: max-content;
+      width: 100%;
       &::after {
         content: ":";
         color: var(--foreground-color);
