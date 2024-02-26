@@ -15,6 +15,7 @@ def replace_numeric_with_slider({rebuild, signal, root})
   for elem of root.query_all("[data-numeric=true]")
     signal:listen(elem "mousedown" |e| {
       e:preventDefault()
+      e:target:focus()
       start_y = e:clientY
       active_elem = elem
       factor = elem:closest("[data-kind]"):dataset:kind.pipe(increment_factor) or 1
