@@ -58,7 +58,9 @@ end
 
 def window:assert__b(cond, msg, ...printables)
   if !cond
-    console:log(printables)
-    panic(msg)
+    if !printables.empty?()
+      console:log(printables)
+    end
+    panic!(msg)
   end
 end

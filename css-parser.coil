@@ -342,6 +342,7 @@ export def* parse_value(rule_name)
 
   let parts = [yield* parse_value_step()]
   -- TODO ; or }
+  assert!(yield test(/.*;/) "expected `;`")
   while !yield trimmed(test(";"))
     yield trim()
     parts:push(yield* parse_value_step())

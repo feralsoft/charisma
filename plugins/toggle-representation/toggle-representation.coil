@@ -1,9 +1,9 @@
-import {call_with} from "../../utils.coil"
+import {match_on} from "../../utils.coil"
 import {to_ast, to_html, compile} from "../../html-ast.coil"
-import {parse_value} from "../../css-parser.coil"
+import {parse_value_step} from "../../css-parser.coil"
 import {run} from "../../parse-utils.coil"
 
-def parse_val(str) = parse_value.run(str).0
+def parse_val(str) = parse_value_step.run(str).0
 
 def rem_font_size() = getComputedStyle(document:documentElement)
   .:fontSize:split("px").0.pipe(parseInt)
@@ -13,13 +13,16 @@ def from_hex(val) = parseInt(val 16)
 def rem_to_px(val) = Number(val) * rem_font_size()
 def px_to_rem(val) = Number(val) / rem_font_size()
 
-let toggle_compile = {
+let toggle_compile = match_on(:kind){
   def :rgb({r g b}) = str("#" hex(r) hex(g) hex(b))
+  def :rgba({r g b a}) = str("#" hex(r) hex(g) hex(b) hex(a.as_num() * 100))
   def :hex({r g b}) = str("rgb(" from_hex(r) "," from_hex(g) "," from_hex(b) ")")
+  def :hex_a({r g b a}) = str("rgba(" from_hex(r) "," from_hex(g) "," from_hex(b) ", " from_hex(a) / 100 ")")
   def :rem({value}) = str(rem_to_px(value) "px")
   def :px({value}) = str(px_to_rem(value) "rem")
   def :var({name} elem)
-    let rule_name = elem:closest("[data-kind=rule]").query("[data-attr=name]"):innerText:trim().as_kw()
+    let rule_name = elem:closest("[data-kind=rule]").log().query("[data-attr=name] [data-value]").log():innerText:trim().as_kw()
+    rule_name.log()
     return elem:closest("[data-kind=decl]")
       .query("[data-attr=query]")
       .to_ast()
@@ -34,13 +37,13 @@ let enabled_nodes_query = toggle_compile.keys()
   .pipe(str:fmt(":is(" _.join(", ") ")"))
 
 def toggle_representation({signal, rebuild, root})
-  for elem of root.query_all("[data-kind]:has(> [data-value])" enabled_nodes_query)
+  for elem of root.query_all(enabled_nodes_query)
     signal:listen(elem "dblclick" |e| {
       e:stopPropagation()
       let node = elem.to_ast()
-      let new_elem = node.pipe(:kind call_with(node, elem){...toggle_compile} parse_val to_html)
+      let new_elem = toggle_compile(node, elem).pipe(parse_val to_html)
       elem:replaceWith(new_elem)
-      rebuild(elem)
+      rebuild(new_elem)
     })
   end
 end
