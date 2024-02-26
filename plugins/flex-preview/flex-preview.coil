@@ -3,8 +3,19 @@ import {parse_rule} from "../../css-parser.coil"
 import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 
-def direction(elem) = :div{
-  class: "flex-direction"
+def cx(class_name) = {
+  def Meta:from_entries(entries) = 
+    str(class_name " " entries.filter(|[_, cond]| cond).map(0).join(" "))
+}
+
+def direction(elem, rebuild) = :div{
+  class: cx("flex-direction"){
+    "flipped" => elem
+      .:closest("[data-kind=decl]")
+      .query("[data-kind=rule]:has(
+        > [data-attr=name] > [data-value=\"flex-direction\"]
+      ) > [data-attr=expr] [data-value=column]")
+  }
   def :onclick
     if this:classList:contains("flipped")
       elem:closest("[data-attr=rules]")
@@ -12,16 +23,21 @@ def direction(elem) = :div{
         .:remove()
       this:classList:remove("flipped")
     else
-      elem:closest("[data-attr=rules]").query("[data-kind]:last-of-type")
+      elem:closest("[data-attr=rules]").query(":scope > [data-kind]:last-of-type")
         .:after(parse_rule.run("flex-direction: column;").0.pipe(to_html))
       this:classList:add("flipped")
     end
+    rebuild(elem)
   end
 }
 
-def flex_preview({root})
-  for flex_rule of root.query_all("[data-kind=rule]:has(> [data-attr=name] > [data-value=display]) > [data-attr=expr] [data-kind]:has([data-value=flex])")
-    flex_rule:append(direction(flex_rule))
+def flex_preview({root, rebuild})
+  for flex_rule of root.query_all(
+    "[data-kind=rule]:has(
+      > [data-attr=name] > [data-value=display]
+    ) > [data-attr=expr] [data-kind]:has([data-value=flex]):not(:has(.flex-direction))"
+  )
+    flex_rule:append(direction(flex_rule, rebuild))
   end
 end
 
