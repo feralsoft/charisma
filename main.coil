@@ -50,6 +50,15 @@ def scroll_to(elem)
   elem:classList:add("focused")
 end
 
+def teardown_search
+  $$(".searched").each(|elem| elem:classList:remove("searched"))
+  $(".--css-edit-editor [type=search]"):remove()
+  let editor = $(".--css-edit-editor")
+  editor:removeAttribute("data-current-search-idx")
+  editor:removeAttribute("data-current-search-last-idx")
+  $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+end
+
 window:addEventListener("keydown" |e| {
   if e:key.pipe(Set["s" "r"]) and e:ctrlKey
     if !$("[type=search]")
@@ -58,7 +67,10 @@ window:addEventListener("keydown" |e| {
         class: "search",
         placeholder: "search..."
         def :onkeyup(e)
-          if e:key == "s" and e:ctrlKey
+          if e:key == "Enter"
+            $(".searched.focused"):focus()
+            teardown_search()
+          else if e:key == "s" and e:ctrlKey
             let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
             if let elem = $("[data-search-idx=\"" prev_idx + 1 "\"]")
               scroll_to(elem)
@@ -101,12 +113,7 @@ window:addEventListener("keydown" |e| {
     end
   end
   if e:key == "Escape"
-    $$(".searched").each(|elem| elem:classList:remove("searched"))
-    $(".--css-edit-editor [type=search]"):remove()
-    let editor = $(".--css-edit-editor")
-    editor:removeAttribute("data-current-search-idx")
-    editor:removeAttribute("data-current-search-last-idx")
-    $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+    teardown_search()
   end
 })
 

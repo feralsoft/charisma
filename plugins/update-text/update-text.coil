@@ -1,0 +1,20 @@
+import "./update-text.css"
+
+def update_text({root, signal, rebuild})
+  for editable of root.query_all("[data-value][contenteditable]")
+    signal:listen(editable "click" |e| e:target:focus())
+    signal:listen(editable "blur" |e| {
+      e:target:classList:add("edited")
+      setTimeout(|| e:target:classList:remove("edited") 2000)
+      rebuild(editable:closest("[data-kind]"))
+    })
+    signal:listen(editable "keydown" |e| {
+      if e:key == "Enter"
+        e:preventDefault()
+        e:target:blur()
+      end
+    })
+  end
+end
+
+export default update_text

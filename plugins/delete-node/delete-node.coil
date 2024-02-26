@@ -19,7 +19,12 @@ protocol backspaced
 -- IDEA: undo via storing the AST as an persistent immutable map
 def delete_node({root, signal, rebuild, scope})
   let interval = nil
-  for node of root.query_all("[data-kind=decl] > [data-attr=rules] *")
+  root.query_all("[contenteditable]").each(|node| signal:listen(node "keydown" |e| {
+    if !e:ctrlKey
+      e:stopPropagation()
+    end
+  }))
+  for node of root.query_all("[data-kind=decl] > [data-attr=rules] *:not([contenteditable])")
     signal:listen(node "keydown" |e| {
       if e:key == "Backspace" and node.backspaced
         if node:parentNode:closest("[data-kind]"):dataset:kind == "decl"

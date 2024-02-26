@@ -9,6 +9,7 @@ import toggle_query_wrapping from "./toggle-query-wrapping/toggle-query-wrapping
 import size_preview from "./size-preview/size-preview.coil";
 import color_preview from "./color-preview/color-preview.coil";
 import flex_preview from "./flex-preview/flex-preview.coil";
+import update_text from "./update-text/update-text.coil";
 
 export default {
   copy_paste,
@@ -22,4 +23,5 @@ export default {
   size_preview,
   color_preview,
   flex_preview,
+  update_text,
 };
