@@ -12,7 +12,7 @@ def direction(elem, rebuild) = :div{
   class: cx("flex-direction"){
     "flipped" => elem
       .:closest("[data-kind=decl]")
-      .query("[data-kind=rule]:has(
+      .query(":scope > [data-attr=rules] > [data-kind=rule]:has(
         > [data-attr=name] > [data-value=\"flex-direction\"]
       ) > [data-attr=expr] [data-value=column]")
   }
