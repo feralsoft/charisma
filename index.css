@@ -86,9 +86,9 @@
 .open-in-vscode {
   display: none;
 }
-/* [data-kind="decl"]:hover .open-in-vscode {
+[data-kind="decl"]:hover .open-in-vscode {
   display: flex;
-} */
+}
 .open-in-vscode {
   font-size: 14px;
   position: absolute;
@@ -100,7 +100,6 @@
 [data-kind="string"] {
   color: var(--string-color);
 }
-/* this is a hack :( */
 [data-kind="decl"][data-self_sub_decl="true"] > [data-attr="query"]::before {
   content: "&";
   margin-right: -2px;
@@ -145,7 +144,7 @@
 }
 [data-kind="px"] {
   display: flex;
-  > [data-attr="value"]::after {
+  & > [data-attr="value"]::after {
     color: var(--function-color);
     content: "px";
   }
@@ -165,15 +164,15 @@
   }
   & > [data-attr]:not(:last-of-type)::after {
     content: ",";
-    color: #a0a0a0;
+    color: var(--foreground-color);
   }
   & > [data-attr="r"]::before {
     content: "(";
-    color: #a0a0a0;
+    color: var(--foreground-color);
   }
   & > [data-attr="b"]::after {
     content: ")";
-    color: #a0a0a0;
+    color: var(--foreground-color);
   }
 }
 [data-kind="rgba"] {
@@ -214,7 +213,6 @@
     background-color: rgba(0, 0, 255, 0.1);
   }
 }
-
 [data-kind="hex_a"] {
   display: flex;
   &::before {
@@ -321,7 +319,7 @@
       content: ",";
     }
   }
-  > [data-attr="name"] > [data-value]::before {
+  & > [data-attr="name"] > [data-value]::before {
     content: ":";
     color: var(--class-color);
   }
@@ -370,15 +368,13 @@
     content: "n";
   }
 }
-
 [data-kind="direct_descendent"] {
   display: flex;
   gap: 0.25em;
-  /* & > ... */
   &:not(:has(> [data-attr="lhs"])) > [data-attr="rhs"] {
     margin-left: 0.25em;
   }
-  > [data-attr="rhs"] {
+  & > [data-attr="rhs"] {
     display: flex;
     gap: 0.25em;
     &::before {
@@ -387,7 +383,6 @@
     }
   }
 }
-
 input[type="search"] {
   font-family: monospace;
   position: sticky;
@@ -399,18 +394,16 @@ input[type="search"] {
   color: var(--foreground-color);
   border-color: var(--outline-color);
 }
-
 .--css-edit-editor .searched {
-  background-color: #9e6a032f;
+  background-color: rgba(158, 106, 3, 0.184);
   &.focused {
-    outline: 0.1em solid #9e6a03;
+    outline: rgb(158, 106, 3) solid 0.1em;
   }
 }
 [data-kind="decl"]::after,
 [data-kind="decl"] > [data-attr="query"]::after {
   color: var(--brace-color);
 }
-
 [data-kind="multi_part_value"] > [data-attr="parts"] {
   display: flex;
   gap: 0.5em;
@@ -421,19 +414,18 @@ input[type="search"] {
     content: "&";
   }
 }
-*:focus {
+:focus {
   outline: none;
 }
 [data-kind="or"] {
   display: flex;
-  > [data-attr="lhs"] {
+  & > [data-attr="lhs"] {
     display: flex;
     &::after {
       content: ",";
     }
   }
 }
-
 [data-kind="plain_text"] {
   display: flex;
 }
@@ -470,26 +462,29 @@ input[type="search"] {
 [data-kind] {
   width: max-content;
 }
+button {
+  font-size: inherit;
+}
 [data-attr="name"]:has([data-value="margin"])
   + [data-attr="expr"]
   > [data-kind="multi_part_value"]
   > [data-attr="parts"]:has(:nth-child(4)) {
-  > ::before {
+  & > ::before {
     font-size: 0.8em;
     margin: 0.2em;
     color: var(--rule-name-color);
     opacity: 0.8;
   }
-  > :nth-child(1)::before {
+  & > :nth-child(1)::before {
     content: "top:";
   }
-  > :nth-child(2)::before {
+  & > :nth-child(2)::before {
     content: "right:";
   }
-  > :nth-child(3)::before {
+  & > :nth-child(3)::before {
     content: "bottom:";
   }
-  > :nth-child(4)::before {
+  & > :nth-child(4)::before {
     content: "left:";
   }
 }
@@ -516,7 +511,7 @@ input[type="search"] {
     display: flex;
     color: var(--function-color);
   }
-  > [data-attr="expr"] {
+  & > [data-attr="expr"] {
     display: flex;
     &::before {
       content: "(";
@@ -529,7 +524,7 @@ input[type="search"] {
 [data-kind="multiply"] {
   display: flex;
   gap: 0.5em;
-  > [data-attr="lhs"] {
+  & > [data-attr="lhs"] {
     display: flex;
     gap: 0.5em;
     &::after {
@@ -554,7 +549,7 @@ input[type="search"] {
 [data-kind="subtract"] {
   display: flex;
   gap: 0.25em;
-  > [data-attr="lhs"] {
+  & > [data-attr="lhs"] {
     gap: 0.25em;
     &::after {
       content: "-";

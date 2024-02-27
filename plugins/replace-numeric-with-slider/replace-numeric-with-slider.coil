@@ -12,7 +12,29 @@ def replace_numeric_with_slider({rebuild, signal, root})
   let start_y = nil
   let active_elem = nil
   let factor = nil
+  def render_value(new_value)
+    new_value = Number(new_value:toFixed(5))
+    active_elem:setAttribute("data-value" new_value)
+    active_elem:replaceChildren(new_value)
+    let expr_node = active_elem:closest("[data-attr=\"expr\"]")
+    expr_node:style:setProperty("--raw-css", compile(expr_node.query("[data-kind]").to_ast()))
+    rebuild(expr_node)
+  end
   for elem of root.query_all("[data-numeric=true]")
+    let inc_factor = elem:closest("[data-kind]"):dataset:kind.pipe(increment_factor) or 1
+    signal:listen(elem "keydown" |e| {
+      if e:key == "ArrowUp"
+        e:preventDefault()
+        active_elem = elem
+        render_value(elem:textContent.as_num() + inc_factor)
+        active_elem = nil
+      else if e:key == "ArrowDown"
+        e:preventDefault()
+        active_elem = elem
+        render_value(elem:textContent.as_num() - inc_factor)
+        active_elem = nil
+      end
+    })
     signal:listen(elem "mousedown" |e| {
       e:preventDefault()
       e:target:focus()
@@ -25,12 +47,7 @@ def replace_numeric_with_slider({rebuild, signal, root})
   signal:listen(window "mousemove" |e| {
     if active_elem
       let new_value = original_value - ((e:clientY - start_y) * factor)
-      new_value = Number(new_value:toFixed(5))
-      active_elem:setAttribute("data-value" new_value)
-      active_elem:replaceChildren(new_value)
-      let expr_node = active_elem:closest("[data-attr=\"expr\"]")
-      expr_node:style:setProperty("--raw-css", compile(expr_node.query("[data-kind]").to_ast()))
-      rebuild(expr_node)
+      render_value(new_value)
     end
   })
   signal:listen(window "mouseup" |e| active_elem = nil)

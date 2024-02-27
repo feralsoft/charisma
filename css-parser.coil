@@ -149,8 +149,17 @@ def* parse_query(end_pattern, skip_step)
     else if yield test(" ")
       yield trim()
       kind = :child_selector
+    else if query:rhs
+      query = {
+        ...query,
+        rhs: {
+          kind: :selector_modifier,
+          lhs: query:rhs,
+          rhs: yield* parse_query_step()
+        }
+      }
+      continue
     else
-      -- this should be handled separately!!
       kind = :selector_modifier
     end
     let rhs = yield* parse_query_step()

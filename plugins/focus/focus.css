@@ -1,5 +1,6 @@
 /* only hide outline when directly hovering the element */
 [data-plugin_focus_active="true"]:not(:hover),
-[data-plugin_focus_active="true"]:hover:has([data-kind]:hover) {
+[data-plugin_focus_active="true"]:hover:has([data-kind]:hover),
+:focus {
   outline: 0.1em dashed var(--outline-color);
 }
