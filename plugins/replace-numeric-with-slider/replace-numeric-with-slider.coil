@@ -11,7 +11,6 @@ def replace_numeric_with_slider({rebuild, signal, root})
     active_elem:setAttribute("data-value" new_value)
     active_elem:replaceChildren(new_value)
     let expr_node = active_elem:closest("[data-attr=\"expr\"]")
-    expr_node:style:setProperty("--raw-css", compile(expr_node.query("[data-kind]").to_ast()))
     rebuild(expr_node)
   end
   for elem of root.query_all("[data-numeric=true]")
@@ -20,7 +19,6 @@ def replace_numeric_with_slider({rebuild, signal, root})
     if decimals
       inc_factor = decimals.at(-1).as_num() / (10 ** decimals.len())
     end
-    
     signal:listen(elem "keydown" |e| {
       if e:key == "ArrowUp"
         e:preventDefault()
