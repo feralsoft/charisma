@@ -11,6 +11,6 @@
   "devDependencies": {
     "prettier": "^3.2.5",
     "vite": "^5.0.8",
-    "@coil-lang/compiler": "0.1.27"
+    "@coil-lang/compiler": "0.1.28"
   }
 }

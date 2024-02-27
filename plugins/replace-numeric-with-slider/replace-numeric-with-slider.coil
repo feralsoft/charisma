@@ -1,12 +1,6 @@
 import {compile, to_ast, to_html} from "../../html-ast.coil"
 import {match_on} from "../../utils.coil"
 
-let increment_factor = {
-  :em => 0.1
-  :rem => 0.1
-  :px => 1
-}
-
 def replace_numeric_with_slider({rebuild, signal, root})
   let original_value = nil
   let start_y = nil
@@ -21,7 +15,12 @@ def replace_numeric_with_slider({rebuild, signal, root})
     rebuild(expr_node)
   end
   for elem of root.query_all("[data-numeric=true]")
-    let inc_factor = elem:closest("[data-kind]"):dataset:kind.pipe(increment_factor) or 1
+    let inc_factor = 1
+    let [_ decimals] = elem:textContent:split(".")
+    if decimals
+      inc_factor = decimals.at(-1).as_num() / (10 ** decimals.len())
+    end
+    
     signal:listen(elem "keydown" |e| {
       if e:key == "ArrowUp"
         e:preventDefault()
@@ -40,7 +39,7 @@ def replace_numeric_with_slider({rebuild, signal, root})
       e:target:focus()
       start_y = e:clientY
       active_elem = elem
-      factor = elem:closest("[data-kind]"):dataset:kind.pipe(increment_factor) or 1
+      factor = inc_factor
       original_value = elem:textContent.as_num()
     })
   end
