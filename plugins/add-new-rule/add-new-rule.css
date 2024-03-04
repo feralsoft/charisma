@@ -21,6 +21,20 @@
   }
 }
 
+.plugin_add_new_rule_new {
+  animation: plugin_add_new_rule_new 1s;
+}
+
+@keyframes plugin_add_new_rule_new {
+  0% {
+    background-color: rgba(50, 218, 41, 0.2);
+  }
+
+  100% {
+    background-color: none;
+  }
+}
+
 .plugin_add_new_rule_unfinished {
   background-color: rgba(255, 255, 255, 0.188);
   outline: none;

@@ -36,7 +36,10 @@ def add_new_rule({signal, root, rebuild, scope})
                 css_rule_text = str(css_rule_text ";")
               end
               if let ast_node = try!(|| parse_rule.run(css_rule_text).0).map_ctor(Error, |e| nil)
-                this:replaceWith(to_html(ast_node))
+                let new_node = to_html(ast_node)
+                new_node:classList:add(scope:class(:new).log())
+                setTimeout(|| new_node:classList:remove(scope:class(:new)), 2000)
+                this:replaceWith(new_node)
                 await rebuild(root:closest("[data-kind=decl]"))
               else
                 this:setAttribute(scope:data(:error), true)
