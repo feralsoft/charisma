@@ -4,8 +4,9 @@ import {run} from "./parse-utils.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import {parse_cx_query} from "./cx-parser.coil"
 import plugins from "./plugins"
+-- import "./diff.coil"
 
-document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_decl.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {  
+document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_decl.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
   let css_decl = to_html(css_ast_node)
   let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
   let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
@@ -174,4 +175,4 @@ def init(root)
   end
 end
 
-init(document:body)
+-- init(document:body)

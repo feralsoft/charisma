@@ -58,7 +58,7 @@ export let compile = match_on(:kind){
 export def to_html(ast_node)
   let elem = :div{"data-kind" => ast_node:kind, "tabindex" => 0}
   let attr_only_keys = []
-  for [key val] of ast_node.delete!(:kind, :nid)
+  for [key val] of ast_node.reject(0 Set["kind" "nid"])
     if val.nil?()
       continue
     end if val:attr_only

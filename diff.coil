@@ -1,0 +1,72 @@
+import "./diff.css"
+import {parse_decl} from "./css-parser.coil"
+import {run} from "./parse-utils.coil"
+import {to_html} from "./html-ast.coil"
+
+protocol to_js
+
+def Object:prototype.to_js = this
+def Keyword:prototype.to_js = this:value
+
+def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
+
+
+let original_document = "
+.test {
+  font-size: 2px;
+}
+"
+
+let new_document = "
+.test {
+  margin: 1rem;
+}
+"
+-- css properties should be sorted alphabetically
+-- your rules shouldn't depend on property order
+
+-- ^ or order properties by type
+
+let original_decl = parse_decl.run(original_document).0
+let new_decl = parse_decl.run(new_document).0
+
+-- stringify(original_decl).log()
+-- stringify(new_decl).log()
+
+def diff(old_node, new_node, path, child)
+  assert!(old_node:kind "expected old_node:kind")
+  assert!(new_node:kind "expected new_node:kind")
+  let new_path = str(path " > [data-kind=\"" old_node:kind "\"]:nth-child(" child or 1 ")")
+  if old_node:kind != new_node:kind
+    return [{diff_type: :kind, path, status: :changed}]
+  end
+  let results = []
+  for [key value] of old_node.reject(_.at(0) == "kind")
+    if type_of(value) == "string"
+      if value != new_node.key
+        results:push({diff_type: :leaf, status: :changed, path: str(new_path " > [data-attr=\"" key "\"]")})
+      end
+    else if value instanceof Array
+      let arr_path = str(new_path " > [data-attr=\"" key "\"]")
+      for [a b i] of value.zip(new_node.key 1..)
+        results:push(...diff(a, b, arr_path, i))
+      end
+    else
+      results:push(...diff(value, new_node.key, str(new_path " > [data-attr=\"" key "\"]")))
+    end
+  end
+  return results
+end
+
+let old_node = to_html(original_decl)
+$(".--css-edit-editor"):append(old_node)
+
+old_node:replaceWith(to_html(new_decl))
+
+for {path, diff_type} of diff(original_decl, new_decl, ":scope")
+  if let node = $(".--css-edit-editor").query(path)
+    node:setAttribute("data-diff-changed" true)
+    node:setAttribute("data-diff-type" diff_type)
+  end
+end
+
