@@ -24,7 +24,18 @@ let text_query = types.at("text")
 
 def order_rules({root})
   if let rules = root:closest("[data-kind=decl] > [data-attr=rules]")
-    rules.log()
+    let vars = rules.query_all(":scope > [data-kind=variable]")
+    let positioning_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " positioning_query ")")
+    let display_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " display_query ")")
+    let color_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " color_query ")")
+    let text_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " text_query ")")
+    rules:prepend(
+      ...vars
+      ...positioning_rules
+      ...display_rules
+      ...color_rules
+      ...text_rules
+    )
   else
     for rules of root.query_all("[data-kind=decl] > [data-attr=rules]")
       let vars = rules.query_all(":scope > [data-kind=variable]")
