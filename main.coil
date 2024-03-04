@@ -175,4 +175,4 @@ def init(root)
   end
 end
 
--- init(document:body)
+init(document:body)
