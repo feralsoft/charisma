@@ -18,7 +18,7 @@ let original_document = "
 
 let new_document = "
 .test {
-  color: 3px;
+  color: red;
 }
 "
 
