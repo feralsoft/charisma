@@ -10,7 +10,6 @@ def Keyword:prototype.to_js = this:value
 
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
-
 let original_document = "
 .test {
   font-size: 2px;
@@ -19,54 +18,80 @@ let original_document = "
 
 let new_document = "
 .test {
-  margin: 1rem;
+  font-size: 3px;
 }
 "
--- css properties should be sorted alphabetically
--- your rules shouldn't depend on property order
-
--- ^ or order properties by type
 
 let original_decl = parse_decl.run(original_document).0
 let new_decl = parse_decl.run(new_document).0
 
--- stringify(original_decl).log()
--- stringify(new_decl).log()
+stringify(original_decl).log()
+stringify(new_decl).log()
 
-def diff(old_node, new_node, path, child)
-  assert!(old_node:kind "expected old_node:kind")
-  assert!(new_node:kind "expected new_node:kind")
-  let new_path = str(path " > [data-kind=\"" old_node:kind "\"]:nth-child(" child or 1 ")")
-  if old_node:kind != new_node:kind
-    return [{diff_type: :kind, path, status: :changed}]
+-- what if diffs gave you meaningful information of how the data changed?
+
+protocol diff_type
+
+def LeafChanged(@path) end
+def LeafChanged:prototype.diff_type = :leaf
+def PropertyRemoved(@path) end
+def PropertyRemoved:prototype.diff_type = :property_removed
+def PropertyAdded(@path) end
+def PropertyAdded:prototype.diff_type = :property_added
+def ExprChanged(@path) end
+def ExprChanged:prototype.diff_type = :expr
+
+protocol diff
+
+def ObjectLiteral:prototype.diff(other, path) = this:kind.diff(this, other, path)
+
+def :class_selector.diff(old, new, path)
+  if old:name != new:name
+    return [LeafChanged[str(path " > [data-kind=class_selector] [data-value]")]]
   end
-  let results = []
-  for [key value] of old_node.reject(_.at(0) == "kind")
-    if type_of(value) == "string"
-      if value != new_node.key
-        results:push({diff_type: :leaf, status: :changed, path: str(new_path " > [data-attr=\"" key "\"]")})
-      end
-    else if value instanceof Array
-      let arr_path = str(new_path " > [data-attr=\"" key "\"]")
-      for [a b i] of value.zip(new_node.key 1..)
-        results:push(...diff(a, b, arr_path, i))
-      end
+end
+
+def :px.diff(old, new, path)
+  if old:value != new:value
+    return [LeafChanged[str(path " > [data-kind=px] [data-value]")]]
+  end
+end
+
+def Array:prototype.diff(new_rules, path)
+  this.0:kind.pipe(Set[:rule :variable]).assert!("only rules")
+  let old = this.map(|{name, expr}| [name expr]).into(Map{})
+  let new = new_rules.map(|{name, expr}| [name expr]).into(Map{})
+
+  let diffs = []
+  for property_name of Set[...old.map(0) ...new.map(0)]
+    let expr_path = str(path " > [data-kind]:has([data-attr=name] [data-value=\"" property_name "\"]) [data-attr=expr]")
+    if new.has?(property_name) and !old.has?(property_name)
+      diffs:push(PropertyAdded[expr_path])
+    else if old.has?(property_name) and !new.has?(property_name)
+      diffs:push(PropertyRemoved[expr_path])
+    else if old.at(property_name):kind != new.at(property_name):kind
+        diffs:push(ExprChanged[expr_path])
     else
-      results:push(...diff(value, new_node.key, str(new_path " > [data-attr=\"" key "\"]")))
+      diffs:push(...old.at(property_name).diff(new.at(property_name), expr_path))
     end
   end
-  return results
+  return diffs
 end
+
+def :decl.diff(old, new, path) = [
+  ...old:query.diff(new:query, str(path " [data-kind=decl] > [data-attr=query]"))
+  ...old:rules.diff(new:rules, str(path " [data-kind=decl] > [data-attr=rules]"))
+]
 
 let old_node = to_html(original_decl)
 $(".--css-edit-editor"):append(old_node)
 
 old_node:replaceWith(to_html(new_decl))
 
-for {path, diff_type} of diff(original_decl, new_decl, ":scope")
-  if let node = $(".--css-edit-editor").query(path)
+for diff_object of original_decl.diff(new_decl, ":scope").log()
+  diff_object.log()
+  if let node = $(".--css-edit-editor").query(diff_object:path)
     node:setAttribute("data-diff-changed" true)
-    node:setAttribute("data-diff-type" diff_type)
+    node:setAttribute("data-diff-type" diff_object.diff_type())
   end
 end
-

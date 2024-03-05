@@ -29,6 +29,7 @@ def order_rules({root})
     let display_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " display_query ")")
     let color_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " color_query ")")
     let text_rules = rules.query_all(":scope > [data-kind=rule]:has(> [data-attr=name] " text_query ")")
+    -- it would be nice to order html nodes by data-attr=name
     rules:prepend(
       ...vars
       ...positioning_rules

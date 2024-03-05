@@ -1,19 +1,8 @@
 :root {
-  --diff-color: rgb(40, 107, 15);
+  --diff-color: rgba(40, 107, 15, 0.5);
 }
 
-[data-diff-changed="true"][data-diff-type="leaf"] [data-value],
-[data-diff-changed="true"][data-diff-type="kind"] {
-  border: 1px dashed var(--diff-color);
-  margin: -1px;
-  background: var(--diff-color);
-}
-
-[data-attr="rules"]
-  > [data-kind]:has(> [data-attr="name"][data-diff-changed="true"]):has(
-    > [data-attr="expr"] [data-diff-changed="true"],
-    > [data-attr="expr"][data-diff-changed="true"]
-  ) {
+[data-diff-changed="true"] {
   border: 1px dashed var(--diff-color);
   margin: -1px;
   background: var(--diff-color);

@@ -488,12 +488,6 @@ button {
     content: "left:";
   }
 }
-[data-kind="em"] [data-value]:not([data-value*="."])::after {
-  content: ".0";
-}
-[data-kind="rem"] [data-value]:not([data-value*="."])::after {
-  content: ".0";
-}
 [data-kind="decl"] {
   padding: 0.25em;
   background-color: rgb(40, 40, 40);
