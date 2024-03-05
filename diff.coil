@@ -18,15 +18,15 @@ let original_document = "
 
 let new_document = "
 .test {
-  font-size: 3px;
+  color: 3px;
 }
 "
 
 let original_decl = parse_decl.run(original_document).0
 let new_decl = parse_decl.run(new_document).0
 
-stringify(original_decl).log()
-stringify(new_decl).log()
+-- stringify(original_decl).log()
+-- stringify(new_decl).log()
 
 -- what if diffs gave you meaningful information of how the data changed?
 
@@ -64,11 +64,12 @@ def Array:prototype.diff(new_rules, path)
 
   let diffs = []
   for property_name of Set[...old.map(0) ...new.map(0)]
-    let expr_path = str(path " > [data-kind]:has([data-attr=name] [data-value=\"" property_name "\"]) [data-attr=expr]")
+    let property_path = str(path " > [data-kind]:has([data-attr=name] [data-value=\"" property_name "\"])")
+    let expr_path = str(property_path " [data-attr=expr]")
     if new.has?(property_name) and !old.has?(property_name)
-      diffs:push(PropertyAdded[expr_path])
+      diffs:push(PropertyAdded[property_path])
     else if old.has?(property_name) and !new.has?(property_name)
-      diffs:push(PropertyRemoved[expr_path])
+      diffs:push(PropertyRemoved[property_path])
     else if old.at(property_name):kind != new.at(property_name):kind
         diffs:push(ExprChanged[expr_path])
     else
@@ -84,13 +85,18 @@ def :decl.diff(old, new, path) = [
 ]
 
 let old_node = to_html(original_decl)
-$(".--css-edit-editor"):append(old_node)
+-- $(".--css-edit-editor"):append(old_node)
 
-old_node:replaceWith(to_html(new_decl))
+$(".--css-edit-editor"):append(to_html(new_decl))
 
-for diff_object of original_decl.diff(new_decl, ":scope").log()
-  diff_object.log()
-  if let node = $(".--css-edit-editor").query(diff_object:path)
+for diff_object of original_decl.diff(new_decl, ":scope")
+  if diff_object instanceof PropertyRemoved
+    let path = diff_object:path:replace(":scope [data-kind=decl] > " "")
+    let removed_node = old_node.query(path)
+    removed_node:setAttribute("data-removed" true)
+    $(".--css-edit-editor").query("[data-kind=decl] > [data-attr=rules]")
+      .:prepend(removed_node)
+  else if let node = $(".--css-edit-editor").query(diff_object:path)
     node:setAttribute("data-diff-changed" true)
     node:setAttribute("data-diff-type" diff_object.diff_type())
   end

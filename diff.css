@@ -7,3 +7,17 @@
   margin: -1px;
   background: var(--diff-color);
 }
+
+[data-removed="true"] {
+  --red: rgba(255, 0, 0, 0.5);
+  border: 1px dashed var(--red);
+  background: var(--red);
+  &:not(:hover) {
+    width: 20%;
+    height: 0.25em;
+    *,
+    &::after {
+      display: none;
+    }
+  }
+}
