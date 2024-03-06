@@ -12,18 +12,18 @@ def direction(elem, rebuild) = :div{
   class: cx("flex-direction"){
     "flipped" => elem
       .:closest("[data-kind=rule]")
-      .query(":scope > [data-attr=rules] > [data-kind=property]:has(
+      .query(":scope > [data-attr=properties] > [data-kind=property]:has(
         > [data-attr=name] > [data-value=\"flex-direction\"]
       ) > [data-attr=expr] [data-value=column]")
   }
   def :onclick
     if this:classList:contains("flipped")
-      elem:closest("[data-attr=rules]")
+      elem:closest("[data-attr=properties]")
         .query("[data-kind=property]:has(> [data-attr=name] [data-value=\"flex-direction\"])")
         .:remove()
       this:classList:remove("flipped")
     else
-      elem:closest("[data-attr=rules]").query(":scope > [data-kind]:last-of-type")
+      elem:closest("[data-attr=properties]").query(":scope > [data-kind]:last-of-type")
         .:after(parse_property.run("flex-direction: column;").0.pipe(to_html))
       this:classList:add("flipped")
     end

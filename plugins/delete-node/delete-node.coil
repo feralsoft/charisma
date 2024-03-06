@@ -24,7 +24,7 @@ def delete_node({root, signal, rebuild, scope})
       e:stopPropagation()
     end
   }))
-  for node of root.query_all("[data-kind=rule] > [data-attr=rules] *:not([contenteditable])")
+  for node of root.query_all("[data-kind=rule] > [data-attr=properties] *:not([contenteditable])")
     signal:listen(node "keydown" |e| {
       if e:key == "Backspace" and node.backspaced
         if node:parentNode:closest("[data-kind]"):dataset:kind == "rule"

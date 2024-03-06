@@ -2,7 +2,7 @@ let ast = {
   kind: :rule
   nid: 1
   query: {kind: :class_selector, name: :test, nid: 2}
-  rules: [{name: "font-size", nid: 3, value: {kind: :px, value: 10, nid: 4}}]
+  properties: [{name: "font-size", nid: 3, value: {kind: :px, value: 10, nid: 4}}]
 }
 
 let partial_css_templates = Map{

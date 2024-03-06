@@ -14,8 +14,8 @@ def Object:prototype.map_ctor(Ctor, cb)
 end
 
 def add_new_property({signal, root, rebuild, scope})
-  for rules of root.query_all("[data-kind=rule]:not(:has(.plugin_add_new_rule_btn)) [data-attr=rules]")
-    rules:append(:button{
+  for properties of root.query_all("[data-kind=rule]:not(:has(.plugin_add_new_property_btn)) [data-attr=properties]")
+    properties:append(:button{
       class: scope:class(:btn),
       children: "+",
       def :onclick(e)
@@ -31,11 +31,11 @@ def add_new_property({signal, root, rebuild, scope})
               end
             else if e:key == "Enter"
               e:preventDefault()
-              let css_rule_text = this:innerText:trim()
-              if !css_rule_text:endsWith(";")
-                css_rule_text = str(css_rule_text ";")
+              let property_text = this:innerText:trim()
+              if !property_text:endsWith(";")
+                property_text = str(property_text ";")
               end
-              if let ast_node = try!(|| parse_property.run(css_rule_text).0).map_ctor(Error, |e| nil)
+              if let ast_node = try!(|| parse_property.run(property_text).0).map_ctor(Error, |e| nil)
                 let new_node = to_html(ast_node)
                 new_node:classList:add(scope:class(:new))
                 setTimeout(|| new_node:classList:remove(scope:class(:new)), 2000)

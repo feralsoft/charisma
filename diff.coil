@@ -11,13 +11,13 @@ def Keyword:prototype.to_js = this:value
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
 let original_document = "
-.test {
+.test.col {
   font-size: 2px;
 }
 "
 
 let new_document = "
-.test {
+.test.color {
   color: red;
 }
 "
@@ -25,8 +25,8 @@ let new_document = "
 let original_rule = parse_rule.run(original_document).0
 let new_rule = parse_rule.run(new_document).0
 
--- stringify(original_rule).log()
--- stringify(new_rule).log()
+stringify(original_rule).log()
+stringify(new_rule).log()
 
 -- what if diffs gave you meaningful information of how the data changed?
 
@@ -57,10 +57,10 @@ def :px.diff(old, new, path)
   end
 end
 
-def Array:prototype.diff(new_rules, path)
+def Array:prototype.diff(new_properties, path)
   this.0:kind.pipe(Set[:property :variable]).assert!("only properties")
   let old = this.map(|{name, expr}| [name expr]).into(Map{})
-  let new = new_rules.map(|{name, expr}| [name expr]).into(Map{})
+  let new = new_properties.map(|{name, expr}| [name expr]).into(Map{})
 
   let diffs = []
   for property_name of Set[...old.map(0) ...new.map(0)]
@@ -79,9 +79,13 @@ def Array:prototype.diff(new_rules, path)
   return diffs
 end
 
+def :selector_modifier.diff(old, new, path)
+  
+end
+
 def :rule.diff(old, new, path) = [
   ...old:query.diff(new:query, str(path " [data-kind=rule] > [data-attr=query]"))
-  ...old:rules.diff(new:rules, str(path " [data-kind=rule] > [data-attr=rules]"))
+  ...old:properties.diff(new:properties, str(path " [data-kind=rule] > [data-attr=properties]"))
 ]
 
 let old_node = to_html(original_rule)
@@ -94,7 +98,7 @@ for diff_object of original_rule.diff(new_rule, ":scope")
     let path = diff_object:path:replace(":scope [data-kind=rule] > " "")
     let removed_node = old_node.query(path)
     removed_node:setAttribute("data-removed" true)
-    $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=rules]")
+    $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=properties]")
       .:prepend(removed_node)
   else if let node = $(".--css-edit-editor").query(diff_object:path)
     node:setAttribute("data-diff-changed" true)

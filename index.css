@@ -118,7 +118,7 @@
     width: max-content;
   }
 }
-[data-kind="rule"] > [data-attr="rules"] {
+[data-kind="rule"] > [data-attr="properties"] {
   padding-left: 1em;
   display: flex;
   flex-direction: column;

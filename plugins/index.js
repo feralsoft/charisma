@@ -9,7 +9,7 @@ import size_preview from "./size-preview/size-preview.coil";
 import color_preview from "./color-preview/color-preview.coil";
 import flex_preview from "./flex-preview/flex-preview.coil";
 import update_text from "./update-text/update-text.coil";
-import order_rules from "./order-rules/order-rules.coil";
+import order_properties from "./order-properties/order-properties.coil";
 
 export default {
   copy_paste,
@@ -23,5 +23,5 @@ export default {
   color_preview,
   flex_preview,
   update_text,
-  order_rules,
+  order_properties,
 };

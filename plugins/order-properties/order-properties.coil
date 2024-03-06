@@ -1,0 +1,58 @@
+let types = Map{
+  "positioning" => Set["position" "z-index" "top" "right" "left" "bottom"]
+  "display" => Set["display" "overflow" "box-sizing" "width" "height" "margin" "padding" "border" "justify-content" "align-content" "flex-direction" "gap"]
+  "color" => Set["color" "background" "background-color"]
+  "text" => Set["font-size" "font-family" "line-height" "text-align"]
+  "meta" => Set["content"]
+}
+
+let positioning_query = types.at("positioning")
+  .map(str:fmt("[data-value=\"" _ "\"]"))
+  .pipe(str:fmt(":is(" _.join(", ") ")"))
+
+let display_query = types.at("display")
+  .map(str:fmt("[data-value=\"" _ "\"]"))
+  .pipe(str:fmt(":is(" _.join(", ") ")"))
+
+let color_query = types.at("color")
+  .map(str:fmt("[data-value=\"" _ "\"]"))
+  .pipe(str:fmt(":is(" _.join(", ") ")"))
+
+let text_query = types.at("text")
+  .map(str:fmt("[data-value=\"" _ "\"]"))
+  .pipe(str:fmt(":is(" _.join(", ") ")"))
+
+def order_properties({root})
+  if let properties = root:closest("[data-kind=rule] > [data-attr=properties]")
+    let vars = properties.query_all(":scope > [data-kind=variable]")
+    let positioning_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " positioning_query ")")
+    let display_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " display_query ")")
+    let color_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " color_query ")")
+    let text_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " text_query ")")
+    -- it would be nice to order html nodes by data-attr=name
+    properties:prepend(
+      ...vars
+      ...positioning_properties
+      ...display_properties
+      ...color_properties
+      ...text_properties
+    )
+  else
+    for properties of root.query_all("[data-kind=rule] > [data-attr=properties]")
+      let vars = properties.query_all(":scope > [data-kind=variable]")
+      let positioning_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " positioning_query ")")
+      let display_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " display_query ")")
+      let color_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " color_query ")")
+      let text_properties = properties.query_all(":scope > [data-kind=property]:has(> [data-attr=name] " text_query ")")
+      properties:prepend(
+        ...vars
+        ...positioning_properties
+        ...display_properties
+        ...color_properties
+        ...text_properties
+      )
+    end
+  end
+end
+
+export default order_properties
