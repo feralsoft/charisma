@@ -1,4 +1,4 @@
-.plugin_add_new_rule_btn {
+.plugin_add_new_property_btn {
   background-color: #313131;
   color: var(--foreground-color);
   border: 1px solid #cccccc99;
@@ -21,11 +21,11 @@
   }
 }
 
-.plugin_add_new_rule_new {
-  animation: plugin_add_new_rule_new 1s;
+.plugin_add_new_property_new {
+  animation: plugin_add_new_property_new 1s;
 }
 
-@keyframes plugin_add_new_rule_new {
+@keyframes plugin_add_new_property_new {
   0% {
     background-color: rgba(50, 218, 41, 0.2);
   }
@@ -41,7 +41,7 @@
   &[data-plugin_add_new_rule_error="true"] {
     border-bottom: 1.5px dashed red;
     &:hover::before {
-      content: "invalid rule";
+      content: "invalid property";
       position: absolute;
       margin-top: 1.5rem;
       font-size: 0.75rem;

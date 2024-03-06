@@ -1,7 +1,7 @@
 import copy_paste from "./copy-paste/copy-paste.coil";
 import toggle_representation from "./toggle-representation/toggle-representation.coil";
 import replace_numeric_with_slider from "./replace-numeric-with-slider/replace-numeric-with-slider.coil";
-import add_new_rule from "./add-new-rule/add-new-rule.coil";
+import add_new_property from "./add-new-property/add-new-property.coil";
 import delete_node from "./delete-node/delete-node.coil";
 import focus from "./focus/focus.coil";
 import toggle_query_wrapping from "./toggle-query-wrapping/toggle-query-wrapping.coil";
@@ -15,7 +15,7 @@ export default {
   copy_paste,
   toggle_representation,
   replace_numeric_with_slider,
-  add_new_rule,
+  add_new_property,
   delete_node,
   focus,
   toggle_query_wrapping,

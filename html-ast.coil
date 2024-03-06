@@ -19,7 +19,7 @@ export let compile = match_on(:kind){
     end
   end
   def :self_query({value}) = str("&" compile(value))
-  def :rule({name expr}) = str(name ": " compile(expr))
+  def :property({name expr}) = str(name ": " compile(expr))
   def :variable({name expr}) = str(name ": " compile(expr))
   def :var({name}) = str("var(" name ")")
   def :var_with_default({name, default_value}) = str("var(" name ", " default_value ")")

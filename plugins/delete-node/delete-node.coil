@@ -1,12 +1,12 @@
-import {parse_rule, parse_value} from "../../css-parser.coil"
+import {parse_property, parse_value} from "../../css-parser.coil"
 import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 import "./delete-node.css"
 
 let context_map = {
-  def :decl(text) = parse_rule.run(text)
+  def :decl(text) = parse_property.run(text)
   def :variable(text) = parse_value.run(text)
-  def :rule(text) = parse_value.run(text)
+  def :property(text) = parse_value.run(text)
 } 
 
 -- show warning when backspaced!!
@@ -14,7 +14,7 @@ let context_map = {
 -- TODO: use a data attribute instead of this protocol so we can style it
 protocol backspaced
 
--- bug: why does it take 4-6 delete keys to delete a css rule from an already deleted value
+-- bug: why does it take 4-6 delete keys to delete a css property from an already deleted value
 
 -- IDEA: undo via storing the AST as an persistent immutable map
 def delete_node({root, signal, rebuild, scope})

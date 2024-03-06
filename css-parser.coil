@@ -342,9 +342,9 @@ export def* parse_value_step
   end
 end
 
-export def* parse_value(rule_name)
+export def* parse_value(property_name)
   -- fonts can have spaces in them, but other values shouldn't
-  if rule_name == "font-family"
+  if property_name == "font-family"
     let value = yield capture!(/^((?!;).)*/)
     return {kind: :plain_text, value}
   end
@@ -364,12 +364,12 @@ export def* parse_value(rule_name)
   end
 end
 
-export def* parse_rule
+export def* parse_property
   let name = yield trimmed!(capture!(/^(\w|-)+/))
   yield trimmed!(chomp!(":"))
   let expr = yield* parse_value(name)
   yield trimmed!(chomp!(";"))
-  return {kind: :rule, name, expr}
+  return {kind: :property, name, expr}
 end
 
 def* parse_variable
@@ -410,7 +410,7 @@ def* parse_statement
   else if yield test("&")
     return yield* parse_self_sub_decl()
   else if yield test(/^(\w|-)+\s*:/)
-    return yield* parse_rule()
+    return yield* parse_property()
   else
     return yield* parse_sub_decl()
   end

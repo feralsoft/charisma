@@ -148,8 +148,8 @@ def init(root)
         new_root = new_root or root
         -- root might be .--css-edit-editor or <body>.. not sure if this is gonna cause issues later or not - it will :)
         let html_node = new_root:closest("[data-kind=decl][data-css-index]") or new_root.query("[data-kind=decl]")
-        -- if what I've updated is just a value in a rule (most the time)
-        -- find the sheet & update the rule directly instead of recompiling the entire decl!! this will be huge!
+        -- if what I've updated is just a value in a property (most the time)
+        -- find the sheet & update the property directly instead of recompiling the entire decl!! this will be huge!
         if !html_node panic!("could not find nearest decl") end
         let ast_node = html_node.to_ast()
         let idx = html_node:getAttribute("data-css-index").as_num()

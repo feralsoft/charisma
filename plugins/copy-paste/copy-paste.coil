@@ -10,13 +10,13 @@ def copy_paste({signal, scope})
 
   signal:listen(document "copy" |e| {
     e:preventDefault()
-    -- e:target doesn't understand [data-kind=rule] is active
+    -- e:target doesn't understand [data-kind=property] is active
     -- even though it has tabindex=0.. not sure why, but document:activeElement works
     let elem = document:activeElement
     if let query = elem:closest("[data-attr=query]")
       return copy(e, query, compile(query.to_ast()))
-    end if let rule = elem:closest(":is([data-kind=rule], [data-kind=variable])")
-      return copy(e, rule, str("\n" compile(rule.to_ast()) ";"))
+    end if let property = elem:closest(":is([data-kind=property], [data-kind=variable])")
+      return copy(e, property, str("\n" compile(property.to_ast()) ";"))
     end if let decl = elem:closest("[data-kind=decl]")
       return copy(e, decl, compile(decl.to_ast()))
     end

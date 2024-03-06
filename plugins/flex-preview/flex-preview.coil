@@ -1,5 +1,5 @@
 import "./flex-preview.css"
-import {parse_rule} from "../../css-parser.coil"
+import {parse_property} from "../../css-parser.coil"
 import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 
@@ -12,19 +12,19 @@ def direction(elem, rebuild) = :div{
   class: cx("flex-direction"){
     "flipped" => elem
       .:closest("[data-kind=decl]")
-      .query(":scope > [data-attr=rules] > [data-kind=rule]:has(
+      .query(":scope > [data-attr=rules] > [data-kind=property]:has(
         > [data-attr=name] > [data-value=\"flex-direction\"]
       ) > [data-attr=expr] [data-value=column]")
   }
   def :onclick
     if this:classList:contains("flipped")
       elem:closest("[data-attr=rules]")
-        .query("[data-kind=rule]:has(> [data-attr=name] [data-value=\"flex-direction\"])")
+        .query("[data-kind=property]:has(> [data-attr=name] [data-value=\"flex-direction\"])")
         .:remove()
       this:classList:remove("flipped")
     else
       elem:closest("[data-attr=rules]").query(":scope > [data-kind]:last-of-type")
-        .:after(parse_rule.run("flex-direction: column;").0.pipe(to_html))
+        .:after(parse_property.run("flex-direction: column;").0.pipe(to_html))
       this:classList:add("flipped")
     end
     rebuild(elem)
@@ -33,7 +33,7 @@ def direction(elem, rebuild) = :div{
 
 def flex_preview({root, rebuild})
   for flex_rule of root.query_all(
-    "[data-kind=rule]:has(
+    "[data-kind=property]:has(
       > [data-attr=name] > [data-value=display]
     ) > [data-attr=expr] [data-kind]:has([data-value=flex]):not(:has(.flex-direction))"
   )

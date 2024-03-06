@@ -58,7 +58,7 @@ def :px.diff(old, new, path)
 end
 
 def Array:prototype.diff(new_rules, path)
-  this.0:kind.pipe(Set[:rule :variable]).assert!("only rules")
+  this.0:kind.pipe(Set[:property :variable]).assert!("only properties")
   let old = this.map(|{name, expr}| [name expr]).into(Map{})
   let new = new_rules.map(|{name, expr}| [name expr]).into(Map{})
 

@@ -1,5 +1,5 @@
-import "./add-new-rule.css"
-import {parse_rule} from "../../css-parser.coil"
+import "./add-new-property.css"
+import {parse_property} from "../../css-parser.coil"
 import {run} from "../../parse-utils.coil"
 import {to_html} from "../../html-ast.coil"
 
@@ -13,7 +13,7 @@ def Object:prototype.map_ctor(Ctor, cb)
   end
 end
 
-def add_new_rule({signal, root, rebuild, scope})
+def add_new_property({signal, root, rebuild, scope})
   for rules of root.query_all("[data-kind=decl]:not(:has(.plugin_add_new_rule_btn)) [data-attr=rules]")
     rules:append(:button{
       class: scope:class(:btn),
@@ -35,9 +35,9 @@ def add_new_rule({signal, root, rebuild, scope})
               if !css_rule_text:endsWith(";")
                 css_rule_text = str(css_rule_text ";")
               end
-              if let ast_node = try!(|| parse_rule.run(css_rule_text).0).map_ctor(Error, |e| nil)
+              if let ast_node = try!(|| parse_property.run(css_rule_text).0).map_ctor(Error, |e| nil)
                 let new_node = to_html(ast_node)
-                new_node:classList:add(scope:class(:new).log())
+                new_node:classList:add(scope:class(:new))
                 setTimeout(|| new_node:classList:remove(scope:class(:new)), 2000)
                 this:replaceWith(new_node)
                 await rebuild(root:closest("[data-kind=decl]"))
@@ -54,4 +54,4 @@ def add_new_rule({signal, root, rebuild, scope})
   end
 end
 
-export default add_new_rule
+export default add_new_property

@@ -12,9 +12,12 @@
   --red: rgba(255, 0, 0, 0.5);
   border: 1px dashed var(--red);
   background: var(--red);
-  &:not(:hover) {
+  transition: all 100ms linear;
+  height: 1.25em;
+  font-size: 18px;
+  &:not(:hover):not(:focus-within) {
     width: 20%;
-    height: 0.25em;
+    height: 5px;
     *,
     &::after {
       display: none;
