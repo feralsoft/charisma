@@ -21,7 +21,19 @@
   margin-top: 1em;
 }
 
-[data-diff-type="removed"] {
+[data-attr="query"] [data-diff-type="removed"] {
+  overflow: hidden;
+  width: 100%;
+  transition: width 200ms linear;
+  min-width: 5px;
+  &:not(:hover):not(:focus-within) {
+    width: 5px;
+    * {
+      display: none;
+    }
+  }
+}
+[data-kind="property"][data-diff-type="removed"] {
   overflow: hidden;
   transition: all 100ms linear;
   height: 1.25em;

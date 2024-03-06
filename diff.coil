@@ -11,7 +11,7 @@ def Keyword:prototype.to_js = this:value
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
 let original_document = "
-.test {
+.color.test {
   font-size: 2px;
 }
 "
@@ -35,13 +35,15 @@ protocol diff_type
 def LeafChanged(@path @old_value) end
 def LeafChanged:prototype.diff_type = :changed
 def PropertyRemoved(@path) end
-def PropertyRemoved:prototype.diff_type = :property_removed
+def PropertyRemoved:prototype.diff_type = :removed
 def PropertyAdded(@path) end
 def PropertyAdded:prototype.diff_type = :added
 def ExprChanged(@path) end
 def ExprChanged:prototype.diff_type = :changed
 def QueryExtended(@path) end
 def QueryExtended:prototype.diff_type = :added
+def QueryPartRemoved(@old_path @new_path) end
+def QueryPartRemoved:prototype.diff_type = :removed
 
 protocol diff
 
@@ -88,7 +90,12 @@ def* :query.diff(old, new, path)
   if old:kind != new:kind
     if new:modifier and new:lhs == old
       yield QueryExtended[str(path " > [data-kind=\"" new:kind "\"] > [data-attr=rhs]")]
-    end
+    else if old:modifier and old:lhs == new
+      yield QueryPartRemoved[
+        str(path " > [data-kind=\"" old:kind "\"] > [data-attr=rhs]")
+        str(path " > [data-kind=\"" new:kind "\"]")
+      ]
+    end 
   else if old:modifier
     yield* old:lhs.diff(new:lhs, str(path " > [data-kind=\"" old:kind "\"] > [data-attr=lhs]"))
     yield* old:rhs.diff(new:rhs, str(path " > [data-kind=\"" old:kind "\"] > [data-attr=rhs]"))
@@ -113,6 +120,12 @@ for diff_object of original_rule.diff(new_rule)
     removed_node:setAttribute("data-diff-type" "removed")
     $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=properties]")
       .:prepend(removed_node)
+  else if diff_object instanceof QueryPartRemoved
+    let {old_path, new_path} = diff_object
+    let removed_node = old_node.query(":scope" old_path).log()
+    removed_node:setAttribute("data-diff-type" "removed")
+    let new_node = $(".--css-edit-editor").query("[data-kind=rule]" new_path)
+    new_node:insertBefore(removed_node, null)
   else if let node = $(".--css-edit-editor").query("[data-kind=rule]" diff_object:path)
     node:setAttribute("data-diff-type" diff_object.diff_type())
     if diff_object:old_value
