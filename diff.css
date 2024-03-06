@@ -1,22 +1,28 @@
-:root {
+[data-diff-type="added"] {
   --diff-color: rgba(40, 107, 15, 0.5);
 }
 
-[data-diff-changed="true"] {
+[data-diff-type="changed"] {
+  --diff-color: rgba(16, 103, 209, 0.5);
+}
+
+[data-diff-type="removed"] {
+  --diff-color: rgba(255, 0, 0, 0.5);
+}
+
+[data-diff-type] {
   border: 1px dashed var(--diff-color);
   margin: -1px;
   background: var(--diff-color);
 }
 
-[data-removed="true"] {
-  --red: rgba(255, 0, 0, 0.5);
-  border: 1px dashed var(--red);
-  background: var(--red);
+[data-diff-type="removed"] {
+  overflow: hidden;
   transition: all 100ms linear;
   height: 1.25em;
   font-size: 18px;
   &:not(:hover):not(:focus-within) {
-    width: 20%;
+    width: 100px;
     height: 5px;
     *,
     &::after {

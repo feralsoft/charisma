@@ -11,7 +11,7 @@ def Keyword:prototype.to_js = this:value
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
 let original_document = "
-.test.col {
+.test {
   font-size: 2px;
 }
 "
@@ -25,83 +25,89 @@ let new_document = "
 let original_rule = parse_rule.run(original_document).0
 let new_rule = parse_rule.run(new_document).0
 
-stringify(original_rule).log()
-stringify(new_rule).log()
+-- stringify(original_rule).log()
+-- stringify(new_rule).log()
 
 -- what if diffs gave you meaningful information of how the data changed?
 
 protocol diff_type
 
 def LeafChanged(@path) end
-def LeafChanged:prototype.diff_type = :leaf
+def LeafChanged:prototype.diff_type = :changed
 def PropertyRemoved(@path) end
 def PropertyRemoved:prototype.diff_type = :property_removed
 def PropertyAdded(@path) end
-def PropertyAdded:prototype.diff_type = :property_added
+def PropertyAdded:prototype.diff_type = :added
 def ExprChanged(@path) end
-def ExprChanged:prototype.diff_type = :expr
+def ExprChanged:prototype.diff_type = :changed
+def QueryExtended(@path) end
+def QueryExtended:prototype.diff_type = :added
 
 protocol diff
 
 def ObjectLiteral:prototype.diff(other, path) = this:kind.diff(this, other, path)
 
-def :class_selector.diff(old, new, path)
+def* :class_selector.diff(old, new, path)
   if old:name != new:name
-    return [LeafChanged[str(path " > [data-kind=class_selector] [data-value]")]]
+    yield LeafChanged[str(path " > [data-kind=class_selector] [data-value]")]
   end
 end
 
-def :px.diff(old, new, path)
+def* :px.diff(old, new, path)
   if old:value != new:value
-    return [LeafChanged[str(path " > [data-kind=px] [data-value]")]]
+    yield LeafChanged[str(path " > [data-kind=px] [data-value]")]
   end
 end
 
-def Array:prototype.diff(new_properties, path)
+def* Array:prototype.diff(new_properties, path)
   this.0:kind.pipe(Set[:property :variable]).assert!("only properties")
   let old = this.map(|{name, expr}| [name expr]).into(Map{})
   let new = new_properties.map(|{name, expr}| [name expr]).into(Map{})
 
-  let diffs = []
-  for property_name of Set[...old.map(0) ...new.map(0)]
+  for property_name of Set[...old.keys() ...new.keys()]
     let property_path = str(path " > [data-kind]:has([data-attr=name] [data-value=\"" property_name "\"])")
     let expr_path = str(property_path " [data-attr=expr]")
     if new.has?(property_name) and !old.has?(property_name)
-      diffs:push(PropertyAdded[property_path])
+      yield PropertyAdded[property_path]
     else if old.has?(property_name) and !new.has?(property_name)
-      diffs:push(PropertyRemoved[property_path])
+      yield PropertyRemoved[property_path]
     else if old.at(property_name):kind != new.at(property_name):kind
-        diffs:push(ExprChanged[expr_path])
+      yield ExprChanged[expr_path]
     else
-      diffs:push(...old.at(property_name).diff(new.at(property_name), expr_path))
+      yield* old.at(property_name).diff(new.at(property_name), expr_path)
     end
   end
-  return diffs
 end
 
-def :selector_modifier.diff(old, new, path)
-  
+def* :selector_modifier.diff(old, new, path)
+  yield* old:lhs.diff(new:lhs, str(path " > [data-kind=selector_modifier] > [data-attr=lhs]"))
+  yield* old:rhs.diff(new:rhs, str(path " > [data-kind=selector_modifier] > [data-attr=rhs]"))
 end
 
-def :rule.diff(old, new, path) = [
-  ...old:query.diff(new:query, str(path " [data-kind=rule] > [data-attr=query]"))
-  ...old:properties.diff(new:properties, str(path " [data-kind=rule] > [data-attr=properties]"))
-]
+def* :query.diff(old, new, path)
+  if old:kind != new:kind
+    if new:modifier and new:lhs == old
+      yield QueryExtended[str(path " > [data-kind=\"" new:kind "\"] > [data-attr=rhs]")]
+    end
+  end
+end
+
+def* :rule.diff(old, new, path)
+  yield* :query.diff(old:query, new:query, str(path " > [data-attr=query]"))
+  yield* old:properties.diff(new:properties, str(path " > [data-attr=properties]"))
+end
 
 let old_node = to_html(original_rule)
--- $(".--css-edit-editor"):append(old_node)
 
 $(".--css-edit-editor"):append(to_html(new_rule))
 
-for diff_object of original_rule.diff(new_rule, ":scope")
+for diff_object of original_rule.diff(new_rule)
   if diff_object instanceof PropertyRemoved
-    let path = diff_object:path:replace(":scope [data-kind=rule] > " "")
-    let removed_node = old_node.query(path)
-    removed_node:setAttribute("data-removed" true)
+    let removed_node = old_node.query(":scope" diff_object:path)
+    removed_node:setAttribute("data-diff-type" "removed")
     $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=properties]")
       .:prepend(removed_node)
-  else if let node = $(".--css-edit-editor").query(diff_object:path)
-    node:setAttribute("data-diff-changed" true)
+  else if let node = $(".--css-edit-editor").query("[data-kind=rule]" diff_object:path.log()).log()
     node:setAttribute("data-diff-type" diff_object.diff_type())
   end
 end

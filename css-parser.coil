@@ -150,12 +150,14 @@ def* parse_query(end_pattern, skip_step)
       yield trim()
       kind = :child_selector
     else if query:rhs
+      -- `a > b:hover` => `a > (b:hover)` not `(a > b):hover`
       query = {
         ...query,
         rhs: {
           kind: :selector_modifier,
           lhs: query:rhs,
           rhs: yield* parse_query_step()
+          modifier: attr(true)
         }
       }
       continue
@@ -163,7 +165,7 @@ def* parse_query(end_pattern, skip_step)
       kind = :selector_modifier
     end
     let rhs = yield* parse_query_step()
-    query = {kind, lhs: query, rhs}
+    query = {kind, lhs: query, rhs, modifier: attr(true)}
   end
   return query
 end
