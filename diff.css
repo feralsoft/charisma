@@ -15,6 +15,12 @@
   margin: -1px;
   background: var(--diff-color);
 }
+[data-diff-old-value]:is(:hover, :focus-within)::after {
+  content: attr(data-diff-old-value);
+  background: rgba(255, 0, 0, 0.5);
+  margin-top: 1em;
+  text-decoration: line-through;
+}
 
 [data-diff-type="removed"] {
   overflow: hidden;

@@ -11,14 +11,14 @@ def Keyword:prototype.to_js = this:value
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
 let original_document = "
-.test {
+.yo.color {
   font-size: 2px;
 }
 "
 
 let new_document = "
 .test.color {
-  color: red;
+  font-size: 4px;
 }
 "
 
@@ -32,7 +32,7 @@ let new_rule = parse_rule.run(new_document).0
 
 protocol diff_type
 
-def LeafChanged(@path) end
+def LeafChanged(@path @old_value) end
 def LeafChanged:prototype.diff_type = :changed
 def PropertyRemoved(@path) end
 def PropertyRemoved:prototype.diff_type = :property_removed
@@ -49,13 +49,13 @@ def ObjectLiteral:prototype.diff(other, path) = this:kind.diff(this, other, path
 
 def* :class_selector.diff(old, new, path)
   if old:name != new:name
-    yield LeafChanged[str(path " > [data-kind=class_selector] [data-value]")]
+    yield LeafChanged[str(path " > [data-kind=class_selector] [data-value]"), old:name]
   end
 end
 
 def* :px.diff(old, new, path)
   if old:value != new:value
-    yield LeafChanged[str(path " > [data-kind=px] [data-value]")]
+    yield LeafChanged[str(path " > [data-kind=px] [data-value]"), old:value]
   end
 end
 
@@ -89,6 +89,11 @@ def* :query.diff(old, new, path)
     if new:modifier and new:lhs == old
       yield QueryExtended[str(path " > [data-kind=\"" new:kind "\"] > [data-attr=rhs]")]
     end
+  else if old:modifier
+    yield* old:lhs.diff(new:lhs, str(path " > [data-kind=\"" old:kind "\"] > [data-attr=lhs]"))
+    yield* old:rhs.diff(new:rhs, str(path " > [data-kind=\"" old:kind "\"] > [data-attr=rhs]"))
+  else
+    yield* old.diff(new, str(path " > [data-kind=\"" old:kind "\"]"))
   end
 end
 
@@ -109,5 +114,8 @@ for diff_object of original_rule.diff(new_rule)
       .:prepend(removed_node)
   else if let node = $(".--css-edit-editor").query("[data-kind=rule]" diff_object:path.log()).log()
     node:setAttribute("data-diff-type" diff_object.diff_type())
+    if diff_object:old_value
+      node:setAttribute("data-diff-old-value" diff_object:old_value)
+    end
   end
 end
