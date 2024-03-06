@@ -17,8 +17,8 @@ def copy_paste({signal, scope})
       return copy(e, query, compile(query.to_ast()))
     end if let property = elem:closest(":is([data-kind=property], [data-kind=variable])")
       return copy(e, property, str("\n" compile(property.to_ast()) ";"))
-    end if let decl = elem:closest("[data-kind=decl]")
-      return copy(e, decl, compile(decl.to_ast()))
+    end if let rule = elem:closest("[data-kind=rule]")
+      return copy(e, rule, compile(rule.to_ast()))
     end
   })
 end

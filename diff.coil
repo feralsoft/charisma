@@ -1,5 +1,5 @@
 import "./diff.css"
-import {parse_decl} from "./css-parser.coil"
+import {parse_rule} from "./css-parser.coil"
 import {run} from "./parse-utils.coil"
 import {to_html} from "./html-ast.coil"
 
@@ -22,11 +22,11 @@ let new_document = "
 }
 "
 
-let original_decl = parse_decl.run(original_document).0
-let new_decl = parse_decl.run(new_document).0
+let original_rule = parse_rule.run(original_document).0
+let new_rule = parse_rule.run(new_document).0
 
--- stringify(original_decl).log()
--- stringify(new_decl).log()
+-- stringify(original_rule).log()
+-- stringify(new_rule).log()
 
 -- what if diffs gave you meaningful information of how the data changed?
 
@@ -79,22 +79,22 @@ def Array:prototype.diff(new_rules, path)
   return diffs
 end
 
-def :decl.diff(old, new, path) = [
-  ...old:query.diff(new:query, str(path " [data-kind=decl] > [data-attr=query]"))
-  ...old:rules.diff(new:rules, str(path " [data-kind=decl] > [data-attr=rules]"))
+def :rule.diff(old, new, path) = [
+  ...old:query.diff(new:query, str(path " [data-kind=rule] > [data-attr=query]"))
+  ...old:rules.diff(new:rules, str(path " [data-kind=rule] > [data-attr=rules]"))
 ]
 
-let old_node = to_html(original_decl)
+let old_node = to_html(original_rule)
 -- $(".--css-edit-editor"):append(old_node)
 
-$(".--css-edit-editor"):append(to_html(new_decl))
+$(".--css-edit-editor"):append(to_html(new_rule))
 
-for diff_object of original_decl.diff(new_decl, ":scope")
+for diff_object of original_rule.diff(new_rule, ":scope")
   if diff_object instanceof PropertyRemoved
-    let path = diff_object:path:replace(":scope [data-kind=decl] > " "")
+    let path = diff_object:path:replace(":scope [data-kind=rule] > " "")
     let removed_node = old_node.query(path)
     removed_node:setAttribute("data-removed" true)
-    $(".--css-edit-editor").query("[data-kind=decl] > [data-attr=rules]")
+    $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=rules]")
       .:prepend(removed_node)
   else if let node = $(".--css-edit-editor").query(diff_object:path)
     node:setAttribute("data-diff-changed" true)

@@ -4,7 +4,7 @@ import {to_html} from "../../html-ast.coil"
 import "./delete-node.css"
 
 let context_map = {
-  def :decl(text) = parse_property.run(text)
+  def :rule(text) = parse_property.run(text)
   def :variable(text) = parse_value.run(text)
   def :property(text) = parse_value.run(text)
 } 
@@ -24,10 +24,10 @@ def delete_node({root, signal, rebuild, scope})
       e:stopPropagation()
     end
   }))
-  for node of root.query_all("[data-kind=decl] > [data-attr=rules] *:not([contenteditable])")
+  for node of root.query_all("[data-kind=rule] > [data-attr=rules] *:not([contenteditable])")
     signal:listen(node "keydown" |e| {
       if e:key == "Backspace" and node.backspaced
-        if node:parentNode:closest("[data-kind]"):dataset:kind == "decl"
+        if node:parentNode:closest("[data-kind]"):dataset:kind == "rule"
           node:remove()
           rebuild()
           return
@@ -40,7 +40,7 @@ def delete_node({root, signal, rebuild, scope})
             if e:key == "Enter"
               let ast_node = context_map.(this:dataset:context)(this:innerText:trim()).0
               this:replaceWith(to_html(ast_node))
-              rebuild(root:closest("[data-kind=decl]"))
+              rebuild(root:closest("[data-kind=rule]"))
             end
           end
         }

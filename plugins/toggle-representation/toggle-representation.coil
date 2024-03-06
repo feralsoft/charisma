@@ -22,7 +22,7 @@ let toggle_compile = match_on(:kind){
   def :px({value}) = str(px_to_rem(value) "rem")
   def :var({name} elem)
     let rule_name = elem:closest("[data-kind=property]").query("[data-attr=name] [data-value]"):innerText:trim().as_kw()
-    return elem:closest("[data-kind=decl]")
+    return elem:closest("[data-kind=rule]")
       .query("[data-attr=query]")
       .to_ast()
       .pipe(compile $$)

@@ -1,25 +1,25 @@
 import "./html.coil"
-import {parse_decl} from "./css-parser.coil"
+import {parse_rule} from "./css-parser.coil"
 import {run} from "./parse-utils.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import {parse_cx_query} from "./cx-parser.coil"
 import plugins from "./plugins"
 import "./diff.coil"
 
--- document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_decl.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
---   let css_decl = to_html(css_ast_node)
+-- document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
+--   let css_rule = to_html(css_ast_node)
 --   let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
 --   let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
 --   let relative_path = absolute_path:slice(root_path.len())
 
---   css_decl:setAttribute("data-css-index", idx)
---   css_decl:setAttribute("data-file-path", relative_path)
---   css_decl:prepend(:a{
+--   css_rule:setAttribute("data-css-index", idx)
+--   css_rule:setAttribute("data-file-path", relative_path)
+--   css_rule:prepend(:a{
 --     href: str("vscode://file" absolute_path),
 --     children: relative_path,
 --     class: "open-in-vscode"
 --   })
---   $(".--css-edit-editor"):append(css_decl)
+--   $(".--css-edit-editor"):append(css_rule)
 -- })
 
 -- warn on unused query
@@ -147,10 +147,10 @@ def init(root)
       async def :eval_css(new_root)
         new_root = new_root or root
         -- root might be .--css-edit-editor or <body>.. not sure if this is gonna cause issues later or not - it will :)
-        let html_node = new_root:closest("[data-kind=decl][data-css-index]") or new_root.query("[data-kind=decl]")
+        let html_node = new_root:closest("[data-kind=rule][data-css-index]") or new_root.query("[data-kind=rule]")
         -- if what I've updated is just a value in a property (most the time)
-        -- find the sheet & update the property directly instead of recompiling the entire decl!! this will be huge!
-        if !html_node panic!("could not find nearest decl") end
+        -- find the sheet & update the property directly instead of recompiling the entire rule!! this will be huge!
+        if !html_node panic!("could not find nearest rule") end
         let ast_node = html_node.to_ast()
         let idx = html_node:getAttribute("data-css-index").as_num()
         let {sheet, attributes} = $("[data-vite-dev-id$=\"" html_node:getAttribute("data-file-path") "\"]")

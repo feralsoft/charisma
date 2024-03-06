@@ -29,7 +29,7 @@
 [data-numeric="true"] {
   color: var(--number-color);
 }
-[data-kind="decl"]::after {
+[data-kind="rule"]::after {
   content: "}";
 }
 [data-kind="property"] > [data-attr="name"] {
@@ -86,7 +86,7 @@
 .open-in-vscode {
   display: none;
 }
-[data-kind="decl"]:hover .open-in-vscode {
+[data-kind="rule"]:hover .open-in-vscode {
   display: flex;
 }
 .open-in-vscode {
@@ -100,12 +100,12 @@
 [data-kind="string"] {
   color: var(--string-color);
 }
-[data-kind="decl"][data-self_sub_decl="true"] > [data-attr="query"]::before {
+[data-kind="rule"][data-self_sub_rule="true"] > [data-attr="query"]::before {
   content: "&";
   margin-right: -2px;
   color: var(--foreground-color);
 }
-[data-kind="decl"] > [data-attr="query"] {
+[data-kind="rule"] > [data-attr="query"] {
   display: flex;
   gap: 0.25em;
   &::after {
@@ -118,7 +118,7 @@
     width: max-content;
   }
 }
-[data-kind="decl"] > [data-attr="rules"] {
+[data-kind="rule"] > [data-attr="rules"] {
   padding-left: 1em;
   display: flex;
   flex-direction: column;
@@ -400,8 +400,8 @@ input[type="search"] {
     outline: rgb(158, 106, 3) solid 0.1em;
   }
 }
-[data-kind="decl"]::after,
-[data-kind="decl"] > [data-attr="query"]::after {
+[data-kind="rule"]::after,
+[data-kind="rule"] > [data-attr="query"]::after {
   color: var(--brace-color);
 }
 [data-kind="multi_part_value"] > [data-attr="parts"] {
@@ -488,14 +488,14 @@ button {
     content: "left:";
   }
 }
-[data-kind="decl"] {
+[data-kind="rule"] {
   padding: 0.25em;
   background-color: rgb(40, 40, 40);
 }
-[data-kind="decl"] [data-kind="decl"] {
+[data-kind="rule"] [data-kind="rule"] {
   background-color: rgb(50, 50, 50);
 }
-[data-kind="decl"] [data-kind="decl"] [data-kind="decl"] {
+[data-kind="rule"] [data-kind="rule"] [data-kind="rule"] {
   background-color: rgb(60, 60, 60);
 }
 [data-kind="calc"] {
@@ -526,7 +526,7 @@ button {
     }
   }
 }
-.--css-edit-editor > [data-kind="decl"] {
+.--css-edit-editor > [data-kind="rule"] {
   max-width: 100%;
   width: 100%;
   overflow-y: scroll;
@@ -537,7 +537,7 @@ button {
 [data-kind] {
   height: min-content;
 }
-[data-kind="decl"] {
+[data-kind="rule"] {
   width: calc(99% - 1em);
 }
 [data-kind="subtract"] {

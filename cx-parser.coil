@@ -94,7 +94,7 @@ export let compile = match_on(:t){
   def :either({queries}) = queries.map(compile).join(", ").pipe(str:fmt(":is(" _ ")"))
 }
 
--- let ast = parse.run("#decl(@query --css-edit-editor) monospace").0
+-- let ast = parse.run("#rule(@query --css-edit-editor) monospace").0
 
 export def parse_cx_query(str) = try!(|| parse.run(str).0.pipe(compile))
 

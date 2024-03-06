@@ -123,7 +123,7 @@ end
 
 def* parse_query(end_pattern, skip_step)
   let query = nil
-  -- this is a fucking mess, please unify this with self_sub_decl
+  -- this is a fucking mess, please unify this with self_sub_rule
   if yield trimmed(test("&"))
     yield trim()
     yield chomp!("&")
@@ -380,7 +380,7 @@ def* parse_variable
   return {kind: :variable, name, expr}
 end
 
-def* parse_self_sub_decl
+def* parse_self_sub_rule
   yield chomp!("&")
   let skip_part = yield test(" ")
   let query = yield* parse_query(/^\s*{/, skip_part)
@@ -390,10 +390,10 @@ def* parse_self_sub_decl
     rules:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {kind: :decl, query, rules, self_sub_decl: attr(true)}
+  return {kind: :rule, query, rules, self_sub_rule: attr(true)}
 end
 
-def* parse_sub_decl
+def* parse_sub_rule
   let query = yield* parse_query(/^\s*{/)
   yield trimmed!(chomp!("{"))
   let rules = []
@@ -401,22 +401,22 @@ def* parse_sub_decl
     rules:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {kind: :decl, query, rules, sub_decl: attr(true)}
+  return {kind: :rule, query, rules, sub_rule: attr(true)}
 end
 
 def* parse_statement
   if yield test("--")
     return yield* parse_variable()
   else if yield test("&")
-    return yield* parse_self_sub_decl()
+    return yield* parse_self_sub_rule()
   else if yield test(/^(\w|-)+\s*:/)
     return yield* parse_property()
   else
-    return yield* parse_sub_decl()
+    return yield* parse_sub_rule()
   end
 end
 
-export def* parse_decl
+export def* parse_rule
   yield trim()
   let query = yield* parse_query(/^\s*{/)
   yield trimmed!(chomp!("{"))
@@ -425,5 +425,5 @@ export def* parse_decl
     rules:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {kind: :decl, query, rules}
+  return {kind: :rule, query, rules}
 end
