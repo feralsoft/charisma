@@ -4,23 +4,23 @@ import {run} from "./parse-utils.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import {parse_cx_query} from "./cx-parser.coil"
 import plugins from "./plugins"
-import "./diff.coil"
+-- import "./diff.coil"
 
--- document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
---   let css_rule = to_html(css_ast_node)
---   let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
---   let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
---   let relative_path = absolute_path:slice(root_path.len())
+document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
+  let css_rule = to_html(css_ast_node)
+  let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
+  let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
+  let relative_path = absolute_path:slice(root_path.len())
 
---   css_rule:setAttribute("data-css-index", idx)
---   css_rule:setAttribute("data-file-path", relative_path)
---   css_rule:prepend(:a{
---     href: str("vscode://file" absolute_path),
---     children: relative_path,
---     class: "open-in-vscode"
---   })
---   $(".--css-edit-editor"):append(css_rule)
--- })
+  css_rule:setAttribute("data-css-index", idx)
+  css_rule:setAttribute("data-file-path", relative_path)
+  css_rule:prepend(:a{
+    href: str("vscode://file" absolute_path),
+    children: relative_path,
+    class: "open-in-vscode"
+  })
+  $(".--css-edit-editor"):append(css_rule)
+})
 
 -- warn on unused query
 -- store active keys on editor elements with data attributes
@@ -69,8 +69,10 @@ window:addEventListener("keydown" |e| {
         placeholder: "search..."
         def :onkeyup(e)
           if e:key == "Enter"
-            $(".searched.focused"):focus()
+            let current_element = $(".searched.focused")
             teardown_search()
+            current_element:focus()
+            current_element:scrollIntoView({block: :center})
           else if e:key == "s" and e:ctrlKey
             let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
             if let elem = $("[data-search-idx=\"" prev_idx + 1 "\"]")
@@ -175,4 +177,4 @@ def init(root)
   end
 end
 
--- init(document:body)
+init(document:body)
