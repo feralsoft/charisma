@@ -1,3 +1,18 @@
+.--css-edit-editor {
+  margin-top: 1em;
+  flex-direction: row;
+  > :nth-child(1)::before {
+    content: "HEAD";
+    position: absolute;
+    top: 0;
+  }
+  > :nth-child(2)::before {
+    content: "@27fadbf2 | detect when ...";
+    position: absolute;
+    top: 0;
+  }
+}
+
 [data-diff-type="added"] {
   --diff-color: rgba(40, 107, 15, 0.5);
 }
@@ -9,41 +24,11 @@
 [data-diff-type="removed"] {
   --diff-color: rgba(255, 0, 0, 0.5);
 }
-
+[data-diff-type="modifier-changed"] > [data-attr="rhs"]::before {
+  background-color: rgba(16, 103, 209, 0.5);
+}
 [data-diff-type] {
   border: 1px dashed var(--diff-color);
   margin: -1px;
   background: var(--diff-color);
-}
-[data-diff-old-value]:is(:hover, :focus-within)::after {
-  content: attr(data-diff-old-value);
-  background: rgba(255, 0, 0, 0.5);
-  margin-top: 1em;
-}
-
-[data-attr="query"] [data-diff-type="removed"] {
-  overflow: hidden;
-  width: 100%;
-  transition: width 200ms linear;
-  min-width: 5px;
-  &:not(:hover):not(:focus-within) {
-    width: 5px;
-    * {
-      display: none;
-    }
-  }
-}
-[data-kind="property"][data-diff-type="removed"] {
-  overflow: hidden;
-  transition: all 100ms linear;
-  height: 1.25em;
-  font-size: 18px;
-  &:not(:hover):not(:focus-within) {
-    width: 100px;
-    height: 5px;
-    *,
-    &::after {
-      display: none;
-    }
-  }
 }

@@ -11,14 +11,16 @@ def Keyword:prototype.to_js = this:value
 def stringify(obj) = JSON:stringify(obj, |k v| v.to_js(), 2)
 
 let original_document = "
-.color.test {
+.color + .test {  
+  display: flex;  
   font-size: 2px;
 }
 "
 
 let new_document = "
-.color {
-  font-size: 4px;
+.color ~ .test {
+  font-size: 1rem;
+  color: red;
 }
 "
 
@@ -42,8 +44,10 @@ def ExprChanged(@path) end
 def ExprChanged:prototype.diff_type = :changed
 def QueryExtended(@path) end
 def QueryExtended:prototype.diff_type = :added
-def QueryPartRemoved(@old_path @new_path) end
+def QueryPartRemoved(@old_path @kind @new_path) end
 def QueryPartRemoved:prototype.diff_type = :removed
+def ModifierTypeChanged(@old_path @new_path) end
+def ModifierTypeChanged:prototype.diff_type = :changed
 
 protocol diff
 
@@ -93,6 +97,12 @@ def* :query.diff(old, new, path)
     else if old:modifier and old:lhs == new
       yield QueryPartRemoved[
         str(path " > [data-kind=\"" old:kind "\"] > [data-attr=rhs]")
+        old:kind
+        str(path " > [data-kind=\"" new:kind "\"]")
+      ]
+    else if new:modifier and old:modifier and new:lhs == old:lhs and new:rhs = old:rhs
+      yield ModifierTypeChanged[
+        str(path " > [data-kind=\"" old:kind "\"]")
         str(path " > [data-kind=\"" new:kind "\"]")
       ]
     end 
@@ -111,25 +121,34 @@ end
 
 let old_node = to_html(original_rule)
 
-$(".--css-edit-editor"):append(to_html(new_rule))
+$(".--css-edit-editor"):append(to_html(new_rule) old_node)
 
 for diff_object of original_rule.diff(new_rule)
-  diff_object.log()
+  -- diff_object.log()
   if diff_object instanceof PropertyRemoved
     let removed_node = old_node.query(":scope" diff_object:path)
     removed_node:setAttribute("data-diff-type" "removed")
-    $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=properties]")
-      .:prepend(removed_node)
+    -- $(".--css-edit-editor").query("[data-kind=rule] > [data-attr=properties]")
+    --   .:prepend(removed_node)
   else if diff_object instanceof QueryPartRemoved
-    let {old_path, new_path} = diff_object
+    let {old_path, kind, new_path} = diff_object
     let removed_node = old_node.query(":scope" old_path).log()
     removed_node:setAttribute("data-diff-type" "removed")
+    removed_node:setAttribute("data-diff-old-kind" kind)
     let new_node = $(".--css-edit-editor").query("[data-kind=rule]" new_path)
     new_node:insertBefore(removed_node, null)
+  else if diff_object instanceof ModifierTypeChanged
+    let {old_path, new_path} = diff_object
+    let node = $(".--css-edit-editor").query("[data-kind=rule]:nth-child(1)" new_path)
+    node:setAttribute("data-diff-type" "modifier-changed")
+    old_node.query(":scope" old_path)
+      .:setAttribute("data-diff-type" "modifier-changed")
   else if let node = $(".--css-edit-editor").query("[data-kind=rule]" diff_object:path)
     node:setAttribute("data-diff-type" diff_object.diff_type())
-    if diff_object:old_value
-      node:setAttribute("data-diff-old-value" diff_object:old_value)
-    end
+    old_node.query(":scope" diff_object:path)
+      .:setAttribute("data-diff-type" diff_object.diff_type())
+    -- if diff_object:old_value
+    --   node:setAttribute("data-diff-old-value" diff_object:old_value)
+    -- end
   end
 end
