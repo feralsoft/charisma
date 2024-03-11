@@ -333,29 +333,6 @@
     content: ")";
   }
 }
-[data-kind="nth_expr_with_plus"]:has(
-    > [data-attr="factor"][data-value="2"],
-    > [data-attr="offset"][data-value="1"]
-  ) {
-  * {
-    display: none;
-  }
-  &::after {
-    content: "odd";
-    color: rgb(186, 156, 36);
-  }
-}
-[data-kind="nth_expr_without_plus"]:has(
-    > [data-attr="factor"][data-value="2"]
-  ) {
-  * {
-    display: none;
-  }
-  &::after {
-    content: "even";
-    color: rgb(186, 156, 36);
-  }
-}
 [data-kind="nth_expr_with_plus"] {
   display: flex;
   & > [data-attr="factor"]::after {
@@ -498,6 +475,24 @@ button {
 [data-kind="rule"] [data-kind="rule"] [data-kind="rule"] {
   background-color: rgb(60, 60, 60);
 }
+[data-kind="rule"] [data-kind="rule"] [data-kind="rule"] [data-kind="rule"] {
+  background-color: rgb(50, 50, 50);
+}
+[data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"] {
+  background-color: rgb(40, 40, 40);
+}
+[data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"]
+  [data-kind="rule"] {
+  background-color: rgb(50, 50, 50);
+}
 [data-kind="calc"] {
   display: flex;
   &::before {
@@ -548,5 +543,31 @@ button {
     &::after {
       content: "-";
     }
+  }
+}
+
+[data-current-search-idx] {
+  :is([data-kind="variable"], [data-kind="property"]):not(
+      :has(.searched),
+      .searched
+    ),
+  [data-kind="rule"]:not(:has(.searched)) {
+    display: none;
+  }
+
+  &::before {
+    content: attr(data-current-search-idx) "/"
+      attr(data-current-search-last-idx);
+    position: fixed;
+    z-index: 1;
+    right: 1.5em;
+  }
+  &[data-current-search-last-idx="-1"]:not(
+      :has(> input.search:placeholder-shown)
+    )::before {
+    content: "no results";
+  }
+  &:has(> input.search:placeholder-shown)::before {
+    content: "";
   }
 }
