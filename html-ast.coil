@@ -110,7 +110,7 @@ def HTMLElement:prototype.to_ast()
     for key of this:getAttribute("data-attr-only-keys"):split(",").reject(_.empty?())
       node.key = {
         attr_only: true,
-        value: JSON:parse(this:dataset.getAttribute(str("data-" key)))
+        value: JSON:parse(this:getAttribute(str("data-" key)))
       }
     end
 
