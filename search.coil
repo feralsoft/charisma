@@ -5,7 +5,7 @@ import "./search.css"
 let root = $(".--css-edit-editor")
 
 def scroll_to(elem)
-  $$(".searched.focused").each(|elem| elem:classList:remove("focused"))
+  root.query_all(".searched.focused").each(|elem| elem:classList:remove("focused"))
   elem:scrollIntoView({block: :center})
   elem:classList:add("focused")
 end
@@ -36,28 +36,28 @@ def search = :input{
       current_element:scrollIntoView({block: :center})
     else if e:key == "s" and e:ctrlKey
       let prev_idx = root:dataset:currentSearchIdx.pipe(parseInt)
-      if let elem = $("[data-search-idx=\"" prev_idx + 1 "\"]")
+      if let elem = root.query("[data-search-idx=\"" prev_idx + 1 "\"]")
         scroll_to(elem)
         root:setAttribute("data-current-search-idx" prev_idx + 1)
       else
-        scroll_to($("[data-search-idx=\"0\"]"))
+        scroll_to(root.query("[data-search-idx=\"0\"]"))
         root:setAttribute("data-current-search-idx" 0)
       end
     else if e:key == "r" and e:ctrlKey
       let prev_idx = root:dataset:currentSearchIdx.pipe(parseInt)
-      if let elem = $("[data-search-idx=\"" prev_idx - 1 "\"]")
+      if let elem = root.query("[data-search-idx=\"" prev_idx - 1 "\"]")
         scroll_to(elem)
         root:setAttribute("data-current-search-idx" prev_idx - 1)
       else
         let {currentSearchLastIdx} = root:dataset
-        scroll_to($("[data-search-idx=\"" currentSearchLastIdx "\"]"))
+        scroll_to(root.query("[data-search-idx=\"" currentSearchLastIdx "\"]"))
         root:setAttribute("data-current-search-idx" currentSearchLastIdx)
       end
     end
   end
   def :oninput(e)
-    $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
-    $$(".searched").each(|elem| {
+    root.query_all("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+    root.query_all(".searched").each(|elem| {
       elem:classList:remove("searched")
       elem:removeEventListener("click" click_to_focus)
     })
