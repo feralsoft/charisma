@@ -360,23 +360,6 @@
     }
   }
 }
-input[type="search"] {
-  font-family: monospace;
-  position: sticky;
-  top: 1rem;
-  width: 100%;
-  font-size: 17px;
-  outline: none;
-  background-color: rgba(56, 56, 56, 0.9);
-  color: var(--foreground-color);
-  border-color: var(--outline-color);
-}
-.--css-edit-editor .searched {
-  background-color: rgba(158, 106, 3, 0.25);
-  &.focused {
-    outline: rgb(158, 106, 3) solid 0.1em;
-  }
-}
 [data-kind="rule"]::after,
 [data-kind="rule"] > [data-attr="query"]::after {
   color: var(--brace-color);
@@ -547,54 +530,6 @@ button {
     &::after {
       content: "-";
     }
-  }
-}
-
-[data-current-search-idx] {
-  [data-attr="query"] {
-    overflow: hidden;
-  }
-  &:not([data-current-search-last-idx="-1"]) {
-    :is([data-kind="variable"], [data-kind="property"]):not(
-        :has(.searched),
-        .searched
-      ) {
-      animation: shrink 100ms ease;
-      animation-fill-mode: forwards;
-      overflow: hidden;
-    }
-    [data-kind="rule"]:not(:has(.searched)) {
-      animation: shrink 100ms ease;
-      animation-fill-mode: forwards;
-      :not([data-kind], [data-attr]),
-      &::after {
-        display: none;
-      }
-    }
-    [data-kind="property"]:not(:has(.searched)) .flex-direction {
-      display: none;
-    }
-    [data-kind="rule"]:is(:active)
-      :is([data-kind="variable"], [data-kind="property"]):not(:has(.searched)) {
-      animation: expand 1s linear;
-      animation-fill-mode: forwards;
-    }
-  }
-
-  &::before {
-    content: attr(data-current-search-idx) "/"
-      attr(data-current-search-last-idx);
-    position: fixed;
-    z-index: 1;
-    right: 1.5em;
-  }
-  &[data-current-search-last-idx="-1"]:not(
-      :has(> input.search:placeholder-shown)
-    )::before {
-    content: "no results";
-  }
-  &:has(> input.search:placeholder-shown)::before {
-    content: "";
   }
 }
 

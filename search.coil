@@ -1,0 +1,100 @@
+import {parse_cx_query} from "./cx-parser.coil"
+import {run} from "./parse-utils.coil"
+import "./search.css"
+
+def scroll_to(elem)
+  $$(".searched.focused").each(|elem| elem:classList:remove("focused"))
+  elem:scrollIntoView({block: :center})
+  elem:classList:add("focused")
+end
+
+def teardown_search
+  $$(".searched").each(|elem| elem:classList:remove("searched"))
+  $(".--css-edit-editor [type=search]"):remove()
+  let editor = $(".--css-edit-editor")
+  editor:removeAttribute("data-current-search-idx")
+  editor:removeAttribute("data-current-search-last-idx")
+  $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+end
+
+
+def search = :input{
+  type: "search",
+  class: "search",
+  placeholder: "search..."
+  def :onkeyup(e)
+    if e:key == "Enter"
+      let current_element = $(".searched.focused")
+      teardown_search()
+      current_element:focus()
+      current_element:scrollIntoView({block: :center})
+    else if e:key == "s" and e:ctrlKey
+      let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
+      if let elem = $("[data-search-idx=\"" prev_idx + 1 "\"]")
+        scroll_to(elem)
+        $(".--css-edit-editor"):setAttribute("data-current-search-idx" prev_idx + 1)
+      else
+        scroll_to($("[data-search-idx=\"0\"]"))
+        $(".--css-edit-editor"):setAttribute("data-current-search-idx" 0)
+      end
+    else if e:key == "r" and e:ctrlKey
+      let prev_idx = $(".--css-edit-editor"):dataset:currentSearchIdx.pipe(parseInt)
+      if let elem = $("[data-search-idx=\"" prev_idx - 1 "\"]")
+        scroll_to(elem)
+        $(".--css-edit-editor"):setAttribute("data-current-search-idx" prev_idx - 1)
+      else
+        let {currentSearchLastIdx} = $(".--css-edit-editor"):dataset
+        scroll_to($("[data-search-idx=\"" currentSearchLastIdx "\"]"))
+        $(".--css-edit-editor"):setAttribute("data-current-search-idx" currentSearchLastIdx)
+      end
+    end
+  end
+  def :oninput(e)
+    $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
+    $$(".searched").each(|elem| elem:classList:remove("searched"))
+    $(".--css-edit-editor"):setAttribute("data-current-search-idx" 0)
+    let search_results = $$(parse_cx_query(e:target:value:trim()))
+    $(".--css-edit-editor"):setAttribute("data-current-search-last-idx" search_results:length - 1)
+    for [elem idx] of search_results.zip(0..)
+      elem:classList:add("searched")
+      elem:setAttribute("data-search-idx", idx)
+    end
+    if let first_result = $("[data-search-idx=\"0\"]")
+      scroll_to(first_result)
+    end
+  end
+}
+
+let root = $(".--css-edit-editor")
+
+window:addEventListener("keydown" |e| {
+  if Set["s" "r"].has?(e:key) and e:ctrlKey
+    if !root.query("input[type=search]")
+      let search_elem = search()
+      root:prepend(search_elem)
+      search_elem:focus()
+    else
+      root.query("input[type=search]"):focus()
+    end
+  else if e:key == "Enter" and root.query("input[type=search]")
+    e:preventDefault()
+    let focused_elem = nil
+    if let active = document:activeElement
+      if let focused = active.query(".searched.focused")
+        focused_elem = focused
+        1.log()
+      else
+        focused_elem = active.query(".searched")
+        2.log()
+      end
+    else
+      focused_elem = root.query(".searched.focused")
+      3.log()
+    end
+    teardown_search()
+    focused_elem:focus()
+    focused_elem:scrollIntoView({block: :center})
+  else if e:key == "Escape"
+    teardown_search()
+  end
+})
