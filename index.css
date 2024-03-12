@@ -478,6 +478,10 @@ button {
 [data-kind="rule"] [data-kind="rule"] [data-kind="rule"] [data-kind="rule"] {
   background-color: rgb(50, 50, 50);
 }
+[data-kind="rule"] {
+  overflow-y: hidden;
+}
+
 [data-kind="rule"]
   [data-kind="rule"]
   [data-kind="rule"]
@@ -551,8 +555,7 @@ button {
 }
 
 [data-current-search-idx] {
-  &:not([data-current-search-last-idx="-1"])
-    [data-kind="rule"]:not(:focus, :focus-within) {
+  &:not([data-current-search-last-idx="-1"]) {
     :is([data-kind="variable"], [data-kind="property"]):not(
         :has(.searched),
         .searched
@@ -561,7 +564,6 @@ button {
       animation-fill-mode: forwards;
       overflow: hidden;
     }
-    &:not(:has(.searched)),
     [data-kind="rule"]:not(:has(.searched)) {
       animation: shrink 100ms ease;
       animation-fill-mode: forwards;
@@ -572,6 +574,11 @@ button {
     }
     [data-kind="property"]:not(:has(.searched)) .flex-direction {
       display: none;
+    }
+    [data-kind="rule"]:is(:active)
+      :is([data-kind="variable"], [data-kind="property"]):not(:has(.searched)) {
+      animation: expand 1s linear;
+      animation-fill-mode: forwards;
     }
   }
 
