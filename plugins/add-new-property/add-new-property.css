@@ -49,3 +49,17 @@
     }
   }
 }
+/* This should be in index.css but our parser doesn't understand @keyframes yet */
+
+@keyframes shrink {
+  0% {
+    height: 1.2em;
+  }
+
+  100% {
+    height: 0;
+    width: 0;
+    margin-top: calc(-1 * var(--spacing));
+    padding: 0;
+  }
+}

@@ -546,13 +546,33 @@ button {
   }
 }
 
+[data-attr="query"] {
+  overflow: hidden;
+}
+
 [data-current-search-idx] {
-  :is([data-kind="variable"], [data-kind="property"]):not(
-      :has(.searched),
-      .searched
-    ),
-  [data-kind="rule"]:not(:has(.searched)) {
-    display: none;
+  &:not([data-current-search-last-idx="-1"])
+    [data-kind="rule"]:not(:focus, :focus-within) {
+    :is([data-kind="variable"], [data-kind="property"]):not(
+        :has(.searched),
+        .searched
+      ) {
+      animation: shrink 100ms ease;
+      animation-fill-mode: forwards;
+      overflow: hidden;
+    }
+    &:not(:has(.searched)),
+    [data-kind="rule"]:not(:has(.searched)) {
+      animation: shrink 100ms ease;
+      animation-fill-mode: forwards;
+      button,
+      &::after {
+        display: none;
+      }
+    }
+    [data-kind="property"]:not(:has(.searched)) .flex-direction {
+      display: none;
+    }
   }
 
   &::before {
