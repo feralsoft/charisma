@@ -372,7 +372,7 @@ input[type="search"] {
   border-color: var(--outline-color);
 }
 .--css-edit-editor .searched {
-  background-color: rgba(158, 106, 3, 0.184);
+  background-color: rgba(158, 106, 3, 0.25);
   &.focused {
     outline: rgb(158, 106, 3) solid 0.1em;
   }
@@ -550,11 +550,10 @@ button {
   }
 }
 
-[data-attr="query"] {
-  overflow: hidden;
-}
-
 [data-current-search-idx] {
+  [data-attr="query"] {
+    overflow: hidden;
+  }
   &:not([data-current-search-last-idx="-1"]) {
     :is([data-kind="variable"], [data-kind="property"]):not(
         :has(.searched),
@@ -567,7 +566,7 @@ button {
     [data-kind="rule"]:not(:has(.searched)) {
       animation: shrink 100ms ease;
       animation-fill-mode: forwards;
-      button,
+      :not([data-kind], [data-attr]),
       &::after {
         display: none;
       }
