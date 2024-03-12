@@ -9,7 +9,10 @@ def scroll_to(elem)
 end
 
 def teardown_search
-  $$(".searched").each(|elem| elem:classList:remove("searched"))
+  $$(".searched").each(|elem| {
+    elem:classList:remove("searched")
+    elem:removeEventListener("click" click_to_focus)
+  })
   $(".--css-edit-editor [type=search]"):remove()
   let editor = $(".--css-edit-editor")
   editor:removeAttribute("data-current-search-idx")
@@ -17,6 +20,7 @@ def teardown_search
   $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
 end
 
+def click_to_focus(e) = scroll_to(e:target)
 
 def search = :input{
   type: "search",
@@ -51,13 +55,17 @@ def search = :input{
   end
   def :oninput(e)
     $$("[data-search-idx]").each(|elem| elem:removeAttribute("data-search-idx"))
-    $$(".searched").each(|elem| elem:classList:remove("searched"))
+    $$(".searched").each(|elem| {
+      elem:classList:remove("searched")
+      elem:removeEventListener("click" click_to_focus)
+    })
     $(".--css-edit-editor"):setAttribute("data-current-search-idx" 0)
     let search_results = $$(parse_cx_query(e:target:value:trim()))
     $(".--css-edit-editor"):setAttribute("data-current-search-last-idx" search_results:length - 1)
     for [elem idx] of search_results.zip(0..)
       elem:classList:add("searched")
       elem:setAttribute("data-search-idx", idx)
+      elem:addEventListener("click" click_to_focus)
     end
     if let first_result = $("[data-search-idx=\"0\"]")
       scroll_to(first_result)
