@@ -3,6 +3,7 @@ import {match_on} from "./utils.coil"
 export let compile = match_on(:kind){
   def :child_selector({lhs rhs}) = str(compile(lhs) " " compile(rhs))
   def :class_selector({name}) = str("." name)
+  def :id_selector({name}) = str("#" name)
   def :selector_modifier({lhs rhs}) = str(compile(lhs) compile(rhs))
   def :rule({query properties self_sub_rule kind})
     if self_sub_rule
@@ -53,6 +54,10 @@ export let compile = match_on(:kind){
   def :element_selector({name}) = name
   def :subtract({lhs, rhs}) = str(compile(lhs) " - " compile(rhs))
   def :attribute_selector_contains({name, value}) = str(name "*=\"" value "\"")
+  def :nth_expr_with_plus({factor offset}) = str(factor "n+" offset)
+  def :nth_expr_without_plus({factor}) = str(factor "n")
+  def :keyframe({pct properties}) = str(pct "% {\n  " properties.map(compile).join(";\n  ") "\n}")
+  def :keyframes({name frames}) = str("@keyframes" name "{\n  " frames.map(compile).join(";\n  ") "\n}")
 }
 
 export def to_html(ast_node)

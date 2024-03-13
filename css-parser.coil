@@ -273,7 +273,7 @@ def* parse_var_with_default_value
   yield trimmed!(chomp!("("))
   let name = yield capture!(/^--(\w|-)+/)
   yield trimmed!(chomp!(","))
-  let default_value = yield* parse_value()
+  let default_value = yield* parse_value_step()
   yield trimmed!(chomp!(")"))
   return {kind: :var_with_default, name, default_value}
 end
@@ -420,7 +420,6 @@ end
 
 def* parse_keyframe
   let pct = yield trimmed!(capture!(/(\d+)%/, 1))
-  pct.log()
   yield trimmed!(chomp!("{"))
   let properties = []
   while !yield trimmed(test("}"))
