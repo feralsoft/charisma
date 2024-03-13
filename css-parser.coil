@@ -418,14 +418,40 @@ def* parse_statement
   end
 end
 
-export def* parse_rule
-  yield trim()
-  let query = yield* parse_query(/^\s*{/)
+def* parse_keyframe
+  let pct = yield trimmed!(capture!(/(\d+)%/, 1))
+  pct.log()
   yield trimmed!(chomp!("{"))
   let properties = []
   while !yield trimmed(test("}"))
     properties:push(yield* parse_statement())
   end
   yield trimmed!(chomp!("}"))
-  return {kind: :rule, query, properties}
+  return {kind: :keyframe, pct, properties}
+end
+
+export def* parse_rule
+  yield trim()
+  if yield test("@")
+    yield chomp!("@")
+    let at_rule_name = yield capture!(/^\w+/)
+    at_rule_name.==("keyframes").assert!(str("@" at_rule_name " not supported"))
+    let frames = []
+    let name = yield trimmed!(capture!(/^\w+/))
+    yield trimmed!(chomp!("{"))
+    while !yield trimmed(test("}"))
+      frames:push(yield* parse_keyframe())
+    end
+    yield trimmed!(chomp!("}"))
+    return {kind: :keyframes, name, frames}
+  else
+    let query = yield* parse_query(/^\s*{/)
+    yield trimmed!(chomp!("{"))
+    let properties = []
+    while !yield trimmed(test("}"))
+      properties:push(yield* parse_statement())
+    end
+    yield trimmed!(chomp!("}"))
+    return {kind: :rule, query, properties}
+  end
 end

@@ -62,7 +62,7 @@ export def trim_before!(parser) = {kind: :trim_before!, parser}
 export def trim = {kind: :trim}
 export def debug = {kind: :debug}
 
-window:DEBUG_PARSER = false
+window:DEBUG_PARSER = true
 
 def :trimmed.run({parser}, string)
   let [result s] = parser.run(string:trimLeft())

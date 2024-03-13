@@ -6,21 +6,23 @@ import plugins from "./plugins"
 import "./search.coil"
 -- import "./diff.coil"
 
-document:styleSheets.0:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
-  let css_rule = to_html(css_ast_node)
-  let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
-  let absolute_path = document:styleSheets.0:ownerNode:getAttribute("data-vite-dev-id")
-  let relative_path = absolute_path:slice(root_path.len())
+for sheet of document:styleSheets
+  sheet:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
+    let css_rule = to_html(css_ast_node)
+    let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"
+    let absolute_path = sheet:ownerNode:getAttribute("data-vite-dev-id")
+    let relative_path = absolute_path:slice(root_path.len())
 
-  css_rule:setAttribute("data-css-index", idx)
-  css_rule:setAttribute("data-file-path", relative_path)
-  css_rule:prepend(:a{
-    href: str("vscode://file" absolute_path),
-    children: relative_path,
-    class: "open-in-vscode"
+    css_rule:setAttribute("data-css-index", idx)
+    css_rule:setAttribute("data-file-path", relative_path)
+    css_rule:prepend(:a{
+      href: str("vscode://file" absolute_path),
+      children: relative_path,
+      class: "open-in-vscode"
+    })
+    $(".--css-edit-editor"):append(css_rule)
   })
-  $(".--css-edit-editor"):append(css_rule)
-})
+end
 
 -- warn on unused query
 -- store active keys on editor elements with data attributes

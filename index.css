@@ -14,6 +14,7 @@
   --string-color: #ce9178;
   --attribute-color: var(--property-name-color);
   --foreground-color: #ccc;
+  --at-rule-color: #c586c0;
   background-color: rgb(31, 31, 31);
   padding: 0.5rem;
   font-size: 18px;
@@ -125,21 +126,22 @@
   gap: var(--spacing);
   padding-top: var(--spacing);
   padding-bottom: var(--spacing);
-  & > :is([data-kind="property"], [data-kind="variable"]) {
-    display: flex;
-    gap: 0.25em;
-    & > [data-attr="name"] {
-      width: 100%;
-      &::after {
-        content: ":";
-        color: var(--foreground-color);
-      }
-    }
+}
+[data-kind="property"],
+[data-kind="variable"] {
+  display: flex;
+  gap: 0.25em;
+  & > [data-attr="name"] {
+    width: 100%;
     &::after {
-      margin-left: -0.25em;
-      content: ";";
+      content: ":";
       color: var(--foreground-color);
     }
+  }
+  &::after {
+    margin-left: -0.25em;
+    content: ";";
+    color: var(--foreground-color);
   }
 }
 [data-kind="px"] {
@@ -535,4 +537,51 @@ button {
 
 .--css-edit-editor [data-kind="rule"][data-file-path]:focus-within {
   outline: 1px solid rgba(255, 255, 255, 0.5);
+}
+[data-kind="keyframes"] {
+  display: flex;
+  flex-direction: column;
+
+  > [data-attr="name"] {
+    &::before {
+      content: "@keyframes";
+      color: var(--at-rule-color);
+    }
+    color: var(--property-name-color);
+    display: flex;
+    gap: var(--spacing);
+    &::after {
+      content: "{";
+      color: var(--brace-color);
+    }
+  }
+  > [data-attr="frames"] {
+    padding-left: 1em;
+    display: flex;
+    flex-direction: column;
+    [data-kind="keyframe"] {
+      > [data-attr="pct"] {
+        > [data-value]::after {
+          content: "%";
+        }
+        display: flex;
+        gap: var(--spacing);
+        &::after {
+          content: "{";
+          color: var(--brace-color);
+        }
+      }
+      &::after {
+        content: "}";
+        color: var(--brace-color);
+      }
+      > [data-attr="properties"] {
+        padding-left: 1em;
+      }
+    }
+  }
+  &::after {
+    content: "}";
+    color: var(--brace-color);
+  }
 }
