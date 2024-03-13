@@ -47,7 +47,14 @@ export let compile = match_on(:kind){
   def :attribute_selector_equals({name value}) = str("[" name "=\"" value "\"]")
   def :string({value}) = str("\"" value "\"")
   def :multi_part_value({parts}) = parts.map(compile).join(" ")
-  def :direct_descendent({lhs, rhs}) = str(compile(lhs) " > " compile(rhs))
+  def :direct_descendent({lhs, rhs})
+    if lhs
+      return str(compile(lhs) " > " compile(rhs))
+    else
+      -- not great... should be handled higher
+      return str("> " compile(rhs))
+    end
+  end
   def :sibling_selector({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
   def :adjacent_sibling_selector({lhs, rhs}) = str(compile(lhs) " + " compile(rhs))
   def :or({lhs, rhs}) = str(compile(lhs) " , " compile(rhs))
