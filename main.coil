@@ -3,10 +3,10 @@ import {parse_rule} from "./css-parser.coil"
 import {run} from "./parse-utils.coil"
 import {to_html, compile, to_ast} from "./html-ast.coil"
 import plugins from "./plugins"
-import "./search.coil"
+import "./search/search.coil"
 -- import "./diff.coil"
 
-for sheet of document:styleSheets
+for sheet of document:styleSheets.take(1)
   sheet:rules.zip(0..).map(|[rule idx]| [parse_rule.run(rule:cssText).0, idx]).each(|[css_ast_node idx]| {
     let css_rule = to_html(css_ast_node)
     let root_path = "/Users/marcelrusu/Documents/Projects/css-edit/"

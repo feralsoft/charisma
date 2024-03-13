@@ -1,5 +1,5 @@
-import {test, capture!, chomp!, trimmed, trimmed!, trim, debug, run} from "./parse-utils.coil"
-import {match_on} from "./utils.coil"
+import {test, capture!, chomp!, trimmed, trimmed!, trim, debug, run} from "../parse-utils.coil"
+import {match_on} from "../utils.coil"
 
 let value_regex = /[^, )]*/
 

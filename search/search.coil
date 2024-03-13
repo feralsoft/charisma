@@ -1,5 +1,5 @@
+import {run} from "../parse-utils.coil"
 import {parse_cx_query} from "./cx-parser.coil"
-import {run} from "./parse-utils.coil"
 import "./search.css"
 
 let root = $(".--css-edit-editor")
