@@ -1,47 +1,40 @@
-def property(name) = str("[data-kind=property]:has(> [data-attr=name] [data-value=\"" name "\"])")
-def attr(name) = str("[data-attr=\" name \"]")
-def value(val) = str("[data-value=\"" val "\"]")
+def QueryNode end
 
-def Closest(@self @query) end
-def Query(@self @query) end
-def Text(@self) end
+def Closest(@node @query) end
+Object:setPrototypeOf(Closest, QueryNode)
+def Query(@node @query) end
+Object:setPrototypeOf(Query, QueryNode)
+def Text(@node) end
+Object:setPrototypeOf(Text, QueryNode)
 
-protocol closest
-protocol query
-protocol text
-
-def Object:prototype.closest(query) = Closest[this query]
-def Object:prototype.query(query) = Query[this query]
-def Object:prototype.text() = Text[this]
-
-{flex_direction:
-  Text[
-    Query[
-      Closest[<self/> "[data-attr=properties]"]
-      "[data-kind=property]:has(> [data-attr=name] [data-value=\"flex-direction\"]) > [data-attr=expr] [data-value]"
-    ]
-  ]
+QueryNode:prototype = {
+  def :closest(selector) = Closest[this selector]
+  def :query(selector) = Query[this selector]
+  def :text = Text[this]
 }
 
-def Text:prototype.observe = {characterData: true}
-def Query:prototype.observe = {childList: true, subTree: true}
-def Closest:prototype.observe = nil
+def Text:prototype:attach_observer(observer)
+  observer:observe(
+    this:node:instantiate()
+    {characterData: true, childList: false}
+  )
+end
+def Query:prototype:attach_observer(observer)
+  observer:observe(this:node:instantiate(), {subTree: true, childList: true})
+  observer:observe(this:query:instantiate(), {childList: true})
+end
+def Closest:prototype:attach_observer = nil
 
 let flex_preview = {
-  -- display: flex;
-  -- 
   query: "[data-kind=property]:has([data-name=display]):has(> [data-attr=expr] [data-value=flex])"
   computed: {
-    def* :flex_direction(self)
-      let properties = yield self.closest(attr("properties"))
-      return yield properties.query(property("flex-direction") " > " attr("expr") " [data-value]").text()
-    end
+    flex_direction: self()
+      .:closest(attr("properties"))
+      .:query(property("flex-direction") " > " attr("expr") " [data-value]")
+      .:text()
   }
   def* :insert_after = :div{
-    class: cx({
-      "flex-direction" => true
-      "flipped" => yield get(:flex_direction) == "column"
-    })
+    class: cx("flex-direction"){"flipped" => yield get(:flex_direction) == "column"}
     def* :onclick(e)
       if yield get(:flex_direction) == "column"
         yield remove_property!("flex-direction")
