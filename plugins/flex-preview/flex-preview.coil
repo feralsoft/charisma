@@ -32,12 +32,12 @@ def direction(elem, rebuild) = :div{
 }
 
 def flex_preview({root, rebuild})
-  for flex_rule of root.query_all(
+  for flex_property of root.query_all(
     "[data-kind=property]:has(
       > [data-attr=name] > [data-value=display]
     ) > [data-attr=expr] [data-kind]:has([data-value=flex]):not(:has(.flex-direction))"
   )
-    flex_rule:append(direction(flex_rule, rebuild))
+    flex_property:append(direction(flex_property, rebuild))
   end
 end
 

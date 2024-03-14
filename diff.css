@@ -6,10 +6,22 @@
     position: absolute;
     top: 0;
   }
-  > :nth-child(2)::before {
-    content: "@27fadbf2 | detect when ...";
-    position: absolute;
-    top: 0;
+  > :nth-child(2) {
+    &::before {
+      content: "02/12/2023 | implement hover on calculated departure";
+      position: absolute;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 325px;
+      top: 0;
+    }
+    &:hover::before {
+      overflow: initial;
+      white-space: unset;
+      text-overflow: unset;
+      background: rgba(31, 31, 31, 0.5);
+    }
   }
 }
 
