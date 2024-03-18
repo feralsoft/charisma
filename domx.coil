@@ -1,10 +1,10 @@
 let flex_preview = {
   query: "[data-kind=property]:has(> [data-attr=name] [data-value=display], > [data-attr=expr] [data-value=flex])"
-  def :insert_after({self, current_rule: {properties}}) = :div{
+  def :insert_after({self: {rule: {properties}}}) = :div{
     class: "flex-direction-preview"
     "data-flex-direction" => properties.at("flex-direction")
     def :onclick
-      if properties.at(:flex_direction) == "column"
+      if properties.at("flex-direction") == "column"
         properties.delete!("flex-direction")
       else
         properties.set!("flex-direction" "column")

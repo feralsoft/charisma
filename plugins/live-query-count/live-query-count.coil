@@ -16,10 +16,7 @@ def live_count({root, signal})
           count:innerText = num
         end
       else
-        top_level_query:append(:div{
-          class: "live-query-count"
-          children: [num]
-        })
+        top_level_query:append(:div{class: "live-query-count", children: [num]})
       end
     end
   })
