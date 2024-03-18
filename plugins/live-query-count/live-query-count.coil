@@ -10,12 +10,15 @@ def live_count({root, signal})
       -- remove ::before,::after
         .:replaceAll("::before", "")
         .:replaceAll("::after", "")
+      let num = $$(selector):length
       if let count = top_level_query.query(".live-query-count")
-        count:innerText = $$(selector):length
+        if count:innerText != str(num)
+          count:innerText = num
+        end
       else
         top_level_query:append(:div{
           class: "live-query-count"
-          children: [$$(selector):length]
+          children: [num]
         })
       end
     end
