@@ -10,3 +10,18 @@ export def match_on(key) = {
     end
   }
 }
+
+export def create_generator_runtime(cb, initial_value) = |generator| {
+  let return_result = initial_value
+  let gen = generator()
+  let result = nil
+  while let {value, done} = gen:next(result)
+    if done
+      return return_result
+    else
+      let {result: r, acc} = cb(return_result, value, generator)
+      result = r
+      return_result = acc
+    end
+  end
+}

@@ -1,11 +1,12 @@
-import {match_on} from "./utils.coil"
+import {match_on, create_generator_runtime} from "./utils.coil"
 
 def get(name) = {type: :get, name}
 def set(name, value) = {type: :set, name, value}
 
-
 let db = {
-  "flex-direction" => "row"
+  properties: {  
+    "flex-direction" => "row"
+  }
 }
 
 let watchers = Map{}
@@ -17,10 +18,10 @@ let exec_cmd = match_on(:type){
     else
       watchers:set(generator, Set[name])
     end
-    return db.name
+    return db:properties.name
   end
   def :set({name, value}, db)
-    db.name = value
+    db:properties.name = value
     for [generator, values] of watchers
       values.has?(name)
       run(generator)
@@ -28,19 +29,10 @@ let exec_cmd = match_on(:type){
   end
 }
 
-def run(generator)
-  let cmds = []
-  let gen = generator()
-  let result = nil
-  while let {value: cmd, done} = gen:next(result)
-    if done
-      return cmds
-    else
-      cmds:push(cmd)
-      result = exec_cmd(cmd, db, generator)
-    end
-  end
-end
+let run = create_generator_runtime(|cmds, cmd, self| ({
+  result: exec_cmd(cmd, db, self)
+  acc: [...cmds, cmd]
+}), [])
 
 def* do_stuff
   let value = yield get("flex-direction")
@@ -51,7 +43,5 @@ def* do_stuff
 end
 
 let cmds = run(do_stuff)
-
-
 
 watchers.at(do_stuff).log()
