@@ -2,11 +2,10 @@ import {match_on, create_generator_runtime} from "./utils.coil"
 
 def get(name) = {type: :get, name}
 def set(name, value) = {type: :set, name, value}
+def remove(name) = {type: :remove, name, value}
 
 let db = {
-  properties: {  
-    "flex-direction" => "row"
-  }
+  properties: {"flex-direction" => "row"}
 }
 
 let watchers = Map{}
@@ -22,10 +21,11 @@ let exec_cmd = match_on(:type){
   end
   def :set({name, value}, db)
     db:properties.name = value
-    for [generator, values] of watchers
-      values.has?(name)
-      run(generator)
-    end
+    watchers.filter(1 _.has?(name)).map(0).each(run)
+  end
+  def :remove({name}, db)
+    db:properties.delete!(name)
+    watchers.filter(1 _.has?(name)).map(0).each(run)
   end
 }
 
