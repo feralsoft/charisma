@@ -15,11 +15,11 @@ for sheet of document:styleSheets.take(1)
 
     css_rule:setAttribute("data-css-index", idx)
     css_rule:setAttribute("data-file-path", relative_path)
-    css_rule:prepend(:a{
-      href: str("vscode://file" absolute_path),
-      children: relative_path,
-      class: "open-in-vscode"
-    })
+    -- css_rule:prepend(:a{
+    --   href: str("vscode://file" absolute_path),
+    --   children: relative_path,
+    --   class: "open-in-vscode"
+    -- })
     $(".--css-edit-editor"):append(css_rule)
   })
 end
@@ -38,6 +38,11 @@ def create_signal() = {
   def :listen(obj event_name cb)
     obj:addEventListener(event_name cb)
     this:on_abort(|| obj:removeEventListener(event_name cb))
+  end
+  def :every(ms, cb)
+    cb()
+    let id = setInterval(cb, ms)
+    this:on_abort(|| clearInterval(id))
   end
 }
 

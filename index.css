@@ -84,7 +84,7 @@
 [data-kind="element_selector"] {
   color: var(--class-color);
 }
-.open-in-vscode {
+/* .open-in-vscode {
   display: none;
 }
 [data-kind="rule"]:hover .open-in-vscode {
@@ -97,7 +97,7 @@
   background-color: rgba(255, 255, 255, 0.285);
   padding: 0.25em;
   color: var(--foreground-color);
-}
+} */
 [data-kind="string"] {
   color: var(--string-color);
 }

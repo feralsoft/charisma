@@ -1,0 +1,25 @@
+import "./live-query-count.css"
+import {to_ast, compile} from "../../html-ast.coil"
+
+-- avg 17ms to do run this plugin over for 69 rules
+-- thought it would be worse.
+def live_count({root, signal})
+  signal:every(500 || {
+    for top_level_query of root.query_all(".--css-edit-editor > [data-kind=rule] > [data-attr=query]")
+      let selector = top_level_query.query("[data-kind]").to_ast().pipe(compile)
+      -- remove ::before,::after
+        .:replaceAll("::before", "")
+        .:replaceAll("::after", "")
+      if let count = top_level_query.query(".live-query-count")
+        count:innerText = $$(selector):length
+      else
+        top_level_query:append(:div{
+          class: "live-query-count"
+          children: [$$(selector):length]
+        })
+      end
+    end
+  })
+end
+
+export default live_count

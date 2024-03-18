@@ -10,6 +10,7 @@ import color_preview from "./color-preview/color-preview.coil";
 import flex_preview from "./flex-preview/flex-preview.coil";
 import update_text from "./update-text/update-text.coil";
 import order_properties from "./order-properties/order-properties.coil";
+import live_query_count from "./live-query-count/live-query-count.coil";
 
 export default {
   copy_paste,
@@ -24,4 +25,5 @@ export default {
   flex_preview,
   update_text,
   order_properties,
+  live_query_count,
 };

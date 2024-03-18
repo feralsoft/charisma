@@ -1,0 +1,14 @@
+.live-query-count {
+  font-size: 0.75em;
+  margin-left: -0.1em;
+  &::before,
+  &::after {
+    color: rgb(143, 143, 143);
+  }
+  &::before {
+    content: "(";
+  }
+  &::after {
+    content: ")";
+  }
+}
