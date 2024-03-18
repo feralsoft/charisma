@@ -8,6 +8,7 @@ let db = {
   properties: {"flex-direction" => "row"}
 }
 
+-- keys can be selector paths
 let watchers = Map{}
 
 let exec_cmd = match_on(:type){
@@ -39,11 +40,10 @@ def* plugin_a
   value.log("value:")
 end
 
-let cmds = run(plugin_a)
-
 def* plugin_b
-  yield remove("flex-direction")
+  yield set("flex-direction" "blah")
 end
-run(plugin_b)
+
+[plugin_a plugin_b].each(run)
 
 watchers.log()
