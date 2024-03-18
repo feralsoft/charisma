@@ -2,7 +2,7 @@ import {match_on, create_generator_runtime} from "./utils.coil"
 
 def get(name) = {type: :get, name}
 def set(name, value) = {type: :set, name, value}
-def remove(name) = {type: :remove, name, value}
+def remove(name) = {type: :remove, name}
 
 let db = {
   properties: {"flex-direction" => "row"}
@@ -19,11 +19,11 @@ let exec_cmd = match_on(:type){
     end
     return db:properties.name
   end
-  def :set({name, value}, db)
+  def :set({name, value}, db, _)
     db:properties.name = value
     watchers.filter(1 _.has?(name)).map(0).each(run)
   end
-  def :remove({name}, db)
+  def :remove({name}, db, _)
     db:properties.delete!(name)
     watchers.filter(1 _.has?(name)).map(0).each(run)
   end
@@ -34,14 +34,16 @@ let run = create_generator_runtime(|cmds, cmd, self| ({
   acc: [...cmds, cmd]
 }), [])
 
-def* do_stuff
+def* plugin_a
   let value = yield get("flex-direction")
   value.log("value:")
-  if value != "column"
-    yield set("flex-direction", "column")
-  end
 end
 
-let cmds = run(do_stuff)
+let cmds = run(plugin_a)
 
-watchers.at(do_stuff).log()
+def* plugin_b
+  yield remove("flex-direction")
+end
+run(plugin_b)
+
+watchers.at(plugin_a).log()
