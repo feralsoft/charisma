@@ -41,7 +41,8 @@ let GeneratorFunction = generator:constructor
 export protocol run
 
 def GeneratorFunction:prototype.run(string, ...args)
-  let [gen result] = [this(...args) nil]
+  let gen = this(...args)
+  let result = nil
   while let {value, done} = gen:next(result)
     if done
       return [value string]
