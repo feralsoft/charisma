@@ -12,20 +12,20 @@ let watchers = Map{}
 
 let exec_cmd = match_on(:type){
   def :get({name}, db, generator)
-    if let list = watchers.at(generator)
-      list:add(name)
+    if let list = watchers.at(name)
+      list:add(generator)
     else
-      watchers:set(generator, Set[name])
+      watchers:set(name, Set[generator])
     end
     return db:properties.name
   end
   def :set({name, value}, db, _)
     db:properties.name = value
-    watchers.filter(1 _.has?(name)).map(0).each(run)
+    watchers.at(name).each(run)
   end
   def :remove({name}, db, _)
     db:properties.delete!(name)
-    watchers.filter(1 _.has?(name)).map(0).each(run)
+    watchers.at(name).each(run)
   end
 }
 
@@ -46,4 +46,4 @@ def* plugin_b
 end
 run(plugin_b)
 
-watchers.at(plugin_a).log()
+watchers.log()
