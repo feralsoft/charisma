@@ -6,7 +6,6 @@ def focus({root, signal, scope})
     $$(".--css-edit-editor [" scope:data(:active) "]").each(|node| node:removeAttribute(scope:data(:active)))
   for node of root.query_all("[data-kind]")
     signal:listen(node "click" |e| {
-      e:stopPropagation()  
       if node:hasAttribute(scope:data(:active))
         unfocus_all()
       else

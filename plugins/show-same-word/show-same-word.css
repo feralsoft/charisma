@@ -1,0 +1,6 @@
+[data-exact-word] {
+  background-color: rgba(180, 180, 251, 0.15);
+}
+[data-similar-word]:not([data-exact-word]) {
+  background-color: rgba(180, 180, 251, 0.05);
+}

@@ -1,0 +1,19 @@
+import "./show-same-word.css"
+let once = false
+def show_same_word({root, signal})
+  if !once
+    signal:listen(root "click" |e| {
+      $$("[data-similar-word]").each(|elem| elem:removeAttribute("data-similar-word"))
+      $$("[data-exact-word]").each(|elem| elem:removeAttribute("data-exact-word"))
+      if let value = document:activeElement:getAttribute("data-value")
+        $$("[data-value*=\"" value "\"]")
+          .each(|elem| elem:setAttribute("data-similar-word" true))
+        $$("[data-value=\"" value "\"]")
+          .each(|elem| elem:setAttribute("data-exact-word" true))
+      end
+    })
+    once = true
+  end
+end
+
+export default show_same_word

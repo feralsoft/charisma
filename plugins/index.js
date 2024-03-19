@@ -11,6 +11,7 @@ import flex_preview from "./flex-preview/flex-preview.coil";
 import update_text from "./update-text/update-text.coil";
 import order_properties from "./order-properties/order-properties.coil";
 import live_query_count from "./live-query-count/live-query-count.coil";
+import show_same_word from "./show-same-word/show-same-word.coil";
 
 export default {
   copy_paste,
@@ -26,4 +27,5 @@ export default {
   update_text,
   order_properties,
   live_query_count,
+  show_same_word,
 };
