@@ -2,7 +2,7 @@ import "./show-same-word.css"
 let once = false
 def show_same_word({root, signal})
   if !once
-    signal:listen(root "click" |e| {
+    signal:listen(root "focus" |e| {
       $$("[data-similar-word]").each(|elem| elem:removeAttribute("data-similar-word"))
       $$("[data-exact-word]").each(|elem| elem:removeAttribute("data-exact-word"))
       if let value = document:activeElement:getAttribute("data-value")
