@@ -45,8 +45,16 @@ def render(plugin, {name, attrs, children}, run)
   for [key val] of attrs.filter(|[_ val]| val instanceof ObjectLiteral)
     new_attrs.key = exec_cmd(val, {db, plugin, refresh: |plugin| refresh(plugin, run)})
   end
-  return VNode[name new_attrs children]
-    .log()
+
+  let new_children = children.map(|vnode| {
+    if type_of(vnode).pipe(Set["string" "number"])
+      return vnode
+    else
+      return render(plugin, vnode, run)
+    end
+  }).into([])
+
+  return VNode[name new_attrs new_children].log()
 end
 def refresh(plugin, run)
   if plugin:do
@@ -71,6 +79,7 @@ let plugin_a = {
   insert_after: :div{
     class: "flex-direction-preview"
     "data-flex-direction" => self.at("flex-direction")
+    children: [:div{class: self.at("flex-direction")}]
   }
 }
 

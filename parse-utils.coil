@@ -37,6 +37,7 @@ def RegExp:prototype.+(regex) = RegExp[this:source + regex:source]
 
 def* generator end
 let GeneratorFunction = generator:constructor
+window:GeneratorFunction = GeneratorFunction
 
 export protocol run
 
