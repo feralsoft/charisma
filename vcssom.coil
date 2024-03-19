@@ -1,51 +1,76 @@
 import {match_on, create_generator_runtime} from "./utils.coil"
 
-def get(name) = {type: :get, name}
-def set(name, value) = {type: :set, name, value}
-def remove(name) = {type: :remove, name}
+def Self() end
+let self = Self[].freeze!()
+
+def Self:prototype.at(name) = {type: :at, name, query: this:query}
+def Self:prototype.set(name, value) = {type: :set, name, value, query: this:query}
+def Self:prototype.delete!(name) = {type: :delete!, name, query: this:query}
 
 let db = {
-  properties: {"flex-direction" => "row"}
+  rules: [
+    {properties: {"flex-direction" => "row"}}
+    {properties: {"flex-direction" => "column"}}
+  ]
 }
 
 -- keys can be selector paths
 let watchers = Map{}
 
 let exec_cmd = match_on(:type){
-  def :get({name}, {db, generator})
-    if let list = watchers.at(name)
-      list:add(generator)
+  def :at({name}, {db, plugin})
+    let path = str(plugin:query "-" name)
+    if let list = watchers.at(path)
+      list:add(plugin)
     else
-      watchers:set(name, Set[generator])
+      watchers:set(path, Set[plugin])
     end
-    return db:properties.name
+    return db:rules.(plugin:query):properties.name
   end
-  def :set({name, value}, {db})
-    db:properties.name = value
-    watchers.at(name).each(run)
+  def :set({name, value}, {db, plugin, run})
+    let path = str(plugin:query "-" name)
+    db:rules.(plugin:query):properties.name = value
+    watchers.at(path).each(run)
   end
-  def :remove({name}, {db})
-    db:properties.delete!(name)
-    watchers.at(name).each(run)
+  def :delete!({name}, {db, plugin, run})
+    let path = str(plugin:query "-" name)
+    db:rules.(plugin:query):properties.delete!(name)
+    watchers.at(path).each(run)
   end
 }
 
 let current_scope = "[data-kind=rule]:nth-child(1)"
 
-let run = create_generator_runtime(|cmds, cmd, generator| ({
-  result: exec_cmd(cmd, {db, generator, scope: current_scope})
-  acc: [...cmds, cmd]
-}), [])
-
-def* plugin_a
-  let value = yield get("flex-direction")
-  value.log("value:")
+def init(plugin)
+  let run = create_generator_runtime(|cmds, cmd| ({
+    result: exec_cmd(cmd, {
+      db,
+      plugin,
+      run: |plugin| run(plugin:do)
+    })
+    acc: [...cmds, cmd]
+  }), [])
+  run(plugin:do)
+  return run
 end
 
-def* plugin_b
-  yield set("flex-direction" "blah")
-end
+let plugin_a = {
+  query: 0,
+  def* :do
+    self.at("flex-direction").yield.log("value:")
+  end
+}
 
-[plugin_a plugin_b].each(run)
+let plugin_b = {
+  query: 0,
+  def* :do
+    if self.at("flex-direction").yield != "blah"
+      self.set("flex-direction", "blah").yield
+    end
+  end
+}
+
+[plugin_a plugin_b].each(init)
 
 watchers.log()
+db.log()

@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
-    "vite": "^5.0.8",
-    "@coil-lang/compiler": "0.1.30"
+    "prettier": "3.2.5",
+    "vite": "5.1.6",
+    "@coil-lang/compiler": "0.1.31"
   }
 }
