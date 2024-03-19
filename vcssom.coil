@@ -28,39 +28,50 @@ let exec_cmd = match_on(:type){
     end
     return db:rules.(plugin:query):properties.name
   end
-  def :set({name, value}, {db, plugin, run})
+  def :set({name, value}, {db, plugin, refresh})
     let path = str(plugin:query "-" name)
     db:rules.(plugin:query):properties.name = value
-    watchers.at(path).each(run)
+    watchers.at(path).each(refresh)
   end
-  def :delete!({name}, {db, plugin, run})
+  def :delete!({name}, {db, plugin, refresh})
     let path = str(plugin:query "-" name)
     db:rules.(plugin:query):properties.delete!(name)
-    watchers.at(path).each(run)
+    watchers.at(path).each(refresh)
   end
 }
 
-let known_method_names = [:do].freeze!()
+def render(plugin, {name, attrs, children}, run)
+  let new_attrs = {...attrs}
+  for [key val] of attrs.filter(|[_ val]| val instanceof ObjectLiteral)
+    new_attrs.key = exec_cmd(val, {db, plugin, refresh: |plugin| refresh(plugin, run)})
+  end
+  return VNode[name new_attrs children]
+    .log()
+end
+def refresh(plugin, run)
+  if plugin:do
+    run(plugin:do)
+  end
+  if let vnode = plugin:insert_after
+    render(plugin, vnode, run)
+  end
+end
 
 def init(plugin)
-  let methods = known_method_names.filter(plugin).into([])
   let run = create_generator_runtime(|cmds, cmd| ({
-    result: exec_cmd(cmd, {
-      db,
-      plugin,
-      run: |plugin| methods.each(|method| run(plugin.method))
-    })
+    result: exec_cmd(cmd, {db, plugin, refresh: |plugin| refresh(plugin, run)})
     acc: [...cmds, cmd]
   }), [])
-  run(plugin:do)
+  refresh(plugin, run)
   return run
 end
 
 let plugin_a = {
   query: 0,
-  def* :do
-    self.at("flex-direction").yield.log("value:")
-  end
+  insert_after: :div{
+    class: "flex-direction-preview"
+    "data-flex-direction" => self.at("flex-direction")
+  }
 }
 
 let plugin_b = {
@@ -71,9 +82,6 @@ let plugin_b = {
     end
   end
 }
-
-:div{class: "test"}["hey there"]
-  .log()
 
 [plugin_a plugin_b].each(init)
 
