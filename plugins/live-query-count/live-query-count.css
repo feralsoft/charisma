@@ -1,14 +1,13 @@
 .live-query-count {
   font-size: 0.75em;
-  margin-left: -0.1em;
-  &::before,
-  &::after {
-    color: rgb(143, 143, 143);
-  }
-  &::before {
-    content: "(";
-  }
-  &::after {
-    content: ")";
-  }
+  margin-left: -0.25em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: rgb(72, 72, 72, 0.8);
+  line-height: 1;
+  padding: 0.1em;
+  justify-content: center;
+  display: flex;
+  width: max-content;
+  height: min-content;
+  border-radius: 5px;
 }
