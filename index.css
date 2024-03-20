@@ -1,6 +1,6 @@
 :root {
-  background-color: rgb(31, 31, 31);
   width: 100%;
+  background-color: rgb(31, 31, 31);
 }
 .--css-edit-editor {
   --spacing: 0.25em;
@@ -84,20 +84,6 @@
 [data-kind="element_selector"] {
   color: var(--class-color);
 }
-/* .open-in-vscode {
-  display: none;
-}
-[data-kind="rule"]:hover .open-in-vscode {
-  display: flex;
-}
-.open-in-vscode {
-  font-size: 14px;
-  position: absolute;
-  right: 1rem;
-  background-color: rgba(255, 255, 255, 0.285);
-  padding: 0.25em;
-  color: var(--foreground-color);
-} */
 [data-kind="string"] {
   color: var(--string-color);
 }
@@ -196,7 +182,6 @@
     color: var(--foreground-color);
   }
 }
-
 [data-kind="hex"],
 [data-kind="hex_short"],
 [data-kind="hex_a"] {
@@ -209,22 +194,21 @@
     color: var(--foreground-color);
   }
 }
-
 [data-kind="hex"],
 [data-kind="hex_a"],
 [data-kind="hex_short"],
 [data-kind="rgb"],
 [data-kind="rgba"] {
-  > [data-attr="r"] [data-value] {
+  & > [data-attr="r"] [data-value] {
     background-color: rgba(255, 0, 0, 0.1);
   }
-  > [data-attr="g"] [data-value] {
+  & > [data-attr="g"] [data-value] {
     background-color: rgba(0, 255, 0, 0.1);
   }
-  > [data-attr="b"] [data-value] {
+  & > [data-attr="b"] [data-value] {
     background-color: rgba(0, 0, 255, 0.1);
   }
-  > [data-attr="a"] [data-value] {
+  & > [data-attr="a"] [data-value] {
     background-color: var(--outline-color);
   }
 }
@@ -449,12 +433,10 @@ button {
   padding: 0.25em;
   background-color: rgb(40, 40, 40);
 }
-
 [data-kind="keyframe"] {
   width: 100%;
   padding: 0.25em;
 }
-
 [data-kind="rule"] [data-kind="rule"],
 [data-kind="keyframe"] {
   background-color: rgb(50, 50, 50);
@@ -532,39 +514,38 @@ button {
     }
   }
 }
-
 .--css-edit-editor [data-kind="rule"][data-file-path]:focus-within {
-  outline: 1px solid rgba(255, 255, 255, 0.5);
+  outline: rgba(255, 255, 255, 0.5) solid 1px;
 }
 [data-kind="keyframes"] {
   display: flex;
   flex-direction: column;
   width: 100%;
-  > [data-attr="name"] {
+  & > [data-attr="name"] {
+    color: var(--property-name-color);
+    display: flex;
+    gap: var(--spacing);
     &::before {
       content: "@keyframes";
       color: var(--at-rule-color);
     }
-    color: var(--property-name-color);
-    display: flex;
-    gap: var(--spacing);
     &::after {
       content: "{";
       color: var(--brace-color);
     }
   }
-  > [data-attr="frames"] {
+  & > [data-attr="frames"] {
     padding-left: 1em;
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
     [data-kind="keyframe"] {
-      > [data-attr="pct"] {
-        > [data-value]::after {
-          content: "%";
-        }
+      & > [data-attr="pct"] {
         display: flex;
         gap: var(--spacing);
+        & > [data-value]::after {
+          content: "%";
+        }
         &::after {
           content: "{";
           color: var(--brace-color);
@@ -574,7 +555,7 @@ button {
         content: "}";
         color: var(--brace-color);
       }
-      > [data-attr="properties"] {
+      & > [data-attr="properties"] {
         display: flex;
         flex-direction: column;
         gap: var(--spacing);
