@@ -196,25 +196,9 @@
     color: var(--foreground-color);
   }
 }
-:is([data-kind="hex"], [data-kind="hex_short"]) {
-  display: flex;
-  &::before {
-    content: "#";
-    color: var(--function-color);
-  }
-  [data-attr] {
-    color: var(--foreground-color);
-  }
-  [data-attr="r"] {
-    background-color: rgba(255, 0, 0, 0.1);
-  }
-  [data-attr="g"] {
-    background-color: rgba(0, 255, 0, 0.1);
-  }
-  [data-attr="b"] {
-    background-color: rgba(0, 0, 255, 0.1);
-  }
-}
+
+[data-kind="hex"],
+[data-kind="hex_short"],
 [data-kind="hex_a"] {
   display: flex;
   &::before {
@@ -224,16 +208,23 @@
   [data-attr] {
     color: var(--foreground-color);
   }
-  [data-attr="r"] {
+}
+
+[data-kind="hex"],
+[data-kind="hex_a"],
+[data-kind="hex_short"],
+[data-kind="rgb"],
+[data-kind="rgba"] {
+  > [data-attr="r"] [data-value] {
     background-color: rgba(255, 0, 0, 0.1);
   }
-  [data-attr="g"] {
+  > [data-attr="g"] [data-value] {
     background-color: rgba(0, 255, 0, 0.1);
   }
-  [data-attr="b"] {
+  > [data-attr="b"] [data-value] {
     background-color: rgba(0, 0, 255, 0.1);
   }
-  [data-attr="a"] {
+  > [data-attr="a"] [data-value] {
     background-color: var(--outline-color);
   }
 }
