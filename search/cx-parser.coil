@@ -60,6 +60,10 @@ def* parse_separator(lhs)
     yield trimmed!(chomp!("~"))
     let rhs = yield* parse()
     return {t: :sibling, lhs, rhs}
+  else if yield trimmed(test(">"))
+    yield trimmed!(chomp!(">"))
+    let rhs = yield* parse()
+    return {t: :direct_child, lhs, rhs}
   else if yield trimmed(test("+"))
     yield trimmed!(chomp!("+"))
     let rhs = yield* parse()
@@ -81,6 +85,7 @@ end
 
 export let compile = match_on(:t){
   def :child({lhs, rhs}) = str(compile(lhs) " " compile(rhs))
+  def :direct_child({lhs, rhs}) = str(compile(lhs) " > " compile(rhs))
   def :has({lhs, rhs}) = str(compile(lhs) ":has(" compile(rhs) ")")
   def :sibling({lhs, rhs}) = str(compile(lhs) " ~ " compile(rhs))
   def :adjacent_sibling({lhs, rhs}) = str(compile(lhs) " + " compile(rhs))
@@ -88,8 +93,8 @@ export let compile = match_on(:t){
   def :direct_match({value}) = str("[data-value=\"" value "\"]")
   def :contains({value}) = str("[data-value*=\"" value "\"]")
   def :attr({attr}) = str("[data-attr=\"" attr "\"]")
-  def :attr_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value=\"" value "\"]")
-  def :attr_contains_eq({attr, value}) = str("[data-attr=\"" attr "\"][data-value*=\"" value "\"]")
+  def :attr_eq({attr, value}) = str("[data-attr=\"" attr "\"]:has(> [data-value=\"" value "\"])")
+  def :attr_contains_eq({attr, value}) = str("[data-attr=\"" attr "\"]:has(> [data-value*=\"" value "\"])")
   def :kind({kinds}) = kinds.map(str:fmt("[data-kind=\"" _ "\"]")).join(", ").pipe(str:fmt("[data-kind]:is(" _ ")"))
   def :either({queries}) = queries.map(compile).join(", ").pipe(str:fmt(":is(" _ ")"))
 }
