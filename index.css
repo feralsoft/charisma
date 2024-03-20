@@ -15,14 +15,14 @@
   --attribute-color: var(--property-name-color);
   --foreground-color: #ccc;
   --at-rule-color: #c586c0;
-  background-color: rgb(31, 31, 31);
   padding: 0.5rem;
-  font-size: 18px;
-  font-family: Berkeley Mono;
   display: flex;
   flex-direction: column;
   gap: var(--spacing);
+  background-color: rgb(31, 31, 31);
   color: var(--foreground-color);
+  font-size: 18px;
+  font-family: Berkeley Mono;
 }
 [data-attr] {
   display: flex;
