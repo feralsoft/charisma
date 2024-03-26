@@ -28,22 +28,34 @@ input[type="search"] {
       animation-fill-mode: forwards;
       overflow: hidden;
     }
-    [data-kind="rule"]:not(:active) [data-kind="rule"]:not(:has(.searched)),
-    [data-kind="rule"]:not(:active):not(:has(.searched)) {
+    [data-kind="rule"]:not(:active, :focus-within):not(:has(.searched)) {
       animation: shrink 100ms ease;
       animation-fill-mode: forwards;
-      :not([data-kind], [data-attr]),
       &::after {
         display: none;
       }
     }
-    [data-kind="property"]:not(:has(.searched)) .flex-direction {
+    [data-kind="property"]:not(:has(.searched))
+      :not([data-attr], [data-kind], [data-value]) {
       display: none;
     }
-    [data-kind="rule"]:is(:active)
-      :is([data-kind="variable"], [data-kind="property"]):not(:has(.searched)) {
-      animation: expand 1s linear;
-      animation-fill-mode: forwards;
+    [data-kind="rule"]:is(:active, :focus-within) {
+      &:not(:has(.searched)),
+      :is([data-kind="variable"], [data-kind="property"], ):not(
+          :has(.searched)
+        ) {
+        animation: expand 1s linear;
+        animation-fill-mode: forwards;
+      }
+      [data-kind="rule"]:not(:has(.searched)) {
+        --background-color: rgb(50, 50, 50);
+        animation: expand 100ms linear;
+        animation-fill-mode: forwards;
+        &::after,
+        [data-kind="rule"]::after {
+          display: flex;
+        }
+      }
     }
   }
 
@@ -97,7 +109,7 @@ input[type="search"] {
   }
 
   100% {
-    background-color: unset;
-    height: 1.2em;
+    background-color: var(--background-color);
+    height: 100%;
   }
 }
