@@ -54,6 +54,7 @@ def scope_helper(plugin_name) = {
 
 -- TODO: toggle this to turn on persisting
 let fetching = true
+-- let fetching = false
 
 protocol signals
 

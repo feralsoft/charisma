@@ -2,7 +2,7 @@ input[type="search"] {
   font-family: monospace;
   position: sticky;
   top: 1rem;
-  width: 100%;
+  width: calc(100% + 0.5em);
   font-size: 17px;
   outline: none;
   background-color: rgba(56, 56, 56, 0.9);
@@ -49,7 +49,7 @@ input[type="search"] {
       }
       [data-kind="rule"]:not(:has(.searched)) {
         --background-color: rgb(50, 50, 50);
-        animation: expand 100ms linear;
+        animation: expand 1s linear;
         animation-fill-mode: forwards;
         &::after,
         [data-kind="rule"]::after {
@@ -64,7 +64,7 @@ input[type="search"] {
       attr(data-current-search-last-idx);
     position: fixed;
     z-index: 1;
-    right: 1.5em;
+    right: 2.5em;
   }
   &[data-current-search-last-idx="-1"]:not(
       :has(> input.search:placeholder-shown)
@@ -93,19 +93,15 @@ input[type="search"] {
   0% {
     height: 0;
     width: 0;
-    margin-top: calc(-1 * var(--spacing));
-    padding: 0;
   }
 
   5% {
-    height: 1.2em;
     width: max-content;
-    margin-top: 0;
     background-color: rgba(0, 128, 0, 0.5);
   }
 
-  10% {
-    background-color: rgba(0, 128, 0, 0.5);
+  20% {
+    height: 100%;
   }
 
   100% {

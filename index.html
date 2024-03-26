@@ -1,12 +1,55 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>[css-edit]</title>
-  </head>
-  <body>
-    <div class="--css-edit-editor" spellcheck="false"></div>
-    <script type="module" src="/main.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[css-edit]</title>
+</head>
+
+<body>
+  <div class="icon">
+    <img src="/public/favicon.ico"></img>
+  </div>
+  <div class="--css-edit-editor" spellcheck="false"></div>
+  <script type="module" src="/main.js"></script>
+</body>
+<style>
+  body>.icon {
+    position: sticky;
+    top: 0;
+
+    img {
+      position: absolute;
+      width: 30px;
+      top: 0.5em;
+      right: -35px;
+      z-index: 10;
+    }
+  }
+
+/* body > .icon::after {
+  content: "|";
+  position: absolute;
+  right: -30px;
+  width: 2px;
+  height: 29px;
+  top: 1em;
+   border-radius: 100%; 
+  background-color: rgba(39, 226, 10, 0.23);
+  animation: live-save 0.5s linear infinite;
+}
+
+@keyframes live-save {
+  0% {
+    transform: rotate(0);
+    width: 2px;
+  }
+  100% {
+    transform: rotate(360deg);
+    width: 10px;
+  }
+} */
+</style>
+
 </html>

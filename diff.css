@@ -8,7 +8,7 @@
   }
   > :nth-child(2) {
     &::before {
-      content: "02/12/2023 | implement hover on calculated departure";
+      content: "02/12/2023 | update ...";
       position: absolute;
       overflow: hidden;
       white-space: nowrap;

@@ -79,8 +79,7 @@ let plugin_a = {
   insert_after: :div{
     class: "flex-direction-preview"
     "data-flex-direction" => self.at("flex-direction")
-    children: [:div{class: self.at("flex-direction")}]
-  }
+  }[:div{class: self.at("flex-direction")}]
 }
 
 let plugin_b = {

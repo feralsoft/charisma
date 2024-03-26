@@ -1,6 +1,7 @@
 :root {
-  width: 100%;
+  width: calc(100% - 2em);
   background-color: rgb(31, 31, 31);
+  /* margin-left: 25%; */
 }
 .--css-edit-editor {
   --spacing: 0.25em;
@@ -263,12 +264,15 @@
     }
   }
 }
-[data-kind="var"] {
+[data-kind="var"],
+[data-kind="var_with_default"] {
   display: flex;
   &::before {
     color: var(--function-color);
     content: "var";
   }
+}
+[data-kind="var"] {
   & > [data-attr="name"] {
     color: var(--variable-color);
     &::before {
@@ -279,6 +283,24 @@
       content: ")";
       color: var(--foreground-color);
     }
+  }
+}
+[data-kind="var_with_default"] {
+  gap: var(--spacing);
+  & > [data-attr="name"] {
+    color: var(--variable-color);
+    &::before {
+      content: "(";
+      color: var(--foreground-color);
+    }
+    &::after {
+      content: ",";
+      color: var(--foreground-color);
+    }
+  }
+  & > [data-attr="default_value"]::after {
+    content: ")";
+    color: var(--foreground-color);
   }
 }
 [data-kind="pseudo_selector_with_args"] {
