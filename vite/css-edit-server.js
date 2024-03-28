@@ -3,8 +3,10 @@ import * as prettier from "prettier";
 
 let css_db_path = "./css";
 
-function save_to_disk(path, code) {
-  fs.writeFile(`${css_db_path}/${path.join("/")}`, code, {});
+async function save_to_disk(path, code) {
+  let dir = `${css_db_path}/${path.join("/")}`;
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(`${dir}/index.css`, code, {});
 }
 
 // TODO: ignore hot-reload of css file while updating it
