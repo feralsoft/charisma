@@ -89,7 +89,6 @@ for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0
 end
 
 await db.map(|{path, code}| post("/save_to_file", {path, code}))
-  .into([])
   .pipe(Promise:all)
 
 
