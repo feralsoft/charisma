@@ -13,7 +13,9 @@ let sheets = document:styleSheets.filter(|sheet| {
 }).into([])
 
 let query_to_file_path = match_on(:kind){
-  def :class_selector({name}) = [str("."name)]
+  def :class_selector({name}) = [str("." name)]
+  def :selector_modifier({lhs, rhs}) =
+    [...query_to_file_path(lhs) str("&" ...query_to_file_path(rhs))]
 }
 
 def save_file(path, code)
@@ -38,7 +40,16 @@ def* CssDB:prototype.(Symbol:iterator)
         path,
         css: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
       }
+      let child_path = path:slice()
+      for [sub_path child] of object:children
+        yield {
+          cmd: "create_file",
+          path: [...path, sub_path]
+          css: str(child:selector " {\n  " child:properties.join(";\n  ") ";\n}\n")
+        }
+      end
     else
+      panic!("idk")
       yield {cmd: "create_folder", path}
     end
   end
@@ -50,13 +61,15 @@ def CssDB:prototype:insert_property(selector, path, property)
     if let map = current_map(sub_path)
       if i == path.len()
         map:properties:add(compile(property))
-      else
+      else if let children = map:children
+        current_map = children
+      else 
         current_map = map
       end
     else if i == path.len()
       current_map.set!(
         sub_path,
-        {selector, properties: Set[compile(property)]}
+        {selector, properties: Set[compile(property)] children: Map{}}
       )
     else
       let map = Map{}
@@ -74,6 +87,7 @@ for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0
     db:insert_property(compile(query), path, property)
   end
 end
+
 for {cmd, ...opts} of db
   if cmd == "create_file"
     save_file(opts:path, opts:css)
