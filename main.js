@@ -8,4 +8,6 @@ window.try__b = function (lambda) {
 };
 
 import "./index.css";
+import "./a.css";
+import "./b.css";
 import "./main.coil";

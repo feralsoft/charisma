@@ -35,17 +35,17 @@
   }
 }
 
-.plugin_add_new_rule_unfinished {
-  background-color: rgba(255, 255, 255, 0.188);
+.plugin_add_new_property_unfinished {
   outline: none;
-  &[data-plugin_add_new_rule_error="true"] {
-    border-bottom: 1.5px dashed red;
+  &[data-error="true"] {
+    width: max-content;
+    border-bottom: 0.125em dashed rgba(166, 5, 5, 0.75);
     &:hover::before {
       content: "invalid property";
       position: absolute;
-      margin-top: 1.5rem;
-      font-size: 0.75rem;
-      background: rgba(255, 255, 0, 0.343);
+      margin-top: 1.75em;
+      font-size: 0.8em;
+      background: rgb(70, 70, 70);
     }
   }
 }

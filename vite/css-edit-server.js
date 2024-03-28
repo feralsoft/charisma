@@ -1,13 +1,27 @@
 import fs from "fs/promises";
 import * as prettier from "prettier";
 
+let css_db_path = "./css";
+
+function save_to_disk(path, code) {
+  fs.writeFile(`${css_db_path}/${path.join("/")}`, code, {});
+}
+
 // TODO: ignore hot-reload of css file while updating it
 export function update_local_css_files() {
   return {
     name: "index-css",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url === "/update_css") {
+        if (req.url === "/save_to_file") {
+          let body = "";
+          req.on("data", (b) => (body += b.toString()));
+          req.on("end", async () => {
+            let { path, code } = JSON.parse(body);
+            save_to_disk(path, code);
+            next();
+          });
+        } else if (req.url === "/update_css") {
           let body = "";
           req.on("data", (b) => (body += b.toString()));
           req.on("end", async () => {

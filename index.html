@@ -9,7 +9,7 @@
 
 <body>
   <div class="icon">
-    <img src="/public/favicon.ico"></img>
+    <img src="/favicon.ico"></img>
   </div>
   <div class="--css-edit-editor" spellcheck="false"></div>
   <script type="module" src="/main.js"></script>
@@ -25,6 +25,12 @@
       top: 0.5em;
       right: -35px;
       z-index: 10;
+      border-radius: 100%;
+      padding-right: 1.5px;
+      padding-top: 1.5px;
+      &.fetching {
+        box-shadow: 0 0 10px black;
+      }
     }
   }
 

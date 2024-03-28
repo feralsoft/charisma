@@ -121,7 +121,7 @@ def* parse_query_step
   end
 end
 
-def* parse_query(end_pattern, skip_step)
+export def* parse_query(end_pattern, skip_step)
   let query = nil
   -- this is a fucking mess, please unify this with self_sub_rule
   if yield trimmed(test("&"))

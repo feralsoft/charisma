@@ -1,0 +1,102 @@
+import {match_on} from "./utils.coil"
+import {parse_rule} from "./css-parser.coil"
+import {run} from "./parse-utils.coil"
+import {compile} from "./html-ast.coil"
+
+def Or(...@conds) end
+def Or:prototype.invoke(arg) = this:conds.any?(|c| c(arg))
+
+let sheets = document:styleSheets.filter(|sheet| {
+  if let file_name = sheet:ownerNode:dataset:viteDevId
+    return file_name.pipe(Or[_.has?("a.css") _.has?("b.css")])
+  end
+}).into([])
+
+let query_to_file_path = match_on(:kind){
+  def :class_selector({name}) = [str("."name)]
+}
+
+def save_file(path, code)
+  fetch("http://localhost:5173/save_to_file", {
+    method: "POST",
+    body: JSON:stringify({path, code})
+  })
+end
+
+def CssDB(entries)
+  this:_map = Map{...entries}
+end
+
+def* CssDB:prototype.(Symbol:iterator)
+  let current_map = this:_map
+  let path = []
+  for [sub_path, object] of current_map
+    path:push(sub_path)
+    if object instanceof ObjectLiteral
+      yield {
+        cmd: "create_file",
+        path,
+        css: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
+      }
+    else
+      yield {cmd: "create_folder", path}
+    end
+  end
+end
+
+def CssDB:prototype:insert_property(selector, path, property)
+  let current_map = this:_map
+  for [sub_path i] of path.zip(1..)
+    if let map = current_map(sub_path)
+      if i == path.len()
+        map:properties:add(compile(property))
+      else
+        current_map = map
+      end
+    else if i == path.len()
+      current_map.set!(
+        sub_path,
+        {selector, properties: Set[compile(property)]}
+      )
+    else
+      let map = Map{}
+      current_map.set!(sub_path, map)
+      current_map = map
+    end
+  end
+end
+
+let db = CssDB{}
+
+for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
+  let path = query_to_file_path(query)
+  for property of properties.filter(:kind Set[:property :variable])
+    db:insert_property(compile(query), path, property)
+  end
+end
+for {cmd, ...opts} of db
+  if cmd == "create_file"
+    save_file(opts:path, opts:css)
+  end
+end
+
+
+
+-- a.css
+-- .btn {
+--   font-size: 20px;
+-- }
+
+-- b.css
+-- .btn {
+--   display: flex;
+-- }
+
+-- parsing
+-- [current-file=a.css]
+--   query = {kind: :class_selector, name: "btn"}
+--   properties = ["font-size: 20px"]
+--
+-- [current-file=b.css] 
+--   query = {kind: :class_selector, name: "btn"}
+--   properties = ["font-size: 20px"]

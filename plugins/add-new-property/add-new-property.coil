@@ -42,7 +42,7 @@ def add_new_property({signal, root, rebuild, scope})
                 this:replaceWith(new_node)
                 await rebuild(root:closest("[data-kind=rule]"))
               else
-                this:setAttribute(scope:data(:error), true)
+                this:dataset:error = true
               end
             end
           end
