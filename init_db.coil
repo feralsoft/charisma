@@ -22,6 +22,7 @@ let query_to_file_path = match_on(:kind){
     [str("[" name "=" value "]")]
   def :attribute_selector_no_match({name}) =
     [str("[" name "]")]
+  def :element_selector({name}) = [name]
 }
 
 def save_file(path, code)
@@ -35,30 +36,25 @@ def CssDB(entries)
   this:_map = Map{...entries}
 end
 
-def* CssDB:prototype.(Symbol:iterator)
-  let current_map = this:_map
-  let path = []
-  for [sub_path, object] of current_map
-    path:push(sub_path)
+def* file_cmds(map, path)
+  for [sub_path, object] of map
+    let current_path = [...path, sub_path]
     if object instanceof ObjectLiteral
       yield {
         cmd: "create_file",
-        path,
+        path: current_path,
         css: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
       }
       let child_path = path:slice()
-      for [sub_path child] of object:children
-        yield {
-          cmd: "create_file",
-          path: [...path, sub_path]
-          css: str(child:selector " {\n  " child:properties.join(";\n  ") ";\n}\n")
-        }
-      end
+      yield* file_cmds(object:children, current_path)
     else
-      panic!("idk")
-      yield {cmd: "create_folder", path}
+      yield* file_cmds(object, current_path)
     end
   end
+end
+
+def* CssDB:prototype.(Symbol:iterator)
+  yield* file_cmds(this:_map, [])
 end
 
 def CssDB:prototype:insert_property(selector, path, property)
@@ -87,7 +83,7 @@ end
 
 let db = CssDB{}
 
-for {query, properties} of sheets.flat_map(:rules).map(:cssText _.log() parse_rule.run 0)
+for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
   -- query.log()
   let path = query_to_file_path(query)
   for property of properties.filter(:kind Set[:property :variable])
@@ -95,7 +91,7 @@ for {query, properties} of sheets.flat_map(:rules).map(:cssText _.log() parse_ru
   end
 end
 
-for {cmd, ...opts} of db.log()
+for {cmd, ...opts} of db
   if cmd == "create_file"
     save_file(opts:path, opts:css)
   end
