@@ -5,3 +5,7 @@
 .btn.active {
   line-height: 1;
 }
+
+.btn[data-value="true"] {
+  line-height: 2;
+}

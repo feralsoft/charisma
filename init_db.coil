@@ -16,6 +16,10 @@ let query_to_file_path = match_on(:kind){
   def :class_selector({name}) = [str("." name)]
   def :selector_modifier({lhs, rhs}) =
     [...query_to_file_path(lhs) str("&" ...query_to_file_path(rhs))]
+  def :child_selector({lhs, rhs}) =
+    [...query_to_file_path(lhs) ...query_to_file_path(rhs)]
+  def :attribute_selector_equals({name, value}) =
+    [str("[" name "=" value "]")]
 }
 
 def save_file(path, code)
@@ -81,14 +85,15 @@ end
 
 let db = CssDB{}
 
-for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
+for {query, properties} of sheets.flat_map(:rules).map(:cssText _.log() parse_rule.run 0)
+  -- query.log()
   let path = query_to_file_path(query)
   for property of properties.filter(:kind Set[:property :variable])
     db:insert_property(compile(query), path, property)
   end
 end
 
-for {cmd, ...opts} of db
+for {cmd, ...opts} of db.log()
   if cmd == "create_file"
     save_file(opts:path, opts:css)
   end
