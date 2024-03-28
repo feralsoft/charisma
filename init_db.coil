@@ -55,10 +55,8 @@ def CssDB:prototype:insert_property(selector, path, property)
     if let map = current_map(sub_path)
       if i == path.len()
         map:properties:add(compile(property))
-      else if let children = map:children
-        current_map = children
-      else 
-        current_map = map
+      else
+        current_map = map:children
       end
     else if i == path.len()
       current_map.set!(sub_path, {
