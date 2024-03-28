@@ -13,3 +13,7 @@
 button .btn [data-value*="true"] {
   line-height: 3;
 }
+
+button > .btn {
+  color: red;
+}

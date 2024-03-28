@@ -17,6 +17,7 @@ let sheets = document:styleSheets.filter(|sheet| {
 let query_to_file_path = match_on(:kind){
   def :class_selector({name}) = [str("." name)]
   def :selector_modifier({lhs, rhs}) =
+  -- maybe don't do str("&" ...query..)
     [...query_to_file_path(lhs) str("&" ...query_to_file_path(rhs))]
   def :child_selector({lhs, rhs}) =
     [...query_to_file_path(lhs) ...query_to_file_path(rhs)]
@@ -27,6 +28,16 @@ let query_to_file_path = match_on(:kind){
   def :attribute_selector_no_match({name}) =
     [str("[" name "]")]
   def :element_selector({name}) = [name]
+  def :id_selector({name}) = [str("#" name)]
+  def :pseudo_selector_without_args({name}) =
+    [str(":" name)]
+  def :pseudo_selector_with_args({name, args}) =
+    [str(":" name "(" args.map(compile).join(", ") ")")]
+  def :pseudo_element_selector({name}) = [str("::" name)]
+  def :direct_descendent({lhs, rhs}) =
+    [...query_to_file_path(lhs) ">" ...query_to_file_path(rhs)]
+  def :sibling_selector({lhs, rhs}) =
+    [...query_to_file_path(lhs) "~" ...query_to_file_path(rhs)]
 }
 
 def CssDB(entries)
