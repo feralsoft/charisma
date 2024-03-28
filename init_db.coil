@@ -3,6 +3,8 @@ import {parse_rule} from "./css-parser.coil"
 import {run} from "./parse-utils.coil"
 import {compile} from "./html-ast.coil"
 
+def post(url, body) = fetch(url, {method: "POST", body: JSON:stringify(body)})
+
 def Or(...@conds) end
 def Or:prototype.invoke(arg) = this:conds.any?(|c| c(arg))
 
@@ -25,10 +27,6 @@ let query_to_file_path = match_on(:kind){
   def :element_selector({name}) = [name]
 }
 
-def save_file(path, code) =
-  fetch("http://localhost:5173/save_to_file",
-    {method: "POST", body: JSON:stringify({path, code})})
-
 def CssDB(entries)
   this:_map = Map{...entries}
 end
@@ -40,7 +38,7 @@ def* file_cmds(map, path)
     if object:selector
       yield {
         path: current_path,
-        css: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
+        code: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
       }
     end
     yield* file_cmds(object:children, current_path)
@@ -90,9 +88,10 @@ for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0
   end
 end
 
-for {path, css} of db
-  save_file(path, css)
-end
+await db.map(|{path, code}| post("/save_to_file", {path, code}))
+  .into([])
+  .pipe(Promise:all)
+
 
 
 
