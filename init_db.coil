@@ -22,6 +22,8 @@ let query_to_file_path = match_on(:kind){
     [...query_to_file_path(lhs) ...query_to_file_path(rhs)]
   def :attribute_selector_equals({name, value}) =
     [str("[" name "=" value "]")]
+  def :attribute_selector_contains({name, value}) =
+    [str("[" name "*=" value "]")]
   def :attribute_selector_no_match({name}) =
     [str("[" name "]")]
   def :element_selector({name}) = [name]

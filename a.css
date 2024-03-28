@@ -10,6 +10,6 @@
   line-height: 2;
 }
 
-button .btn [data-value="true"] {
+button .btn [data-value*="true"] {
   line-height: 3;
 }

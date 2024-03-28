@@ -3,6 +3,8 @@ import * as prettier from "prettier";
 
 let css_db_path = "./css";
 
+await fs.rm(css_db_path, { recursive: true });
+
 async function save_to_disk(path, code) {
   let dir = `${css_db_path}/${path.join("/")}`;
   await fs.mkdir(dir, { recursive: true });
