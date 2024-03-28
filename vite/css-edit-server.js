@@ -20,9 +20,9 @@ export function update_local_css_files() {
           req.on("data", (b) => (body += b.toString()));
           req.on("end", async () => {
             let { path, code } = JSON.parse(body);
-            save_to_disk(path, code);
-            next();
+            await save_to_disk(path, code);
           });
+          next();
         } else if (req.url === "/update_css") {
           let body = "";
           req.on("data", (b) => (body += b.toString()));

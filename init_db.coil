@@ -39,17 +39,15 @@ end
 def* file_cmds(map, path)
   for [sub_path, object] of map
     let current_path = [...path, sub_path]
-    if object instanceof ObjectLiteral
+    -- TODO: it should probably always be an object literal
+    if object:selector
       yield {
         cmd: "create_file",
         path: current_path,
         css: str(object:selector " {\n  " object:properties.join(";\n  ") ";\n}\n")
       }
-      let child_path = path:slice()
-      yield* file_cmds(object:children, current_path)
-    else
-      yield* file_cmds(object, current_path)
     end
+    yield* file_cmds(object:children, current_path)
   end
 end
 
@@ -69,13 +67,18 @@ def CssDB:prototype:insert_property(selector, path, property)
         current_map = map
       end
     else if i == path.len()
-      current_map.set!(
-        sub_path,
-        {selector, properties: Set[compile(property)] children: Map{}}
-      )
+      current_map.set!(sub_path, {
+        selector,
+        properties: Set[compile(property)]
+        children: Map{}
+      })
     else
       let map = Map{}
-      current_map.set!(sub_path, map)
+      current_map.set!(sub_path, {
+        selector: nil,
+        properties: nil,
+        children: map
+      })
       current_map = map
     end
   end
