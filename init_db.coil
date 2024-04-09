@@ -14,17 +14,26 @@ let sheets = document:styleSheets.filter(|sheet| {
   end
 }).into([])
 
+def* c_product(left, right)
+  for l of left
+    for r of right
+      yield [l r]
+    end
+  end
+end
+
 let query_to_file_path = match_on(:kind){
   def :class_selector({name}) = [str("." name)]
   def :selector_modifier({lhs, rhs}) =
-  -- maybe don't do str("&" ...query..)
-    [...query_to_file_path(lhs) str("&" ...query_to_file_path(rhs))]
+    c_product(query_to_file_path(lhs), query_to_file_path(rhs))
+      .map(str:fmt(0 "/&/" 1))
   def :child_selector({lhs, rhs}) =
-    [...query_to_file_path(lhs) ...query_to_file_path(rhs)]
+    c_product(query_to_file_path(lhs), query_to_file_path(rhs))
+      .map(str:fmt(0 "/" 1))
   def :attribute_selector_equals({name, value}) =
-    [str("[" name "=" value "]")]
+    [str("[" name "=\"" value "\"]")]
   def :attribute_selector_contains({name, value}) =
-    [str("[" name "*=" value "]")]
+    [str("[" name "*=\"" value "\"]")]
   def :attribute_selector_no_match({name}) =
     [str("[" name "]")]
   def :element_selector({name}) = [name]
@@ -35,9 +44,13 @@ let query_to_file_path = match_on(:kind){
     [str(":" name "(" args.map(compile).join(", ") ")")]
   def :pseudo_element_selector({name}) = [str("::" name)]
   def :direct_descendent({lhs, rhs}) =
-    [...query_to_file_path(lhs) ">" ...query_to_file_path(rhs)]
+    c_product(query_to_file_path(lhs), query_to_file_path(rhs))
+      .map(str:fmt(0 "/>/" 1))
   def :sibling_selector({lhs, rhs}) =
-    [...query_to_file_path(lhs) "~" ...query_to_file_path(rhs)]
+    c_product(query_to_file_path(lhs), query_to_file_path(rhs))
+      .map(str:fmt(0 "/~/" 1))
+  def :or({lhs, rhs}) =
+    [...query_to_file_path(lhs) ...query_to_file_path(rhs)]
 }
 
 def CssDB(entries)
@@ -62,8 +75,9 @@ def* CssDB:prototype.(Symbol:iterator)
   yield* file_cmds(this:_map, [])
 end
 
-def CssDB:prototype:insert_property(selector, path, property)
+def CssDB:prototype:insert_property(selector, str_path, property)
   let current_map = this:_map
+  let path = str_path:split("/")
   for [sub_path i] of path.zip(1..)
     if let map = current_map(sub_path)
       if i == path.len()
@@ -92,18 +106,28 @@ end
 let db = CssDB{}
 
 for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
-  -- query.log()
-  let path = query_to_file_path(query)
-  for property of properties.filter(:kind Set[:property :variable])
-    db:insert_property(compile(query), path, property)
+  -- there's a number of paths that we generate
+  -- but they all contain the same properties
+  -- for eg. :is(a, b).active generates:
+  --   ["a/&/.active", "b/&/.active"]
+  -- we need a way to tie these all together & choose a main
+  -- that the others will listen to.
+  -- 
+  -- for now we will duplicate & ignore the problem until we have to deal with it
+  for path of query_to_file_path(query)
+    -- query should be built up from the path
+    let actual_query = path:replaceAll("/&/" "")
+      .:replaceAll("/" " ")
+      
+    (!actual_query.has?("/")).assert!("f")
+    for property of properties.filter(:kind Set[:property :variable])
+      db:insert_property(actual_query, path, property)
+    end
   end
 end
 
 await db.map(|{path, code}| post("/save_to_file", {path, code}))
   .pipe(Promise:all)
-
-
-
 
 -- a.css
 -- .btn {

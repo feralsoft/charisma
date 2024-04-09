@@ -17,3 +17,58 @@ button .btn [data-value*="true"] {
 button > .btn {
   color: red;
 }
+
+:root {
+  width: calc(100% - 2em);
+  background-color: rgb(31, 31, 31);
+}
+
+.--css-edit-editor {
+  --spacing: 0.25em;
+  --brace-color: #d8a90c;
+  --outline-color: #ffffff17;
+  --number-color: #b5cea8;
+  --class-color: #d7ba7d;
+  --function-color: #dcdcaa;
+  --property-name-color: #9cdcfe;
+  --variable-color: #9cdcfe;
+  --string-color: #ce9178;
+  --attribute-color: var(--property-name-color);
+  --foreground-color: #ccc;
+  --at-rule-color: #c586c0;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  background-color: rgb(31, 31, 31);
+  color: var(--foreground-color);
+  font-size: 18px;
+  font-family: Berkeley Mono;
+}
+
+[data-attr] {
+  display: flex;
+}
+[data-numeric="true"] {
+  color: var(--number-color);
+}
+
+[data-kind="rule"]::after {
+  content: "}";
+}
+
+[data-kind="property"] > [data-attr="name"] {
+  color: var(--property-name-color);
+}
+[data-kind="selector_modifier"] {
+  display: flex;
+}
+[data-kind="child_selector"] {
+  display: flex;
+  gap: 0.25em;
+}
+
+[data-value]:hover,
+[data-value]:focus {
+  outline: var(--outline-color) solid 0.1em;
+}

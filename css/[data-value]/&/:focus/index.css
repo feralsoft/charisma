@@ -1,0 +1,3 @@
+[data-value]:focus {
+  outline: var(--outline-color) solid 0.1em;
+}

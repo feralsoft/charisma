@@ -45,7 +45,7 @@ export let compile = match_on(:kind){
   def :multiply({lhs, rhs}) = str(compile(lhs) " * " compile(rhs))
   def :attribute_selector_no_match({name}) = str("[" name "]")
   def :attribute_selector_equals({name value}) = str("[" name "=\"" value "\"]")
-  def :string({value}) = str("\"" value "\"")
+  def :string({value}) = value
   def :multi_part_value({parts}) = parts.map(compile).join(" ")
   def :direct_descendent({lhs, rhs})
     if lhs
