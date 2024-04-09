@@ -105,7 +105,8 @@ end
 
 let db = CssDB{}
 
-for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
+def into_db({query, properties}, parent_path)
+  parent_path = parent_path or ""
   -- there's a number of paths that we generate
   -- but they all contain the same properties
   -- for eg. :is(a, b).active generates:
@@ -115,16 +116,25 @@ for {query, properties} of sheets.flat_map(:rules).map(:cssText parse_rule.run 0
   -- 
   -- for now we will duplicate & ignore the problem until we have to deal with it
   for path of query_to_file_path(query)
+    path = parent_path + path
     -- query should be built up from the path
     let actual_query = path:replaceAll("/&/" "")
       .:replaceAll("/" " ")
-      
+
     (!actual_query.has?("/")).assert!("f")
     for property of properties.filter(:kind Set[:property :variable])
       db:insert_property(actual_query, path, property)
     end
+    for rule of properties.filter(:kind Set[:rule])
+      if rule.pipe(:self_sub_rule :value)
+        into_db(rule, str(path "/&/"))
+      end
+    end
   end
 end
+
+sheets.flat_map(:rules).map(:cssText parse_rule.run 0)
+  .each(into_db)
 
 await db.map(|{path, code}| post("/save_to_file", {path, code}))
   .pipe(Promise:all)

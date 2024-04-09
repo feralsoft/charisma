@@ -48,12 +48,14 @@
 [data-value]:focus {
   outline: var(--outline-color) solid 0.1em;
 }
+/* TODO: start */
 [data-kind]:hover:not(:has([data-kind]:hover)) {
   outline: var(--outline-color) solid 0.1em;
 }
 [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
   outline: var(--outline-color) solid 0.1em;
 }
+/* TODO: end */
 [data-kind="rem"],
 [data-kind="em"] {
   display: flex;

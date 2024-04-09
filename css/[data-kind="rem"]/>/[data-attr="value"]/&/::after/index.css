@@ -1,0 +1,4 @@
+[data-kind="rem"] > [data-attr="value"]::after {
+  content: "rem";
+  color: var(--function-color);
+}

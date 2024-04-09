@@ -72,3 +72,24 @@ button > .btn {
 [data-value]:focus {
   outline: var(--outline-color) solid 0.1em;
 }
+
+[data-kind="rem"],
+[data-kind="em"] {
+  display: flex;
+}
+[data-kind="rem"] > [data-attr="value"]::after {
+  content: "rem";
+  color: var(--function-color);
+}
+[data-kind="em"] > [data-attr="value"]::after {
+  content: "em";
+  color: var(--function-color);
+}
+
+[data-kind="pseudo_selector_without_args"] > [data-attr="name"] {
+  color: var(--class-color);
+  &::before {
+    content: ":";
+    color: var(--class-color);
+  }
+}
