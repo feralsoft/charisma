@@ -128,6 +128,8 @@ def into_db({query, properties}, parent_path)
     for rule of properties.filter(:kind Set[:rule])
       if rule.pipe(:self_sub_rule :value)
         into_db(rule, str(path "/&/"))
+      else
+        into_db(rule, str(path "/"))
       end
     end
   end

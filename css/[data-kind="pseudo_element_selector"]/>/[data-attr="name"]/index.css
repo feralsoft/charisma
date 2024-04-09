@@ -1,0 +1,3 @@
+[data-kind="pseudo_element_selector"] > [data-attr="name"] {
+  color: var(--class-color);
+}
