@@ -1,0 +1,4 @@
+[data-kind="rule"] > [data-attr="query"] {
+  display: flex;
+  gap: 0.25em;
+}

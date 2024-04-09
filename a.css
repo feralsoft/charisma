@@ -100,3 +100,54 @@ button > .btn {
     content: "::";
   }
 }
+
+[data-kind="element_selector"] {
+  color: var(--class-color);
+}
+[data-kind="string"] {
+  color: var(--string-color);
+}
+[data-kind="rule"][data-self_sub_rule="true"] > [data-attr="query"]::before {
+  content: "&";
+  margin-right: -2px;
+  color: var(--foreground-color);
+}
+[data-kind="rule"] > [data-attr="query"] {
+  display: flex;
+  gap: 0.25em;
+  &::after {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+    content: "{";
+  }
+  [data-attr="name"] {
+    width: max-content;
+  }
+}
+
+[data-kind="rule"] > [data-attr="properties"] {
+  padding-left: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  padding-top: var(--spacing);
+  padding-bottom: var(--spacing);
+}
+[data-kind="property"],
+[data-kind="variable"] {
+  display: flex;
+  gap: 0.25em;
+  & > [data-attr="name"] {
+    width: 100%;
+    &::after {
+      content: ":";
+      color: var(--foreground-color);
+    }
+  }
+  &::after {
+    margin-left: -0.25em;
+    content: ";";
+    color: var(--foreground-color);
+  }
+}

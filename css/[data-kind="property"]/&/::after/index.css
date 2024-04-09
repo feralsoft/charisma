@@ -1,0 +1,5 @@
+[data-kind="property"]::after {
+  margin-left: -0.25em;
+  content: ";";
+  color: var(--foreground-color);
+}

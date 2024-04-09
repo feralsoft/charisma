@@ -3,7 +3,9 @@ import * as prettier from "prettier";
 
 let css_db_path = "./css";
 
-await fs.rm(css_db_path, { recursive: true });
+try {
+  await fs.rm(css_db_path, { recursive: true });
+} catch {}
 
 async function save_to_disk(path, code) {
   let dir = `${css_db_path}/${path.join("/")}`;
@@ -17,14 +19,16 @@ export function update_local_css_files() {
     name: "index-css",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
+        // console.log(req);
         if (req.url === "/save_to_file") {
           let body = "";
           req.on("data", (b) => (body += b.toString()));
           req.on("end", async () => {
             let { path, code } = JSON.parse(body);
             await save_to_disk(path, code);
+            next();
           });
-          next();
+          res.statusCode = 200;
         } else if (req.url === "/update_css") {
           let body = "";
           req.on("data", (b) => (body += b.toString()));
@@ -34,9 +38,10 @@ export function update_local_css_files() {
             fs.writeFile(file, css);
             next();
           });
+          res.statusCode = 200;
+        } else {
+          next();
         }
-        // why not else?
-        next();
       });
     },
   };

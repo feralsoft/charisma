@@ -1,0 +1,3 @@
+[data-kind="rule"] > [data-attr="query"] [data-attr="name"] {
+  width: max-content;
+}

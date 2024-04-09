@@ -1,0 +1,4 @@
+[data-kind="variable"] > [data-attr="name"]::after {
+  content: ":";
+  color: var(--foreground-color);
+}
