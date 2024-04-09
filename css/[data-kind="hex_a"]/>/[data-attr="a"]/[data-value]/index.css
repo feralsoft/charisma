@@ -1,0 +1,3 @@
+[data-kind="hex_a"] > [data-attr="a"] [data-value] {
+  background-color: var(--outline-color);
+}

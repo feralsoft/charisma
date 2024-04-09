@@ -1,0 +1,4 @@
+[data-kind="hex"]::before {
+  content: "#";
+  color: var(--function-color);
+}

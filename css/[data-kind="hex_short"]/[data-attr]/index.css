@@ -1,0 +1,3 @@
+[data-kind="hex_short"] [data-attr] {
+  color: var(--foreground-color);
+}
