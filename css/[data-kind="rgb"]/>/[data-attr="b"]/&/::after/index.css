@@ -1,0 +1,4 @@
+[data-kind="rgb"] > [data-attr="b"]::after {
+  content: ")";
+  color: var(--foreground-color);
+}

@@ -1,0 +1,4 @@
+[data-kind="px"] > [data-attr="value"]::after {
+  color: var(--function-color);
+  content: "px";
+}

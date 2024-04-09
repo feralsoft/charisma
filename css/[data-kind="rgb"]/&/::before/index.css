@@ -1,0 +1,4 @@
+[data-kind="rgb"]::before {
+  content: "rgb";
+  color: var(--function-color);
+}

@@ -151,3 +151,37 @@ button > .btn {
     color: var(--foreground-color);
   }
 }
+
+[data-kind="px"] {
+  display: flex;
+  & > [data-attr="value"]::after {
+    color: var(--function-color);
+    content: "px";
+  }
+}
+[data-kind="class_selector"] {
+  display: flex;
+  color: var(--class-color);
+  [data-value]::before {
+    content: ".";
+  }
+}
+[data-kind="rgb"] {
+  display: flex;
+  &::before {
+    content: "rgb";
+    color: var(--function-color);
+  }
+  & > [data-attr]:not(:last-of-type)::after {
+    content: ",";
+    color: var(--foreground-color);
+  }
+  & > [data-attr="r"]::before {
+    content: "(";
+    color: var(--foreground-color);
+  }
+  & > [data-attr="b"]::after {
+    content: ")";
+    color: var(--foreground-color);
+  }
+}
