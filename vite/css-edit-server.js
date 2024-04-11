@@ -21,7 +21,7 @@ export function update_local_css_files() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (req.url.startsWith("/css/")) {
-          render(req, next, res, req.url.slice(5));
+          render(res, req.url.slice(5));
         } else if (req.url === "/save_to_file") {
           let body = "";
           req.on("data", (b) => (body += b.toString()));

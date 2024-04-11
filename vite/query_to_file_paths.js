@@ -6,7 +6,7 @@ function* c_product(left, right) {
   }
 }
 
-function query_to_file_path(query) {
+function query_to_file_paths(query) {
   let out = [],
     lhs,
     rhs,
@@ -19,8 +19,8 @@ function query_to_file_path(query) {
     case "selector_modifier":
       out = [];
       for (let [a, b] of c_product(
-        query_to_file_path(query.lhs),
-        query_to_file_path(query.rhs)
+        query_to_file_paths(query.lhs),
+        query_to_file_paths(query.rhs)
       )) {
         out.push(a + "/&/" + b);
       }
@@ -28,8 +28,8 @@ function query_to_file_path(query) {
     case "child_selector":
       out = [](({ lhs, rhs } = query));
       for (let [a, b] of c_product(
-        query_to_file_path(lhs),
-        query_to_file_path(rhs)
+        query_to_file_paths(lhs),
+        query_to_file_paths(rhs)
       ))
         out.push(a + "/" + b);
       return out;
@@ -61,27 +61,27 @@ function query_to_file_path(query) {
       ({ lhs, rhs } = query);
       if (lhs) {
         for (let [a, b] of c_product(
-          query_to_file_path(lhs),
-          query_to_file_path(rhs)
+          query_to_file_paths(lhs),
+          query_to_file_paths(rhs)
         ))
           out.push(a + "/>/" + b);
         return out;
       } else {
-        return query_to_file_path(rhs).map((x) => "/>/" + x);
+        return query_to_file_paths(rhs).map((x) => "/>/" + x);
       }
 
     case "sibling_selector":
       ({ lhs, rhs } = query);
       for (let [a, b] of c_product(
-        query_to_file_path(lhs),
-        query_to_file_path(rhs)
+        query_to_file_paths(lhs),
+        query_to_file_paths(rhs)
       ))
         out.push(a + "/~/" + b);
       return out;
     case "or":
       ({ lhs, rhs } = query);
-      [...query_to_file_path(lhs), ...query_to_file_path(rhs)];
+      return [...query_to_file_paths(lhs), ...query_to_file_paths(rhs)];
   }
 }
 
-export default query_to_file_path;
+export default query_to_file_paths;
