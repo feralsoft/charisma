@@ -1,7 +1,8 @@
 import fs from "fs/promises";
-import { parse_rule } from "./parser/css-parser.js";
+import { parse_rule, parse_query } from "./parser/css-parser.js";
 import { run } from "./parser/parse-utils.js";
 import { AssertionError } from "assert";
+import query_to_file_path from "./query_to_file_path.js";
 
 function assert(cond, message) {
   if (!cond) {
@@ -47,18 +48,24 @@ function to_html(node) {
   `;
 }
 
-export async function render(req, next, res, url) {
+let css = (await fs.readFile("index.css")).toString();
+
+export async function render(req, next, res, query) {
   try {
-    let file = (await fs.readFile(`./css/${url}/index.css`)).toString();
+    let url = decodeURI(query);
+    console.log({ url });
+    let parsed_query = parse_query[run](url, /^$/)[0];
+    console.log({ parsed_query });
+
+    let path = query_to_file_path(parsed_query).join("/");
+    console.log(path);
+    let file = (await fs.readFile(`./css/${path}/index.css`)).toString();
     let ast = parse_rule[run](file)[0];
     let html = to_html(ast);
-    console.log(ast);
     res.end(`
   <html>
     <head>
-      <style type="text/css" data-vite-dev-id="/Users/marcelrusu/Documents/Projects/css-edit/index.css">
-        ${(await fs.readFile("index.css")).toString()}
-      </style>
+      <style type="text/css">${css}</style>
     </head>
     <body>
       <div class="--css-edit-editor" spellcheck="false">
@@ -67,7 +74,9 @@ export async function render(req, next, res, url) {
     </body>
   </div>
   `);
-  } catch {
+  } catch (e) {
+    console.error(e);
+    console.log(":(");
     res.end(`no file found`);
   }
 }
