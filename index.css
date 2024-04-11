@@ -1,9 +1,8 @@
 :root {
-  width: calc(100% - 2em);
   background-color: rgb(31, 31, 31);
-  /* margin-left: 25%; */
-}
-.--css-edit-editor {
+  width: 50%;
+  margin-left: 25%;
+  margin-top: 2em;
   --spacing: 0.25em;
   --brace-color: #d8a90c;
   --outline-color: #ffffff17;
@@ -16,14 +15,18 @@
   --attribute-color: var(--property-name-color);
   --foreground-color: #ccc;
   --at-rule-color: #c586c0;
+
+  font-size: 18px;
+  font-family: Berkeley Mono;
+}
+.--css-edit-editor {
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: var(--spacing);
-  background-color: rgb(31, 31, 31);
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1em;
   color: var(--foreground-color);
-  font-size: 18px;
-  font-family: Berkeley Mono;
 }
 [data-attr] {
   display: flex;

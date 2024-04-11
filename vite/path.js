@@ -82,9 +82,10 @@ export async function render(res, query) {
     <head>
       <style type="text/css">${css}</style>
     </head>
-    <body>
-      <div class="--css-edit-editor" spellcheck="false">
-        ${html}
+    <body spellcheck="false">
+      <div class="query">${to_html(parsed_query)}</div>
+      <div class="--css-edit-editor" >
+        <div class="code">${html}</div>
       </div>  
     </body>
   </div>
