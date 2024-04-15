@@ -15,7 +15,7 @@
   --attribute-color: var(--property-name-color);
   --foreground-color: #ccc;
   --at-rule-color: #c586c0;
-
+  color: var(--foreground-color);
   font-size: 18px;
   font-family: Berkeley Mono;
 }
@@ -26,7 +26,6 @@
   gap: var(--spacing);
   background-color: rgba(255, 255, 255, 0.1);
   padding: 1em;
-  color: var(--foreground-color);
 }
 [data-attr] {
   display: flex;

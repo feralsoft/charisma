@@ -49,8 +49,6 @@ function to_html(node) {
   `;
 }
 
-let css = (await fs.readFile("index.css")).toString();
-
 function unique_props(props) {
   let known_props = {};
   for (let prop of props) {
@@ -80,7 +78,7 @@ export async function render(res, query) {
     res.end(`
   <html>
     <head>
-      <style type="text/css">${css}</style>
+      <style type="text/css">${(await fs.readFile("index.css")).toString()}</style>
     </head>
     <body spellcheck="false">
       <div class="query">${to_html(parsed_query)}</div>
