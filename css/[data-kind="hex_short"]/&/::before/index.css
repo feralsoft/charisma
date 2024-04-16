@@ -1,4 +1,0 @@
-[data-kind="hex_short"]::before {
-  content: "#";
-  color: var(--function-color);
-}

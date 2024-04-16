@@ -1,6 +1,0 @@
-[data-kind="rule"] > [data-attr="query"]::after {
-  display: flex;
-  flex-direction: column;
-  justify-content: end;
-  content: "{";
-}

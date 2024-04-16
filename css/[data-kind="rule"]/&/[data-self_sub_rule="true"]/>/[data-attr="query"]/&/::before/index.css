@@ -1,5 +1,0 @@
-[data-kind="rule"][data-self_sub_rule="true"] > [data-attr="query"]::before {
-  content: "&";
-  margin-right: -2px;
-  color: var(--foreground-color);
-}

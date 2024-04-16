@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <style>
+      :root {
+        background-color: rgb(40, 40, 40);
+        font-family: Berkeley Mono;
+        font-size: 22px;
+        color: white;
+      }
+      body {
+        width: 50%;
+        min-width: 400px;
+        padding-top: 2em;
+        margin: auto;
+      }
+      [data-kind="class"] {
+        color: rgb(255, 187, 0);
+        &::before {
+          cursor: pointer;
+          content: ".";
+        }
+      }
+      [data-kind="modifier"],
+      [data-kind="child"] {
+        display: flex;
+      }
+      [data-kind="child"] {
+        gap: 0.5em;
+      }
+      [data-kind][contenteditable] {
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="search" spellcheck="false">
+      <!-- <div data-kind="class">btn</div> -->
+      <div data-kind="modifier">
+        <div data-attr="left"><div data-kind="class">btn</div></div>
+        <div data-attr="right">
+          <div data-kind="class">active</div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    "use strict";
+    function h(kind, attrs, ...children) {
+      let elem = document.createElement(kind);
+      for (let key in attrs) {
+        elem.setAttribute(key, attrs[key]);
+      }
+      elem.append(...children);
+      return elem;
+    }
+    const dir = {
+      "/.btn/&/.active": ".btn.active { display: flex; }",
+      "/.btn": ".btn { font-size: 20px; }",
+    };
+    let selected_node = null;
+    function focus(elem) {
+      selected_node?.removeEventListener("keydown", on_input);
+      selected_node = elem;
+      selected_node.setAttribute("contenteditable", true);
+      selected_node.focus();
+      selected_node.addEventListener("keydown", on_input);
+    }
+
+    search.addEventListener("click", (e) => {
+      focus(e.target);
+    });
+
+    function create_group(kind, left, right) {
+      return h(
+        "div",
+        { "data-kind": kind },
+        h("div", { "data-attr": "left" }, left),
+        h("div", { "data-attr": "right" }, right)
+      );
+    }
+
+    let events = {
+      delete: {
+        // when we want to delete the node & the context is modifier
+        modifier(modifier, node_to_be_deleted) {
+          let parent = modifier.parentElement;
+          if (
+            modifier.querySelector("[data-attr=right] > [data-kind]") ===
+            node_to_be_deleted
+          ) {
+            // delete right, keep the left
+            let left = modifier.querySelector("[data-attr=left] > [data-kind]");
+            parent.append(left);
+            modifier.remove();
+            focus(left);
+          } else {
+            // delete left, keep the right
+            let right = modifier.querySelector(
+              "[data-attr=right] > [data-kind]"
+            );
+            parent.append(right);
+            modifier.remove();
+            focus(right);
+          }
+        },
+      },
+      last_char: {
+        "."(selected_node) {
+          selected_node.innerText = selected_node.innerText.slice(0, -1);
+          let class_node = h(
+            "div",
+            { "data-kind": "class", contenteditable: true },
+            " "
+          );
+          if (selected_node.dataset.kind === "empty") {
+            selected_node.replaceWith(class_node);
+          } else {
+            selected_node.parentElement.append(
+              create_group("modifier", selected_node, class_node)
+            );
+          }
+          focus(class_node);
+        },
+        " "(selected_node) {
+          let right = h("div", { "data-kind": "empty", contenteditable: true });
+          selected_node.parentElement.append(
+            create_group("child", selected_node, right)
+          );
+          focus(right);
+        },
+      },
+    };
+
+    let last_time_was_empty = false;
+    function on_input(e) {
+      let selected_node = e.target;
+      // ignore the <br> at the end
+      let last_char = selected_node.innerHTML.at(-5);
+      if (events.last_char[last_char]) {
+        events.last_char[last_char](selected_node);
+      } else if (last_time_was_empty && selected_node.innerText.trim() === "") {
+        let parent_node = selected_node.parentElement.closest("[data-kind]");
+        events.delete[parent_node.dataset.kind](parent_node, selected_node);
+      } else if (selected_node.innerText.trim() === "") {
+        last_time_was_empty = true;
+      } else {
+        last_time_was_empty = false;
+      }
+    }
+  </script>
+</html>

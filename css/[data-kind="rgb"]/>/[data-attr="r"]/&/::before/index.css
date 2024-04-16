@@ -1,4 +1,0 @@
-[data-kind="rgb"] > [data-attr="r"]::before {
-  content: "(";
-  color: var(--foreground-color);
-}
