@@ -86,10 +86,16 @@ impl Render for biome_css_syntax::CssGenericProperty {
         assert!(self.value().into_iter().into_iter().len() == 1);
         let value = self.value().into_iter().next().unwrap();
         let value = value.as_any_css_value().unwrap();
+        let property_kind = if name.starts_with("--") {
+            "variable"
+        } else {
+            "property"
+        };
 
         format!(
-            "<div data-kind=\"property\"><div data-attr=\"name\">{}</div><div data-attr=\"value\">{}</div></div>",
-            render_value(name.trim().to_string()),
+            "<div data-kind=\"property\" data-property-kind=\"{}\"><div data-attr=\"name\">{}</div><div data-attr=\"value\">{}</div></div>",
+            property_kind,
+            render_value(name.to_string().trim().to_string()),
             value.render_html()
         )
     }

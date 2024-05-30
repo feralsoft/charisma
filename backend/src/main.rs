@@ -15,7 +15,7 @@ fn main() {
         + "</div>"
         + "</div>"
         + "<div data-attr=\"properties\">"
-        + "<div data-kind=\"property\">"
+        + "<div data-kind=\"property\" data-property-kind=\"variable\">"
         + "<div data-attr=\"name\">"
         + &html::render_value("--color".to_owned())
         + "</div>"
