@@ -28,6 +28,7 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "biome_css_parser",
+ "biome_css_syntax",
 ]
 
 [[package]]
