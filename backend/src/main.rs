@@ -4,16 +4,14 @@ mod html;
 
 fn main() {
     let result = biome_css_parser::parse_css(
-        ".btn { font-size: 20px; }",
+        ".test { font-size: 20%; }",
         biome_css_parser::CssParserOptions::default(),
     );
-    let tree = result.tree();
-
-    let output = tree.render_html();
+    let output = result.tree().render_html();
 
     let expected_output = "<div data-kind=\"rule\"><div data-attr=\"selector\">".to_owned()
         + "<div data-kind=\"class\">"
-        + &html::render_value("btn".to_string())
+        + &html::render_value("test".to_string())
         + "</div>"
         + "</div>"
         + "<div data-attr=\"properties\">"
@@ -22,7 +20,7 @@ fn main() {
         + &html::render_value("font-size".to_owned())
         + "</div>"
         + "<div data-attr=\"value\">"
-        + "<div data-kind=\"unit\" data-unit-type=\"px\">"
+        + "<div data-kind=\"unit\" data-unit-type=\"percentage\">"
         + &html::render_value("20".to_owned())
         + "</div>"
         + "</div>"

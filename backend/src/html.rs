@@ -44,6 +44,26 @@ impl Render for biome_css_syntax::CssRegularDimension {
     }
 }
 
+impl Render for biome_css_syntax::CssPercentage {
+    fn render_html(&self) -> String {
+        let value = self.value_token().unwrap().to_string();
+        format!(
+            "<div data-kind=\"unit\" data-unit-type=\"percentage\">{}</div>",
+            render_value(value)
+        )
+    }
+}
+
+impl Render for biome_css_syntax::AnyCssDimension {
+    fn render_html(&self) -> String {
+        match self {
+            biome_css_syntax::AnyCssDimension::CssPercentage(node) => node.render_html(),
+            biome_css_syntax::AnyCssDimension::CssRegularDimension(node) => node.render_html(),
+            biome_css_syntax::AnyCssDimension::CssUnknownDimension(_) => todo!(),
+        }
+    }
+}
+
 impl Render for biome_css_syntax::CssGenericProperty {
     fn render_html(&self) -> String {
         let name = self.name().unwrap().to_string();
@@ -53,8 +73,6 @@ impl Render for biome_css_syntax::CssGenericProperty {
             .as_any_css_value()
             .unwrap()
             .as_any_css_dimension()
-            .unwrap()
-            .as_css_regular_dimension()
             .unwrap();
 
         format!(
