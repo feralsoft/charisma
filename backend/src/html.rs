@@ -64,21 +64,33 @@ impl Render for biome_css_syntax::AnyCssDimension {
     }
 }
 
+impl Render for biome_css_syntax::AnyCssValue {
+    fn render_html(&self) -> String {
+        match self {
+            biome_css_syntax::AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
+            biome_css_syntax::AnyCssValue::AnyCssFunction(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssColor(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssCustomIdentifier(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssDashedIdentifier(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssIdentifier(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssNumber(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssRatio(_) => todo!(),
+            biome_css_syntax::AnyCssValue::CssString(_) => todo!(),
+        }
+    }
+}
+
 impl Render for biome_css_syntax::CssGenericProperty {
     fn render_html(&self) -> String {
         let name = self.name().unwrap().to_string();
         assert!(self.value().into_iter().into_iter().len() == 1);
         let value = self.value().into_iter().next().unwrap();
-        let number = value
-            .as_any_css_value()
-            .unwrap()
-            .as_any_css_dimension()
-            .unwrap();
+        let value = value.as_any_css_value().unwrap();
 
         format!(
             "<div data-kind=\"property\"><div data-attr=\"name\">{}</div><div data-attr=\"value\">{}</div></div>",
             render_value(name.trim().to_string()),
-            number.render_html()
+            value.render_html()
         )
     }
 }

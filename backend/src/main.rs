@@ -4,7 +4,7 @@ mod html;
 
 fn main() {
     let result = biome_css_parser::parse_css(
-        ".test { font-size: 20%; }",
+        ".test { --color: 20%; }",
         biome_css_parser::CssParserOptions::default(),
     );
     let output = result.tree().render_html();
@@ -17,7 +17,7 @@ fn main() {
         + "<div data-attr=\"properties\">"
         + "<div data-kind=\"property\">"
         + "<div data-attr=\"name\">"
-        + &html::render_value("font-size".to_owned())
+        + &html::render_value("--color".to_owned())
         + "</div>"
         + "<div data-attr=\"value\">"
         + "<div data-kind=\"unit\" data-unit-type=\"percentage\">"
