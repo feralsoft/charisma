@@ -1,3 +1,10 @@
+fn render_value(value: String) -> String {
+    format!(
+        "<div data-value=\"{}\" contenteditable>{}</div>",
+        value, value
+    )
+}
+
 trait Render {
     fn render_html(&self) -> String;
 }
@@ -16,11 +23,11 @@ impl Render for biome_css_syntax::CssCompoundSelector {
             biome_css_syntax::AnyCssSubSelector::CssPseudoClassSelector(_) => todo!(),
             biome_css_syntax::AnyCssSubSelector::CssPseudoElementSelector(_) => todo!(),
         };
-        let value = name.trim();
 
         format!(
-            "<div data-kind=\"{}\"><div data-value=\"{}\" contenteditable>{}</div></div>",
-            kind, value, value
+            "<div data-kind=\"{}\">{}</div>",
+            kind,
+            render_value(name.trim().to_string())
         )
     }
 }
@@ -30,16 +37,16 @@ impl Render for biome_css_syntax::CssRegularDimension {
         let unit_type = self.unit_token().unwrap().to_string();
         let value = self.value_token().unwrap().to_string();
         format!(
-            "<div data-kind=\"unit\" data-unit-type=\"{}\"><div data-value=\"{}\" contenteditable>{}</div></div>",
-            unit_type, value, value
+            "<div data-kind=\"unit\" data-unit-type=\"{}\">{}</div>",
+            unit_type,
+            render_value(value)
         )
     }
 }
 
 impl Render for biome_css_syntax::CssGenericProperty {
     fn render_html(&self) -> String {
-        let n = self.name().unwrap().to_string();
-        let name = n.trim();
+        let name = self.name().unwrap().to_string();
         assert!(self.value().into_iter().into_iter().len() == 1);
         let value = self.value().into_iter().next().unwrap();
         let number = value
@@ -51,9 +58,8 @@ impl Render for biome_css_syntax::CssGenericProperty {
             .unwrap();
 
         format!(
-            "<div data-kind=\"property\"><div data-attr=\"name\"><div data-value=\"{}\" contenteditable>{}</div></div><div data-attr=\"value\">{}</div></div>",
-            name,
-            name,
+            "<div data-kind=\"property\"><div data-attr=\"name\">{}</div><div data-attr=\"value\">{}</div></div>",
+            render_value(name.trim().to_string()),
             number.render_html()
         )
     }
@@ -112,17 +118,17 @@ fn main() {
 
     let expected_output = "<div data-kind=\"rule\"><div data-attr=\"selector\">".to_owned()
         + "<div data-kind=\"class\">"
-        + "<div data-value=\"btn\" contenteditable>btn</div>"
+        + &render_value("btn".to_string())
         + "</div>"
         + "</div>"
         + "<div data-attr=\"properties\">"
         + "<div data-kind=\"property\">"
         + "<div data-attr=\"name\">"
-        + "<div data-value=\"font-size\" contenteditable>font-size</div>"
+        + &render_value("font-size".to_owned())
         + "</div>"
         + "<div data-attr=\"value\">"
         + "<div data-kind=\"unit\" data-unit-type=\"px\">"
-        + "<div data-value=\"20\" contenteditable>20</div>"
+        + &render_value("20".to_owned())
         + "</div>"
         + "</div>"
         + "</div>"
