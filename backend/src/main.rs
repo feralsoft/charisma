@@ -108,44 +108,27 @@ fn main() {
     );
     let tree = result.tree();
 
-    println!("{}", tree.render_html());
+    let output = tree.render_html();
 
-    let _expected_result = "
-    <div data-kind=\"rule\">
-        <div data-attr=\"selector\">
-            <div data-kind=\"class\">
-                <div data-value=\"btn\" contenteditable>btn</div>
-            </div>
-        </div>
-        <div data-attr=\"properties\">
-            <div data-kind=\"property\">
-                <div data-attr=\"name\">
-                    <div data-value=\"font-size\" contenteditable>font-size</div>
-                </div>
-                <div data-attr=\"value\">
-                    <div data-kind=\"unit\" data-unit-type=\"px\">
-                        <div data-value=\"20\">20</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    ";
+    let expected_output = "<div data-kind=\"rule\"><div data-attr=\"selector\">".to_owned()
+        + "<div data-kind=\"class\">"
+        + "<div data-value=\"btn\" contenteditable>btn</div>"
+        + "</div>"
+        + "</div>"
+        + "<div data-attr=\"properties\">"
+        + "<div data-kind=\"property\">"
+        + "<div data-attr=\"name\">"
+        + "<div data-value=\"font-size\" contenteditable>font-size</div>"
+        + "</div>"
+        + "<div data-attr=\"value\">"
+        + "<div data-kind=\"unit\" data-unit-type=\"px\">"
+        + "<div data-value=\"20\" contenteditable>20</div>"
+        + "</div>"
+        + "</div>"
+        + "</div>"
+        + "</div>"
+        + "</div>";
+    // println!("{}", expected_output);
 
-    // let base_rule = result.tree().rules().into_iter().next().unwrap();
-
-    // let btn_selector = base_rule
-    //     .as_css_qualified_rule()
-    //     .unwrap()
-    //     .prelude()
-    //     .into_iter()
-    //     .next()
-    //     .unwrap()
-    //     .unwrap()
-    //     .as_css_compound_selector()
-    //     .unwrap()
-    //     .as_fields()
-    //     .sub_selectors;
-
-    // println!("{:?}", base_rule)
+    assert!(expected_output == output)
 }
