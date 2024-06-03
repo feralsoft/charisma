@@ -36,8 +36,6 @@ pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, 
     let path = format!("db/{}", db_path);
     match fs::read_to_string(path.clone()) {
         Ok(rule) => {
-            let _: Option<biome_css_syntax::AnyCssDeclarationOrRule> = None;
-
             let rule = parse_one(rule);
             let new_property = parse_property(name, value);
             let block = rule.block().unwrap();
@@ -45,11 +43,11 @@ pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, 
             let selector = rule.prelude().into_iter().next().unwrap().unwrap();
             assert!(selector.to_path_parts().join("/") == db_path);
 
-            let mut properties = block
+            let mut properties: HashSet<String> = block
                 .items()
                 .into_iter()
                 .map(|n| n.to_string().trim().to_string())
-                .collect::<HashSet<_>>();
+                .collect();
             properties.insert(new_property.to_string().trim().to_string());
             let mut sorted_properties: Vec<String> = properties.iter().map(|n| n.clone()).collect();
             sorted_properties.sort();
@@ -60,7 +58,7 @@ pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, 
             );
             fs::write(path, new_rule).unwrap();
         }
-        Err(e) => todo!("{:?}", e),
+        Err(e) => panic!("store_property error: {:?}", e),
     }
 }
 
