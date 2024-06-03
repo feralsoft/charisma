@@ -133,15 +133,14 @@
     color: var(--foreground-color);
   }
 }
-
-[data-unit-type="px"] > [data-value]::after {
+[data-unit-type]::after {
   color: var(--function-color);
-  content: "px";
+  content: attr(data-unit-type);
 }
 [data-kind="class"] {
   display: flex;
   color: var(--class-color);
-  [data-value]::before {
+  &::before {
     content: ".";
   }
 }
@@ -516,9 +515,6 @@ button {
   max-width: 100%;
   width: 100%;
   overflow-y: scroll;
-}
-[data-unit-type="percentage"] > [data-value]::after {
-  content: "%";
 }
 [data-kind] {
   height: min-content;
