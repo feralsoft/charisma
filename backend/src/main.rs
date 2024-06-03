@@ -3,8 +3,6 @@ extern crate rocket;
 
 use html::Render;
 use rocket::{http::ContentType, tokio::fs::read_to_string};
-use sha1::Digest;
-use storage::Storage;
 
 mod html;
 mod storage;
@@ -43,20 +41,16 @@ fn rocket() -> _ {
     .into_iter()
     .next()
     .unwrap();
-    let path = rule
+    let selector = rule
         .as_css_qualified_rule()
         .unwrap()
         .prelude()
         .into_iter()
         .next()
         .unwrap()
-        .unwrap()
-        .to_path();
-    let mut hasher = sha1::Sha1::new();
-    hasher.update(b".btn");
-    let btn = hasher.finalize();
+        .unwrap();
 
-    assert!(path == vec![format!("{:X}", btn)]);
+    storage::store_property(selector, "font-size".to_owned(), "20px".to_owned());
 
     rocket::build().mount("/", routes![index])
 }
