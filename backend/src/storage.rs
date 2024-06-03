@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashSet, fs};
 
 use biome_css_syntax::{AnyCssSelector::*, AnyCssSubSelector::*, CssDeclarationWithSemicolon};
 
@@ -43,16 +43,21 @@ pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, 
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
             let selector = rule.prelude().into_iter().next().unwrap().unwrap();
-            assert!(selector.to_path_parts().join("/n") == db_path);
+            assert!(selector.to_path_parts().join("/") == db_path);
 
-            let old_properties = block
+            let mut properties = block
                 .items()
                 .into_iter()
-                .map(|n| n.to_string())
-                .collect::<Vec<_>>()
-                .join("\n");
-
-            let new_rule = format!("{} {{ {}\n  {}\n}}", selector, old_properties, new_property);
+                .map(|n| n.to_string().trim().to_string())
+                .collect::<HashSet<_>>();
+            properties.insert(new_property.to_string().trim().to_string());
+            let mut sorted_properties: Vec<String> = properties.iter().map(|n| n.clone()).collect();
+            sorted_properties.sort();
+            let new_rule = format!(
+                "{} {{\n  {}\n}}",
+                selector.to_string().trim(),
+                sorted_properties.join("\n  ")
+            );
             fs::write(path, new_rule).unwrap();
         }
         Err(e) => todo!("{:?}", e),
