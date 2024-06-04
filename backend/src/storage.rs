@@ -49,6 +49,32 @@ fn parse_property(name: String, value: String) -> CssDeclarationWithSemicolon {
     item.as_css_declaration_with_semicolon().unwrap().to_owned()
 }
 
+pub fn delete_property(selector: biome_css_syntax::AnyCssSelector, name: String) {
+    let db_path = selector.to_path_parts().join("/");
+    let path = format!("db/{}/index.css", db_path);
+    match fs::read_to_string(path.clone()) {
+        Ok(rule) => {
+            let rule = parse_one(rule);
+            let block = rule.block().unwrap();
+            let block = block.as_css_declaration_or_rule_block().unwrap();
+            let mut sorted_properties = block
+                .items()
+                .into_iter()
+                .filter(|i| name_of_item(i) != name)
+                .map(|i| i.to_string().trim().to_string())
+                .collect::<Vec<String>>();
+            sorted_properties.sort();
+            let new_rule = format!(
+                "{} {{\n  {}\n}}",
+                selector.to_string().trim(),
+                sorted_properties.join("\n  ")
+            );
+            fs::write(path, new_rule).unwrap();
+        }
+        Err(_) => panic!("should never delete a property of a non-existent rule"),
+    }
+}
+
 pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, value: String) {
     let db_path = selector.to_path_parts().join("/");
     let path = format!("db/{}/index.css", db_path);
