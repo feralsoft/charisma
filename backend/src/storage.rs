@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, io};
+use std::{collections::HashMap, fs, io};
 
 use biome_css_syntax::{
     AnyCssDeclarationOrRule, AnyCssSelector::*, AnyCssSubSelector::*, CssDeclarationWithSemicolon,
@@ -29,17 +29,30 @@ fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
     value.token_text_trimmed().to_string()
 }
 
+fn value_of_item(item: &AnyCssDeclarationOrRule) -> String {
+    let decl = item
+        .as_css_declaration_with_semicolon()
+        .unwrap()
+        .declaration();
+    let property = decl.unwrap().property().unwrap();
+    let property = property.as_css_generic_property().unwrap();
+    let value_list = property.value();
+    assert!((&value_list).into_iter().len() == 1);
+    let value_node = value_list.into_iter().next().unwrap();
+    value_node.as_any_css_value().unwrap().to_string()
+}
+
 fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
     let rules = biome_css_parser::parse_css(&rule, biome_css_parser::CssParserOptions::default())
         .tree()
         .rules();
-    assert!(rules.clone().into_iter().len() == 1);
+    assert!((&rules).into_iter().len() == 1);
     let rule = rules.into_iter().next().unwrap();
 
     rule.as_css_qualified_rule().unwrap().to_owned()
 }
 
-fn parse_property(name: String, value: String) -> CssDeclarationWithSemicolon {
+fn parse_property(name: &String, value: &String) -> CssDeclarationWithSemicolon {
     let property_str = format!("{}: {};", name, value);
     let dummy_rule = parse_one(format!(".a {{ {} }}", property_str));
     let block = dummy_rule.block().unwrap();
@@ -49,10 +62,10 @@ fn parse_property(name: String, value: String) -> CssDeclarationWithSemicolon {
     item.as_css_declaration_with_semicolon().unwrap().to_owned()
 }
 
-pub fn delete_property(selector: biome_css_syntax::AnyCssSelector, name: String) {
+pub fn delete_property(selector: &biome_css_syntax::AnyCssSelector, name: String) {
     let db_path = selector.to_path_parts().join("/");
     let path = format!("db/{}/index.css", db_path);
-    match fs::read_to_string(path.clone()) {
+    match fs::read_to_string(&path) {
         Ok(rule) => {
             let rule = parse_one(rule);
             let block = rule.block().unwrap();
@@ -75,38 +88,41 @@ pub fn delete_property(selector: biome_css_syntax::AnyCssSelector, name: String)
     }
 }
 
-pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, value: String) {
+pub fn store_property(selector: &biome_css_syntax::AnyCssSelector, name: String, value: String) {
     let db_path = selector.to_path_parts().join("/");
     let path = format!("db/{}/index.css", db_path);
-    match fs::read_to_string(path.clone()) {
+    match fs::read_to_string(&path) {
         Ok(rule) => {
             let rule = parse_one(rule);
-            let new_property = parse_property(name.clone(), value);
+            parse_property(&name, &value); // make sure we can parse it
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
             let selector = rule.prelude().into_iter().next().unwrap().unwrap();
             assert!(selector.to_path_parts().join("/") == db_path);
 
             assert!(!block.items().into_iter().any(|i| name_of_item(&i) == name));
-
-            let mut properties: HashSet<String> = block
+            let mut properties: HashMap<String, String> = block
                 .items()
                 .into_iter()
-                .map(|n| n.to_string().trim().to_string())
+                .map(|i| (name_of_item(&i), value_of_item(&i)))
                 .collect();
-            properties.insert(new_property.to_string().trim().to_string());
-            let mut sorted_properties: Vec<String> = properties.iter().map(|n| n.clone()).collect();
+            properties.insert(name, value);
+            let mut sorted_properties: Vec<_> = properties
+                .iter()
+                .map(|(name, value)| format!("{}: {};", name, value))
+                .collect();
             sorted_properties.sort();
+
             let new_rule = format!(
-                "{} {{\n  {}\n}}",
+                "{} {{\n  {}\n}}\n",
                 selector.to_string().trim(),
                 sorted_properties.join("\n  ")
             );
             fs::write(path, new_rule).unwrap();
         }
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            let new_property = parse_property(name, value);
-            let rule = format!("{} {{\n  {}\n}}", selector, new_property);
+            let new_property = parse_property(&name, &value);
+            let rule = format!("{} {{\n  {}\n}}\n", selector, new_property);
             fs::create_dir(format!("db/{}", db_path)).unwrap();
             fs::write(path, rule).unwrap();
         }
