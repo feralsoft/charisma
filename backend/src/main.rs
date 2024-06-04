@@ -50,7 +50,8 @@ fn rocket() -> _ {
         .unwrap()
         .unwrap();
 
-    storage::store_property(selector, "font-size".to_owned(), "20px".to_owned());
+    storage::store_property(selector, "color".to_owned(), "20px".to_owned());
+    panic!();
 
     rocket::build().mount("/", routes![index])
 }

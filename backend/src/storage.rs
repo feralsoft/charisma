@@ -1,6 +1,8 @@
-use std::{collections::HashSet, fs};
+use std::{collections::HashSet, fs, io};
 
-use biome_css_syntax::{AnyCssSelector::*, AnyCssSubSelector::*, CssDeclarationWithSemicolon};
+use biome_css_syntax::{
+    AnyCssDeclarationOrRule, AnyCssSelector::*, AnyCssSubSelector::*, CssDeclarationWithSemicolon,
+};
 
 use sha1::Digest;
 
@@ -9,6 +11,22 @@ fn hash(string: String) -> String {
     hasher.update(string.as_bytes());
     let h = hasher.finalize();
     format!("{:x}", h)
+}
+
+fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
+    let decl = item
+        .as_css_declaration_with_semicolon()
+        .unwrap()
+        .declaration();
+    let property = decl.unwrap().property().unwrap();
+    let property = property.as_css_generic_property().unwrap();
+    let name_node = property.name().unwrap();
+    let value = name_node
+        .as_css_identifier()
+        .unwrap()
+        .value_token()
+        .unwrap();
+    value.token_text_trimmed().to_string()
 }
 
 fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
@@ -33,15 +51,17 @@ fn parse_property(name: String, value: String) -> CssDeclarationWithSemicolon {
 
 pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, value: String) {
     let db_path = selector.to_path_parts().join("/");
-    let path = format!("db/{}", db_path);
+    let path = format!("db/{}/index.css", db_path);
     match fs::read_to_string(path.clone()) {
         Ok(rule) => {
             let rule = parse_one(rule);
-            let new_property = parse_property(name, value);
+            let new_property = parse_property(name.clone(), value);
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
             let selector = rule.prelude().into_iter().next().unwrap().unwrap();
             assert!(selector.to_path_parts().join("/") == db_path);
+
+            assert!(!block.items().into_iter().any(|i| name_of_item(&i) == name));
 
             let mut properties: HashSet<String> = block
                 .items()
@@ -58,7 +78,13 @@ pub fn store_property(selector: biome_css_syntax::AnyCssSelector, name: String, 
             );
             fs::write(path, new_rule).unwrap();
         }
-        Err(e) => panic!("store_property error: {:?}", e),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let new_property = parse_property(name, value);
+            let rule = format!("{} {{\n  {}\n}}", selector, new_property);
+            fs::create_dir(format!("db/{}", db_path)).unwrap();
+            fs::write(path, rule).unwrap();
+        }
+        Err(_) => panic!("unknown error"),
     }
 }
 
