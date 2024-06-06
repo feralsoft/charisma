@@ -1,7 +1,14 @@
-use std::{collections::HashMap, fs, io};
+use std::{
+    collections::HashMap,
+    fs::{self},
+    io,
+};
 
 use biome_css_syntax::{
-    AnyCssDeclarationOrRule, AnyCssSelector::*, AnyCssSubSelector::*, CssDeclarationWithSemicolon,
+    AnyCssDeclarationOrRule,
+    AnyCssSelector::{self, *},
+    AnyCssSubSelector::*,
+    CssDeclarationWithSemicolon,
 };
 
 use sha1::Digest;
@@ -27,6 +34,61 @@ fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
         .value_token()
         .unwrap();
     value.token_text_trimmed().to_string()
+}
+
+pub fn siblings_of(selector: AnyCssSelector, idx: usize) -> Vec<String> {
+    let part_paths = selector.to_path_parts();
+    assert!((0..part_paths.len()).contains(&idx));
+    let parent_dir_path = part_paths[0..idx].join("/");
+    let mut out: Vec<String> = vec![];
+    for dir in fs::read_dir(format!("db/{}", parent_dir_path)).unwrap() {
+        let dir = dir.unwrap();
+        assert!(dir.file_type().unwrap().is_dir());
+        let file_name = dir.file_name().into_string().unwrap();
+        let path = format!("{}/{}", parent_dir_path, file_name);
+        if path == format!("{}/{}", parent_dir_path, part_paths[idx]) {
+            continue;
+        }
+        out.push(path);
+    }
+    out
+}
+
+fn parse_selector(str: &'static str) -> AnyCssSelector {
+    let rule = biome_css_parser::parse_css(
+        format!("{} {{}}", str).as_str(),
+        biome_css_parser::CssParserOptions::default(),
+    )
+    .tree()
+    .rules()
+    .into_iter()
+    .next()
+    .unwrap();
+
+    rule.as_css_qualified_rule()
+        .unwrap()
+        .prelude()
+        .into_iter()
+        .next()
+        .unwrap()
+        .unwrap()
+}
+
+#[test]
+fn test_siblings() {
+    let s1 = parse_selector(".btn");
+
+    delete_property(&s1, "color".to_owned());
+    store_property(&s1, "color".to_owned(), "red".to_owned());
+
+    let s2 = parse_selector(".container");
+
+    delete_property(&s2, "display".to_owned());
+    store_property(&s2, "display".to_owned(), "flex".to_owned());
+
+    let siblings = siblings_of(s2, 0);
+
+    assert_eq!(siblings, vec!["/".to_owned() + &hash(".btn".to_owned())],);
 }
 
 fn value_of_item(item: &AnyCssDeclarationOrRule) -> String {
@@ -159,11 +221,9 @@ impl Storage for biome_css_syntax::AnyCssSubSelector {
             CssAttributeSelector(_) => todo!(),
             CssBogusSubSelector(_) => todo!(),
             CssClassSelector(class) => {
-                let n = class.name().unwrap().to_string();
-                // TODO: remove trim
-                let name = n.trim();
-                assert!(name == "btn".to_string());
-                return vec![hash(".".to_string() + &name)];
+                let name = class.name().unwrap().value_token().unwrap();
+                let name = name.text_trimmed();
+                return vec![hash(format!(".{}", name))];
             }
             CssIdSelector(_) => todo!(),
             CssPseudoClassSelector(_) => todo!(),

@@ -32,27 +32,5 @@ async fn index() -> (ContentType, String) {
 
 #[launch]
 fn rocket() -> _ {
-    let rule = biome_css_parser::parse_css(
-        ".btn { font-size: 20px; }",
-        biome_css_parser::CssParserOptions::default(),
-    )
-    .tree()
-    .rules()
-    .into_iter()
-    .next()
-    .unwrap();
-    let selector = rule
-        .as_css_qualified_rule()
-        .unwrap()
-        .prelude()
-        .into_iter()
-        .next()
-        .unwrap()
-        .unwrap();
-
-    storage::delete_property(&selector, "color".to_owned());
-    storage::store_property(&selector, "color".to_owned(), "red".to_owned());
-    panic!();
-
     rocket::build().mount("/", routes![index])
 }
