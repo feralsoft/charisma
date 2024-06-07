@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    fs::{self},
-    io,
-};
+use std::{collections::HashMap, fs, io};
 
 use biome_css_syntax::{
     AnyCssDeclarationOrRule,
@@ -10,15 +6,6 @@ use biome_css_syntax::{
     AnyCssSubSelector::*,
     CssDeclarationWithSemicolon,
 };
-
-use sha1::Digest;
-
-fn hash(string: String) -> String {
-    let mut hasher = sha1::Sha1::new();
-    hasher.update(string.as_bytes());
-    let h = hasher.finalize();
-    format!("{:x}", h)
-}
 
 fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
     let decl = item
@@ -54,7 +41,81 @@ pub fn siblings_of(selector: AnyCssSelector, idx: usize) -> Vec<String> {
     out
 }
 
-fn parse_selector(str: &'static str) -> AnyCssSelector {
+#[derive(Clone, Debug, PartialEq)]
+pub struct Rule {
+    selector: AnyCssSelector,
+    properties: Vec<CssDeclarationWithSemicolon>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DBTree {
+    children: HashMap<String, DBTree>,
+    rule: Option<Rule>,
+}
+
+impl DBTree {
+    fn new() -> DBTree {
+        DBTree {
+            children: HashMap::new(),
+            rule: None,
+        }
+    }
+
+    fn insert(
+        &self,
+        selector: AnyCssSelector,
+        path: &[String],
+        name: &String,
+        value: &String,
+    ) -> DBTree {
+        match path {
+            [] => {
+                let new_rule = if let Some(rule) = &self.rule {
+                    let mut new_rule = rule.clone();
+                    new_rule.properties.push(parse_property(&name, &value));
+                    new_rule
+                } else {
+                    Rule {
+                        selector,
+                        properties: vec![parse_property(&name, &value)],
+                    }
+                };
+                DBTree {
+                    children: self.children.clone(),
+                    rule: Some(new_rule),
+                }
+            }
+            [part, parts @ ..] => match self.children.get(part) {
+                Some(tree) => {
+                    let mut new_children = self.children.clone();
+                    new_children.insert(part.to_owned(), tree.insert(selector, parts, name, value));
+                    DBTree {
+                        children: new_children,
+                        rule: self.rule.clone(),
+                    }
+                }
+                None => DBTree {
+                    children: HashMap::from([(
+                        part.to_owned(),
+                        DBTree::new().insert(selector, parts, name, value),
+                    )]),
+                    rule: None,
+                },
+            },
+        }
+    }
+    fn get(&self, path: &[String]) -> Option<Rule> {
+        match path {
+            [] => self.rule.clone(),
+            [part, parts @ ..] => match self.children.get(part) {
+                Some(child) => child.get(parts),
+                None => None,
+            },
+        }
+    }
+}
+
+fn parse_selector(str: &String) -> AnyCssSelector {
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),
@@ -75,20 +136,22 @@ fn parse_selector(str: &'static str) -> AnyCssSelector {
 }
 
 #[test]
-fn test_siblings() {
-    let s1 = parse_selector(".btn");
+fn test() {
+    let selector = parse_selector(&".btn".to_owned());
+    let path = [".btn".to_owned()];
+    let name = "font-size".to_owned();
+    let value = "20px".to_owned();
+    let tree = DBTree::new().insert(selector.clone(), &path, &name, &value);
 
-    delete_property(&s1, "color".to_owned());
-    store_property(&s1, "color".to_owned(), "red".to_owned());
-
-    let s2 = parse_selector(".container");
-
-    delete_property(&s2, "display".to_owned());
-    store_property(&s2, "display".to_owned(), "flex".to_owned());
-
-    let siblings = siblings_of(s2, 0);
-
-    assert_eq!(siblings, vec!["/".to_owned() + &hash(".btn".to_owned())],);
+    assert_eq!(
+        tree.get(&path)
+            .unwrap()
+            .properties
+            .get(0)
+            .unwrap()
+            .to_string(),
+        parse_property(&name, &value).to_string()
+    )
 }
 
 fn value_of_item(item: &AnyCssDeclarationOrRule) -> String {
@@ -223,7 +286,7 @@ impl Storage for biome_css_syntax::AnyCssSubSelector {
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                return vec![hash(format!(".{}", name))];
+                return vec![format!(".{}", name)];
             }
             CssIdSelector(_) => todo!(),
             CssPseudoClassSelector(_) => todo!(),
