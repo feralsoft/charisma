@@ -355,6 +355,7 @@ fn no_super_pathes() {
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(paths, vec![] as Vec<Vec<String>>);
 }
+
 #[test]
 fn var_is_inherited() {
     let mut tree = DBTree::new();
