@@ -134,6 +134,42 @@ impl DBTree {
         properties
     }
 
+    fn inherited_vars_for_aux(
+        &self,
+        path: &[String],
+        inherited_vars: &mut HashMap<String, CssDeclarationWithSemicolon>,
+    ) {
+        let inherited_vars_from_self: HashMap<String, CssDeclarationWithSemicolon> =
+            if let Some(rule) = &self.rule {
+                rule.properties
+                    .iter()
+                    .filter(|p| is_var(p))
+                    .map(|p| (name_of_item(p), p.clone()))
+                    .collect::<HashMap<_, _>>()
+            } else {
+                HashMap::new()
+            };
+        match path {
+            [] => panic!("should never reach the end of path"),
+            [_part] => {
+                inherited_vars.extend(inherited_vars_from_self);
+            }
+            [part, parts @ ..] => {
+                inherited_vars.extend(inherited_vars_from_self);
+                self.children
+                    .get(part)
+                    .unwrap()
+                    .inherited_vars_for_aux(parts, inherited_vars);
+            }
+        }
+    }
+
+    fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, CssDeclarationWithSemicolon> {
+        let mut vars: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
+        self.inherited_vars_for_aux(path, &mut vars);
+        vars
+    }
+
     fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
         assert!(path.len() > 0);
         let (last_part, parent_path) = path.split_last().unwrap();
@@ -209,6 +245,15 @@ impl DBTree {
     }
 }
 
+fn is_var(property: &CssDeclarationWithSemicolon) -> bool {
+    let decl = property.as_fields().declaration.unwrap();
+    let property = decl.as_fields().property.unwrap();
+    let property = property.as_css_generic_property().unwrap();
+    let name = property.as_fields().name.unwrap();
+    let name = name.as_css_identifier().unwrap();
+    name.to_string().starts_with("--")
+}
+
 fn parse_selector(str: &String) -> AnyCssSelector {
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
@@ -227,6 +272,24 @@ fn parse_selector(str: &String) -> AnyCssSelector {
         .next()
         .unwrap()
         .unwrap()
+}
+
+#[test]
+fn var_is_inherited() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"--var".to_string(), &"red".to_string());
+    let s2 = parse_selector(&".card .btn".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        &"font-size".to_string(),
+        &"var(--var)".to_string(),
+    );
+    let inhertied_vars = tree.inherited_vars_for(&s2_path);
+    assert_eq!(inhertied_vars.contains_key("--var"), true);
 }
 
 #[test]
