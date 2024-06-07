@@ -1,4 +1,7 @@
-use std::{collections::HashMap, fs, io};
+use std::{
+    collections::{HashMap, HashSet},
+    fs, io,
+};
 
 use biome_css_syntax::{
     AnyCssDeclarationOrRule,
@@ -84,6 +87,19 @@ impl DBTree {
         )
     }
 
+    fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
+        assert!(path.len() > 0);
+        let (last_part, parent_path) = path.split_last().unwrap();
+        let root = self.get(parent_path);
+        assert!(root.is_some());
+        let root = root.unwrap();
+        root.children
+            .iter()
+            .filter(|(part, _)| *part != last_part)
+            .filter_map(|(_, tree)| tree.rule.clone())
+            .collect()
+    }
+
     fn insert_mut(
         &mut self,
         selector: AnyCssSelector,
@@ -157,9 +173,9 @@ impl DBTree {
             },
         }
     }
-    fn get(&self, path: &[String]) -> Option<Rule> {
+    fn get(&self, path: &[String]) -> Option<DBTree> {
         match path {
-            [] => self.rule.clone(),
+            [] => Some(self.clone()),
             [part, parts @ ..] => match self.children.get(part) {
                 Some(child) => child.get(parts),
                 None => None,
@@ -189,6 +205,29 @@ fn parse_selector(str: &String) -> AnyCssSelector {
 }
 
 #[test]
+fn siblings() {
+    let s1 = parse_selector(&".btn".to_owned());
+    let s1_path = s1.to_path_parts();
+    let s2 = parse_selector(&".card".to_owned());
+    let s2_path = s2.to_path_parts();
+    let s3 = parse_selector(&".table".to_owned());
+    let s3_path = s3.to_path_parts();
+    let mut tree = DBTree::new();
+    tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
+    tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
+    tree.insert_mut(s3, &s3_path, &"display".to_owned(), &"flex".to_owned());
+    let s1_siblings = tree.siblings_for(&s1_path);
+    let sibling_selectors: HashSet<String> = s1_siblings
+        .iter()
+        .map(|r| r.selector.to_string().trim().to_string())
+        .collect();
+    assert_eq!(
+        sibling_selectors,
+        HashSet::from([".card".to_string(), ".table".to_string()])
+    );
+}
+
+#[test]
 fn mutable_test() {
     let selector = parse_selector(&".btn".to_owned());
     let path = selector.to_path_parts();
@@ -199,6 +238,8 @@ fn mutable_test() {
 
     assert_eq!(
         tree.get(&path)
+            .unwrap()
+            .rule
             .unwrap()
             .properties
             .get(0)
@@ -218,6 +259,8 @@ fn immutable_insert() {
 
     assert_eq!(
         tree.get(&path)
+            .unwrap()
+            .rule
             .unwrap()
             .properties
             .get(0)
