@@ -61,6 +61,29 @@ impl DBTree {
         }
     }
 
+    fn serialize(&self) -> String {
+        let rule = match &self.rule {
+            Some(Rule {
+                properties,
+                selector,
+            }) => format!(
+                "{} {{ {} }}",
+                selector,
+                properties.iter().map(|p| p.to_string()).collect::<String>()
+            ),
+            None => String::from(""),
+        };
+
+        format!(
+            "{}\n{}",
+            rule,
+            self.children
+                .values()
+                .map(|node| node.serialize())
+                .collect::<String>()
+        )
+    }
+
     fn insert_mut(
         &mut self,
         selector: AnyCssSelector,
@@ -202,6 +225,19 @@ fn immutable_insert() {
             .to_string(),
         parse_property(&name, &value).to_string()
     )
+}
+
+#[test]
+fn serialize() {
+    let selector = parse_selector(&".btn".to_owned());
+    let path = selector.to_path_parts();
+    let name = "font-size".to_owned();
+    let value = "20px".to_owned();
+    let tree = DBTree::new().insert(selector, &path, &name, &value);
+    assert_eq!(
+        tree.serialize(),
+        String::from("\n.btn  { font-size: 20px;  }\n")
+    );
 }
 
 fn value_of_item(item: &AnyCssDeclarationOrRule) -> String {
