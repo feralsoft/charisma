@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
 use biome_css_syntax::{
-    AnyCssDeclarationOrRule,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::*,
     CssDeclarationWithSemicolon,
@@ -93,6 +92,31 @@ impl DBTree {
                 .map(|node| node.serialize())
                 .collect::<String>()
         )
+    }
+
+    fn super_pathes_of_aux(
+        &self,
+        path: &[String],
+        is_root: bool,
+        super_paths: &mut Vec<Vec<String>>,
+    ) {
+        if !is_root {
+            if let Some(path) = self
+                .get(path)
+                .and_then(|n| n.rule.as_ref().map(|r| r.selector.to_path_parts()))
+            {
+                super_paths.push(path)
+            }
+        }
+
+        for (_, t) in &self.children {
+            t.super_pathes_of_aux(path, false, super_paths);
+        }
+    }
+    fn super_pathes_of(&self, path: &[String]) -> Vec<Vec<String>> {
+        let mut super_paths: Vec<Vec<String>> = vec![];
+        self.super_pathes_of_aux(path, true, &mut super_paths);
+        super_paths
     }
 
     fn inherited_properties_for_aux(
@@ -275,6 +299,63 @@ fn parse_selector(str: &String) -> AnyCssSelector {
 }
 
 #[test]
+fn one_level_super_path() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    let s2 = parse_selector(&".container .card".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+
+    let paths = tree.super_pathes_of(&s1_path);
+    assert_eq!(
+        paths,
+        vec![vec![
+            ".container".to_string(),
+            " ".to_string(),
+            ".card".to_string()
+        ]]
+    );
+}
+
+#[test]
+fn two_level_super_path() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    let s2 = parse_selector(&".main .container .card".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+
+    let paths = tree.super_pathes_of(&s1_path);
+    assert_eq!(
+        paths,
+        vec![vec![
+            ".main".to_string(),
+            " ".to_string(),
+            ".container".to_string(),
+            " ".to_string(),
+            ".card".to_string()
+        ]]
+    );
+}
+
+#[test]
+fn no_super_pathes() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    let s2 = parse_selector(&".main .container".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+
+    let paths = tree.super_pathes_of(&s1_path);
+    assert_eq!(paths, vec![] as Vec<Vec<String>>);
+}
+#[test]
 fn var_is_inherited() {
     let mut tree = DBTree::new();
     let s1 = parse_selector(&".card".to_owned());
@@ -400,19 +481,6 @@ fn serialize() {
         tree.serialize(),
         String::from("\n.btn  { font-size: 20px;  }\n")
     );
-}
-
-fn value_of_item(item: &AnyCssDeclarationOrRule) -> String {
-    let decl = item
-        .as_css_declaration_with_semicolon()
-        .unwrap()
-        .declaration();
-    let property = decl.unwrap().property().unwrap();
-    let property = property.as_css_generic_property().unwrap();
-    let value_list = property.value();
-    assert!((&value_list).into_iter().len() == 1);
-    let value_node = value_list.into_iter().next().unwrap();
-    value_node.as_any_css_value().unwrap().to_string()
 }
 
 fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
