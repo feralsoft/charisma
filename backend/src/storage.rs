@@ -7,6 +7,38 @@ use biome_css_syntax::{
     CssDeclarationWithSemicolon,
 };
 
+const INHERITABLE_PROPERTIES: [&str; 29] = [
+    "azimuth",
+    "border-collapse",
+    "border-spacing",
+    "caption-side",
+    "color",
+    "cursor",
+    "direction",
+    "empty-cells",
+    "font-family",
+    "font-size",
+    "font-style",
+    "font-variant",
+    "font-weight",
+    "font",
+    "letter-spacing",
+    "line-height",
+    "list-style-image",
+    "list-style-position",
+    "list-style-type",
+    "list-style",
+    "orphans",
+    "quotes",
+    "text-align",
+    "text-indent",
+    "text-transform",
+    "visibility",
+    "white-space",
+    "widows",
+    "word-spacing",
+];
+
 fn name_of_item(item: &CssDeclarationWithSemicolon) -> String {
     let decl = item.declaration();
     let property = decl.unwrap().property().unwrap();
@@ -63,6 +95,45 @@ impl DBTree {
         )
     }
 
+    fn inherited_properties_for_aux(
+        &self,
+        path: &[String],
+        inhertied_properties: &mut HashMap<String, CssDeclarationWithSemicolon>,
+    ) {
+        let inherited_properties_from_self: HashMap<String, CssDeclarationWithSemicolon> =
+            if let Some(rule) = &self.rule {
+                rule.properties
+                    .iter()
+                    .filter(|p| INHERITABLE_PROPERTIES.contains(&name_of_item(p).as_str()))
+                    .map(|p| (name_of_item(p), p.clone()))
+                    .collect::<HashMap<_, _>>()
+            } else {
+                HashMap::new()
+            };
+        match path {
+            [] => panic!("should never reach the end of path"),
+            [_part] => {
+                inhertied_properties.extend(inherited_properties_from_self);
+            }
+            [part, parts @ ..] => {
+                inhertied_properties.extend(inherited_properties_from_self);
+                self.children
+                    .get(part)
+                    .unwrap()
+                    .inherited_properties_for_aux(parts, inhertied_properties)
+            }
+        }
+    }
+
+    fn inherited_properties_for(
+        &self,
+        path: &[String],
+    ) -> HashMap<String, CssDeclarationWithSemicolon> {
+        let mut properties: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
+        self.inherited_properties_for_aux(path, &mut properties);
+        properties
+    }
+
     fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
         assert!(path.len() > 0);
         let (last_part, parent_path) = path.split_last().unwrap();
@@ -77,23 +148,14 @@ impl DBTree {
     }
 
     fn delete_mut(&mut self, path: &[String], property_name: &String) {
-        match path {
-            [] => {
-                assert!(
-                    self.rule.is_some(),
-                    "can't delete property from rule that doesn't exist"
-                );
-                let rule = self.rule.as_mut().unwrap();
-                rule.properties
-                    .retain(|p| &name_of_item(p) != property_name);
-            }
-            [part, parts @ ..] => {
-                self.children
-                    .get_mut(part)
-                    .unwrap()
-                    .delete_mut(parts, property_name);
-            }
-        }
+        let tree = self.get_mut(path).unwrap();
+        assert!(
+            tree.rule.is_some(),
+            "can't delete property from rule that doesn't exist"
+        );
+        let rule = tree.rule.as_mut().unwrap();
+        rule.properties
+            .retain(|p| &name_of_item(p) != property_name);
     }
 
     fn insert_mut(
@@ -126,54 +188,21 @@ impl DBTree {
         }
     }
 
-    fn insert(
-        &self,
-        selector: AnyCssSelector,
-        path: &[String],
-        name: &String,
-        value: &String,
-    ) -> DBTree {
+    fn get(&self, path: &[String]) -> Option<&DBTree> {
         match path {
-            [] => {
-                let new_rule = if let Some(rule) = &self.rule {
-                    let mut new_rule = rule.clone();
-                    new_rule.properties.push(parse_property(&name, &value));
-                    new_rule
-                } else {
-                    Rule {
-                        selector,
-                        properties: vec![parse_property(&name, &value)],
-                    }
-                };
-                DBTree {
-                    children: self.children.clone(),
-                    rule: Some(new_rule),
-                }
-            }
+            [] => Some(self),
             [part, parts @ ..] => match self.children.get(part) {
-                Some(tree) => {
-                    let mut new_children = self.children.clone();
-                    new_children.insert(part.to_owned(), tree.insert(selector, parts, name, value));
-                    DBTree {
-                        children: new_children,
-                        rule: self.rule.clone(),
-                    }
-                }
-                None => DBTree {
-                    children: HashMap::from([(
-                        part.to_owned(),
-                        DBTree::new().insert(selector, parts, name, value),
-                    )]),
-                    rule: None,
-                },
+                Some(child) => child.get(parts),
+                None => None,
             },
         }
     }
-    fn get(&self, path: &[String]) -> Option<DBTree> {
+
+    fn get_mut(&mut self, path: &[String]) -> Option<&mut DBTree> {
         match path {
-            [] => Some(self.clone()),
-            [part, parts @ ..] => match self.children.get(part) {
-                Some(child) => child.get(parts),
+            [] => Some(self),
+            [part, parts @ ..] => match self.children.get_mut(part) {
+                Some(child) => child.get_mut(parts),
                 None => None,
             },
         }
@@ -198,6 +227,32 @@ fn parse_selector(str: &String) -> AnyCssSelector {
         .next()
         .unwrap()
         .unwrap()
+}
+
+#[test]
+fn color_is_inherited() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    let s2 = parse_selector(&".card .btn".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    let inherited_properties = tree.inherited_properties_for(&s2_path);
+    assert_eq!(inherited_properties.contains_key("color"), true);
+}
+
+#[test]
+fn display_is_not_inherited() {
+    let mut tree = DBTree::new();
+    let s1 = parse_selector(&".card".to_owned());
+    let s1_path = s1.to_path_parts();
+    tree.insert_mut(s1, &s1_path, &"display".to_string(), &"flex".to_string());
+    let s2 = parse_selector(&".card .btn".to_owned());
+    let s2_path = s2.to_path_parts();
+    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    let inherited_properties = tree.inherited_properties_for(&s2_path);
+    assert_eq!(inherited_properties.contains_key("display"), false);
 }
 
 #[test]
@@ -249,39 +304,18 @@ fn siblings() {
 }
 
 #[test]
-fn mutable_test() {
+fn insert_mutable_test() {
     let selector = parse_selector(&".btn".to_owned());
     let path = selector.to_path_parts();
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
     let mut tree = DBTree::new();
     tree.insert_mut(selector, &path, &name, &value);
+    let node = tree.get(&path).unwrap();
 
     assert_eq!(
-        tree.get(&path)
-            .unwrap()
-            .rule
-            .unwrap()
-            .properties
-            .get(0)
-            .unwrap()
-            .to_string(),
-        parse_property(&name, &value).to_string()
-    )
-}
-
-#[test]
-fn immutable_insert() {
-    let selector = parse_selector(&".btn".to_owned());
-    let path = selector.to_path_parts();
-    let name = "font-size".to_owned();
-    let value = "20px".to_owned();
-    let tree = DBTree::new().insert(selector, &path, &name, &value);
-
-    assert_eq!(
-        tree.get(&path)
-            .unwrap()
-            .rule
+        node.rule
+            .as_ref()
             .unwrap()
             .properties
             .get(0)
@@ -297,7 +331,8 @@ fn serialize() {
     let path = selector.to_path_parts();
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
-    let tree = DBTree::new().insert(selector, &path, &name, &value);
+    let mut tree = DBTree::new();
+    tree.insert_mut(selector, &path, &name, &value);
     assert_eq!(
         tree.serialize(),
         String::from("\n.btn  { font-size: 20px;  }\n")
@@ -345,7 +380,15 @@ impl Storage for biome_css_syntax::AnyCssSelector {
     fn to_path_parts(&self) -> Vec<String> {
         match self {
             CssBogusSelector(_) => todo!(),
-            CssComplexSelector(_) => todo!(),
+            CssComplexSelector(s) => {
+                let fields = s.as_fields();
+                let left = fields.left.unwrap();
+                let right = fields.right.unwrap();
+                let mut parts = left.to_path_parts();
+                parts.push(" ".to_string());
+                parts.extend(right.to_path_parts());
+                parts
+            }
             CssCompoundSelector(selector) => selector.to_path_parts(),
         }
     }
