@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs, io,
-};
+use std::collections::{HashMap, HashSet};
 
 use biome_css_syntax::{
     AnyCssDeclarationOrRule,
@@ -10,11 +7,8 @@ use biome_css_syntax::{
     CssDeclarationWithSemicolon,
 };
 
-fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
-    let decl = item
-        .as_css_declaration_with_semicolon()
-        .unwrap()
-        .declaration();
+fn name_of_item(item: &CssDeclarationWithSemicolon) -> String {
+    let decl = item.declaration();
     let property = decl.unwrap().property().unwrap();
     let property = property.as_css_generic_property().unwrap();
     let name_node = property.name().unwrap();
@@ -24,24 +18,6 @@ fn name_of_item(item: &AnyCssDeclarationOrRule) -> String {
         .value_token()
         .unwrap();
     value.token_text_trimmed().to_string()
-}
-
-pub fn siblings_of(selector: AnyCssSelector, idx: usize) -> Vec<String> {
-    let part_paths = selector.to_path_parts();
-    assert!((0..part_paths.len()).contains(&idx));
-    let parent_dir_path = part_paths[0..idx].join("/");
-    let mut out: Vec<String> = vec![];
-    for dir in fs::read_dir(format!("db/{}", parent_dir_path)).unwrap() {
-        let dir = dir.unwrap();
-        assert!(dir.file_type().unwrap().is_dir());
-        let file_name = dir.file_name().into_string().unwrap();
-        let path = format!("{}/{}", parent_dir_path, file_name);
-        if path == format!("{}/{}", parent_dir_path, part_paths[idx]) {
-            continue;
-        }
-        out.push(path);
-    }
-    out
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -98,6 +74,26 @@ impl DBTree {
             .filter(|(part, _)| *part != last_part)
             .filter_map(|(_, tree)| tree.rule.clone())
             .collect()
+    }
+
+    fn delete_mut(&mut self, path: &[String], property_name: &String) {
+        match path {
+            [] => {
+                assert!(
+                    self.rule.is_some(),
+                    "can't delete property from rule that doesn't exist"
+                );
+                let rule = self.rule.as_mut().unwrap();
+                rule.properties
+                    .retain(|p| &name_of_item(p) != property_name);
+            }
+            [part, parts @ ..] => {
+                self.children
+                    .get_mut(part)
+                    .unwrap()
+                    .delete_mut(parts, property_name);
+            }
+        }
     }
 
     fn insert_mut(
@@ -202,6 +198,31 @@ fn parse_selector(str: &String) -> AnyCssSelector {
         .next()
         .unwrap()
         .unwrap()
+}
+
+#[test]
+fn delete() {
+    let s1 = parse_selector(&".btn".to_owned());
+    let s1_path = s1.to_path_parts();
+    let s2 = parse_selector(&".card".to_owned());
+    let s2_path = s2.to_path_parts();
+    let mut tree = DBTree::new();
+    tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
+    tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
+    tree.delete_mut(&s1_path, &"font-size".to_owned());
+
+    assert_eq!(
+        tree.children
+            .values()
+            .filter_map(|p| p.rule.clone())
+            .flat_map(|rule| rule
+                .properties
+                .iter()
+                .map(|p| p.to_string().trim().to_string())
+                .collect::<Vec<_>>())
+            .collect::<HashSet<_>>(),
+        HashSet::from(["color: red;".to_string()])
+    );
 }
 
 #[test]
@@ -314,74 +335,6 @@ fn parse_property(name: &String, value: &String) -> CssDeclarationWithSemicolon 
     assert!(block.unwrap().items().into_iter().len() == 1);
     let item = block.unwrap().items().into_iter().next().unwrap();
     item.as_css_declaration_with_semicolon().unwrap().to_owned()
-}
-
-pub fn delete_property(selector: &biome_css_syntax::AnyCssSelector, name: String) {
-    let db_path = selector.to_path_parts().join("/");
-    let path = format!("db/{}/index.css", db_path);
-    match fs::read_to_string(&path) {
-        Ok(rule) => {
-            let rule = parse_one(rule);
-            let block = rule.block().unwrap();
-            let block = block.as_css_declaration_or_rule_block().unwrap();
-            let mut sorted_properties = block
-                .items()
-                .into_iter()
-                .filter(|i| name_of_item(i) != name)
-                .map(|i| i.to_string().trim().to_string())
-                .collect::<Vec<String>>();
-            sorted_properties.sort();
-            let new_rule = format!(
-                "{} {{\n  {}\n}}",
-                selector.to_string().trim(),
-                sorted_properties.join("\n  ")
-            );
-            fs::write(path, new_rule).unwrap();
-        }
-        Err(_) => panic!("should never delete a property of a non-existent rule"),
-    }
-}
-
-pub fn store_property(selector: &biome_css_syntax::AnyCssSelector, name: String, value: String) {
-    let db_path = selector.to_path_parts().join("/");
-    let path = format!("db/{}/index.css", db_path);
-    match fs::read_to_string(&path) {
-        Ok(rule) => {
-            let rule = parse_one(rule);
-            parse_property(&name, &value); // make sure we can parse it
-            let block = rule.block().unwrap();
-            let block = block.as_css_declaration_or_rule_block().unwrap();
-            let selector = rule.prelude().into_iter().next().unwrap().unwrap();
-            assert!(selector.to_path_parts().join("/") == db_path);
-
-            assert!(!block.items().into_iter().any(|i| name_of_item(&i) == name));
-            let mut properties: HashMap<String, String> = block
-                .items()
-                .into_iter()
-                .map(|i| (name_of_item(&i), value_of_item(&i)))
-                .collect();
-            properties.insert(name, value);
-            let mut sorted_properties: Vec<_> = properties
-                .iter()
-                .map(|(name, value)| format!("{}: {};", name, value))
-                .collect();
-            sorted_properties.sort();
-
-            let new_rule = format!(
-                "{} {{\n  {}\n}}\n",
-                selector.to_string().trim(),
-                sorted_properties.join("\n  ")
-            );
-            fs::write(path, new_rule).unwrap();
-        }
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            let new_property = parse_property(&name, &value);
-            let rule = format!("{} {{\n  {}\n}}\n", selector, new_property);
-            fs::create_dir(format!("db/{}", db_path)).unwrap();
-            fs::write(path, rule).unwrap();
-        }
-        Err(_) => panic!("unknown error"),
-    }
 }
 
 pub trait Storage {
