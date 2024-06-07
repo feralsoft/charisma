@@ -1,3 +1,8 @@
+use biome_css_syntax::{
+    AnyCssDimension, AnyCssSubSelector, AnyCssValue, CssCompoundSelector, CssGenericProperty,
+    CssPercentage, CssQualifiedRule, CssRegularDimension, CssRoot,
+};
+
 pub fn render_value(value: String) -> String {
     format!(
         "<div data-value=\"{}\" contenteditable>{}</div>",
@@ -9,19 +14,19 @@ pub trait Render {
     fn render_html(&self) -> String;
 }
 
-impl Render for biome_css_syntax::CssCompoundSelector {
+impl Render for CssCompoundSelector {
     fn render_html(&self) -> String {
         assert!(self.sub_selectors().into_iter().len() == 1);
         let selector = self.sub_selectors().into_iter().next().unwrap();
         let (name, kind) = match selector {
-            biome_css_syntax::AnyCssSubSelector::CssAttributeSelector(_) => todo!(),
-            biome_css_syntax::AnyCssSubSelector::CssBogusSubSelector(_) => todo!(),
-            biome_css_syntax::AnyCssSubSelector::CssClassSelector(class) => {
+            AnyCssSubSelector::CssAttributeSelector(_) => todo!(),
+            AnyCssSubSelector::CssBogusSubSelector(_) => todo!(),
+            AnyCssSubSelector::CssClassSelector(class) => {
                 (class.name().unwrap().to_string(), "class")
             }
-            biome_css_syntax::AnyCssSubSelector::CssIdSelector(_) => todo!(),
-            biome_css_syntax::AnyCssSubSelector::CssPseudoClassSelector(_) => todo!(),
-            biome_css_syntax::AnyCssSubSelector::CssPseudoElementSelector(_) => todo!(),
+            AnyCssSubSelector::CssIdSelector(_) => todo!(),
+            AnyCssSubSelector::CssPseudoClassSelector(_) => todo!(),
+            AnyCssSubSelector::CssPseudoElementSelector(_) => todo!(),
         };
 
         format!(
@@ -32,7 +37,7 @@ impl Render for biome_css_syntax::CssCompoundSelector {
     }
 }
 
-impl Render for biome_css_syntax::CssRegularDimension {
+impl Render for CssRegularDimension {
     fn render_html(&self) -> String {
         let unit_type = self.unit_token().unwrap().to_string();
         let value = self.value_token().unwrap().to_string();
@@ -44,7 +49,7 @@ impl Render for biome_css_syntax::CssRegularDimension {
     }
 }
 
-impl Render for biome_css_syntax::CssPercentage {
+impl Render for CssPercentage {
     fn render_html(&self) -> String {
         let value = self.value_token().unwrap().to_string();
         format!(
@@ -54,33 +59,35 @@ impl Render for biome_css_syntax::CssPercentage {
     }
 }
 
-impl Render for biome_css_syntax::AnyCssDimension {
+impl Render for AnyCssDimension {
     fn render_html(&self) -> String {
         match self {
-            biome_css_syntax::AnyCssDimension::CssPercentage(node) => node.render_html(),
-            biome_css_syntax::AnyCssDimension::CssRegularDimension(node) => node.render_html(),
-            biome_css_syntax::AnyCssDimension::CssUnknownDimension(_) => todo!(),
+            AnyCssDimension::CssPercentage(node) => node.render_html(),
+            AnyCssDimension::CssRegularDimension(node) => node.render_html(),
+            AnyCssDimension::CssUnknownDimension(_) => todo!(),
         }
     }
 }
 
-impl Render for biome_css_syntax::AnyCssValue {
+impl Render for AnyCssValue {
     fn render_html(&self) -> String {
         match self {
-            biome_css_syntax::AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
-            biome_css_syntax::AnyCssValue::AnyCssFunction(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssColor(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssCustomIdentifier(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssDashedIdentifier(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssIdentifier(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssNumber(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssRatio(_) => todo!(),
-            biome_css_syntax::AnyCssValue::CssString(_) => todo!(),
+            AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
+            AnyCssValue::AnyCssFunction(_) => todo!(),
+            AnyCssValue::CssColor(_) => todo!(),
+            AnyCssValue::CssCustomIdentifier(_) => todo!(),
+            AnyCssValue::CssDashedIdentifier(_) => todo!(),
+            AnyCssValue::CssIdentifier(_) => todo!(),
+            AnyCssValue::CssNumber(_) => todo!(),
+            AnyCssValue::CssRatio(_) => todo!(),
+            AnyCssValue::CssString(_) => {
+                todo!()
+            }
         }
     }
 }
 
-impl Render for biome_css_syntax::CssGenericProperty {
+impl Render for CssGenericProperty {
     fn render_html(&self) -> String {
         let name = self.name().unwrap().to_string();
         assert!(self.value().into_iter().into_iter().len() == 1);
@@ -101,7 +108,7 @@ impl Render for biome_css_syntax::CssGenericProperty {
     }
 }
 
-impl Render for biome_css_syntax::CssQualifiedRule {
+impl Render for CssQualifiedRule {
     fn render_html(&self) -> String {
         assert!(self.prelude().into_iter().collect::<Vec<_>>().len() == 1);
         let selector = self.prelude().into_iter().next().unwrap().unwrap();
@@ -134,7 +141,7 @@ impl Render for biome_css_syntax::CssQualifiedRule {
     }
 }
 
-impl Render for biome_css_syntax::CssRoot {
+impl Render for CssRoot {
     fn render_html(&self) -> String {
         self.rules()
             .into_iter()
