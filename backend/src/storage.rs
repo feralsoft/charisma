@@ -166,14 +166,32 @@ fn parse_selector(str: &String) -> AnyCssSelector {
 }
 
 #[test]
-fn test() {
+fn mutable_test() {
     let selector = parse_selector(&".btn".to_owned());
-    let path = [".btn".to_owned()];
+    let path = selector.to_path_parts();
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
     let mut tree = DBTree::new();
-    // let tree = tree.insert(selector.clone(), &path, &name, &value);
-    tree.insert_mut(selector.clone(), &path, &name, &value);
+    tree.insert_mut(selector, &path, &name, &value);
+
+    assert_eq!(
+        tree.get(&path)
+            .unwrap()
+            .properties
+            .get(0)
+            .unwrap()
+            .to_string(),
+        parse_property(&name, &value).to_string()
+    )
+}
+
+#[test]
+fn immutable_insert() {
+    let selector = parse_selector(&".btn".to_owned());
+    let path = selector.to_path_parts();
+    let name = "font-size".to_owned();
+    let value = "20px".to_owned();
+    let tree = DBTree::new().insert(selector, &path, &name, &value);
 
     assert_eq!(
         tree.get(&path)
