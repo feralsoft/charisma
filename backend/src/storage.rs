@@ -61,6 +61,36 @@ impl DBTree {
         }
     }
 
+    fn insert_mut(
+        &mut self,
+        selector: AnyCssSelector,
+        path: &[String],
+        name: &String,
+        value: &String,
+    ) {
+        match path {
+            [] => {
+                match &mut self.rule {
+                    Some(rule) => rule.properties.push(parse_property(name, value)),
+                    None => {
+                        self.rule = Some(Rule {
+                            selector,
+                            properties: vec![parse_property(name, value)],
+                        })
+                    }
+                };
+            }
+            [part, parts @ ..] => match self.children.get_mut(part) {
+                Some(tree) => tree.insert_mut(selector, parts, name, value),
+                None => {
+                    let mut new_tree = DBTree::new();
+                    new_tree.insert_mut(selector, parts, name, value);
+                    self.children.insert(part.to_owned(), new_tree);
+                }
+            },
+        }
+    }
+
     fn insert(
         &self,
         selector: AnyCssSelector,
@@ -141,7 +171,9 @@ fn test() {
     let path = [".btn".to_owned()];
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
-    let tree = DBTree::new().insert(selector.clone(), &path, &name, &value);
+    let mut tree = DBTree::new();
+    // let tree = tree.insert(selector.clone(), &path, &name, &value);
+    tree.insert_mut(selector.clone(), &path, &name, &value);
 
     assert_eq!(
         tree.get(&path)
