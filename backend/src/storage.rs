@@ -1,4 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use crate::parse_utils::parse_selector;
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 use biome_css_syntax::{
     AnyCssSelector::{self, *},
@@ -60,18 +64,55 @@ pub struct Rule {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DBTree {
     children: HashMap<String, DBTree>,
-    rule: Option<Rule>,
+    pub rule: Option<Rule>,
 }
 
 impl DBTree {
-    fn new() -> DBTree {
+    pub fn new() -> DBTree {
         DBTree {
             children: HashMap::new(),
             rule: None,
         }
     }
 
-    fn serialize(&self) -> String {
+    pub fn load(&mut self, css_path: &str) {
+        let css = fs::read_to_string(css_path).unwrap();
+        let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
+        for rule in ast.tree().rules() {
+            let rule = rule.as_css_qualified_rule().unwrap();
+            let selector = rule.prelude();
+            assert!((&selector).into_iter().collect::<Vec<_>>().len() == 1);
+            let selector = selector.into_iter().next().unwrap().unwrap();
+            let properties = rule.block().unwrap();
+            let properties = properties
+                .as_css_declaration_or_rule_block()
+                .unwrap()
+                .items();
+            for property in properties {
+                let property = property.as_css_declaration_with_semicolon().unwrap();
+                let property = property.declaration().unwrap().property().unwrap();
+                let property = property.as_css_generic_property().unwrap();
+                let name = property.name().unwrap().to_string().trim().to_string();
+                let value = property.value();
+                assert!((&value).into_iter().len() == 1);
+                let value = value
+                    .into_iter()
+                    .next()
+                    .unwrap()
+                    .to_string()
+                    .trim()
+                    .to_string();
+                self.insert_mut(
+                    selector.to_owned(),
+                    &selector.to_path_parts(),
+                    &name,
+                    &value,
+                )
+            }
+        }
+    }
+
+    pub fn serialize(&self) -> String {
         let rule = match &self.rule {
             Some(Rule {
                 properties,
@@ -218,7 +259,7 @@ impl DBTree {
             .retain(|p| &name_of_item(p) != property_name);
     }
 
-    fn insert_mut(
+    pub fn insert_mut(
         &mut self,
         selector: AnyCssSelector,
         path: &[String],
@@ -248,7 +289,7 @@ impl DBTree {
         }
     }
 
-    fn get(&self, path: &[String]) -> Option<&DBTree> {
+    pub fn get(&self, path: &[String]) -> Option<&DBTree> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => match self.children.get(part) {
@@ -258,7 +299,7 @@ impl DBTree {
         }
     }
 
-    fn get_mut(&mut self, path: &[String]) -> Option<&mut DBTree> {
+    pub fn get_mut(&mut self, path: &[String]) -> Option<&mut DBTree> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => match self.children.get_mut(part) {
@@ -276,26 +317,6 @@ fn is_var(property: &CssDeclarationWithSemicolon) -> bool {
     let name = property.as_fields().name.unwrap();
     let name = name.as_css_identifier().unwrap();
     name.to_string().starts_with("--")
-}
-
-fn parse_selector(str: &String) -> AnyCssSelector {
-    let rule = biome_css_parser::parse_css(
-        format!("{} {{}}", str).as_str(),
-        biome_css_parser::CssParserOptions::default(),
-    )
-    .tree()
-    .rules()
-    .into_iter()
-    .next()
-    .unwrap();
-
-    rule.as_css_qualified_rule()
-        .unwrap()
-        .prelude()
-        .into_iter()
-        .next()
-        .unwrap()
-        .unwrap()
 }
 
 #[test]

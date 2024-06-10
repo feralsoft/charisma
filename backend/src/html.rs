@@ -1,6 +1,7 @@
 use biome_css_syntax::{
-    AnyCssDimension, AnyCssSubSelector, AnyCssValue, CssCompoundSelector, CssGenericProperty,
-    CssPercentage, CssQualifiedRule, CssRegularDimension, CssRoot,
+    AnyCssDimension, AnyCssSubSelector, AnyCssValue, CssCompoundSelector,
+    CssDeclarationWithSemicolon, CssGenericProperty, CssIdentifier, CssPercentage,
+    CssQualifiedRule, CssRegularDimension, CssRoot,
 };
 
 pub fn render_value(value: String) -> String {
@@ -69,6 +70,12 @@ impl Render for AnyCssDimension {
     }
 }
 
+impl Render for CssIdentifier {
+    fn render_html(&self) -> String {
+        self.value_token().unwrap().text_trimmed().to_string()
+    }
+}
+
 impl Render for AnyCssValue {
     fn render_html(&self) -> String {
         match self {
@@ -77,12 +84,10 @@ impl Render for AnyCssValue {
             AnyCssValue::CssColor(_) => todo!(),
             AnyCssValue::CssCustomIdentifier(_) => todo!(),
             AnyCssValue::CssDashedIdentifier(_) => todo!(),
-            AnyCssValue::CssIdentifier(_) => todo!(),
+            AnyCssValue::CssIdentifier(id) => id.render_html(),
             AnyCssValue::CssNumber(_) => todo!(),
             AnyCssValue::CssRatio(_) => todo!(),
-            AnyCssValue::CssString(_) => {
-                todo!()
-            }
+            AnyCssValue::CssString(_) => todo!(),
         }
     }
 }
@@ -108,34 +113,39 @@ impl Render for CssGenericProperty {
     }
 }
 
+impl Render for CssDeclarationWithSemicolon {
+    fn render_html(&self) -> String {
+        self.declaration()
+            .unwrap()
+            .property()
+            .unwrap()
+            .as_css_generic_property()
+            .unwrap()
+            .render_html()
+    }
+}
+
 impl Render for CssQualifiedRule {
     fn render_html(&self) -> String {
         assert!(self.prelude().into_iter().collect::<Vec<_>>().len() == 1);
         let selector = self.prelude().into_iter().next().unwrap().unwrap();
 
         let b = self.block().unwrap();
-        let block = b.as_css_declaration_or_rule_block().unwrap().items();
-        assert!(block.clone().into_iter().len() == 1);
-        let p = block.into_iter().next().unwrap();
-        let properties = p
-            .as_css_declaration_with_semicolon()
-            .unwrap()
-            .declaration()
-            .unwrap();
+        let items = b.as_css_declaration_or_rule_block().unwrap().items();
+        let properties = items
+            .into_iter()
+            .map(|item| {
+                item.as_css_declaration_with_semicolon()
+                    .unwrap()
+                    .render_html()
+            })
+            .collect::<String>();
 
         let selector = format!(
             "<div data-attr=\"selector\">{}</div>",
             selector.as_css_compound_selector().unwrap().render_html()
         );
-        let properties = format!(
-            "<div data-attr=\"properties\">{}</div>",
-            properties
-                .property()
-                .unwrap()
-                .as_css_generic_property()
-                .unwrap()
-                .render_html()
-        );
+        let properties = format!("<div data-attr=\"properties\">{}</div>", properties);
 
         format!("<div data-kind=\"rule\">{}{}</div>", selector, properties)
     }
