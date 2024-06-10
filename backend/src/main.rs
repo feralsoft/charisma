@@ -20,7 +20,7 @@ fn css() -> String {
 #[get("/src/<selector>")]
 async fn index(selector: &str) -> (ContentType, String) {
     let mut db = DBTree::new();
-    db.load("db.css");
+    db.load("test.css");
     let selector = parse_selector(&selector.to_string());
     println!("{:?}", &selector.to_path_parts());
     let tree = db.get(&selector.to_path_parts()).unwrap();

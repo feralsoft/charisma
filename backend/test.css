@@ -1,8 +1,11 @@
 .btn {
     font-size: 20px;
-    display: flex;
 }
 
 .main .btn {
     color: red;
+}
+
+.btn {
+    display: flex;
 }
