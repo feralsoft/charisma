@@ -1,8 +1,10 @@
 use biome_css_syntax::{
-    AnyCssDimension, AnyCssSubSelector, AnyCssValue, CssCompoundSelector,
-    CssDeclarationWithSemicolon, CssGenericProperty, CssIdentifier, CssPercentage,
-    CssQualifiedRule, CssRegularDimension, CssRoot,
+    AnyCssDimension, AnyCssSelector, AnyCssSubSelector, AnyCssValue, CssComplexSelector,
+    CssCompoundSelector, CssDeclarationWithSemicolon, CssGenericProperty, CssIdentifier,
+    CssPercentage, CssQualifiedRule, CssRegularDimension, CssRoot, CssSyntaxKind,
 };
+
+use crate::parse_utils::get_combinator_type;
 
 pub fn render_value(value: String) -> String {
     format!(
@@ -13,6 +15,35 @@ pub fn render_value(value: String) -> String {
 
 pub trait Render {
     fn render_html(&self) -> String;
+}
+
+impl Render for AnyCssSelector {
+    fn render_html(&self) -> String {
+        match self {
+            AnyCssSelector::CssBogusSelector(_) => todo!(),
+            AnyCssSelector::CssComplexSelector(s) => s.render_html(),
+            AnyCssSelector::CssCompoundSelector(s) => s.render_html(),
+        }
+    }
+}
+
+impl Render for CssComplexSelector {
+    fn render_html(&self) -> String {
+        let left = self.left().unwrap();
+        let right = self.right().unwrap();
+        let combinator = self.combinator().unwrap();
+
+        format!(
+            "
+            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\">
+                <div data-attr=\"left\">{}</div>
+                <div data-attr=\"right\">{}</div>
+            </div>",
+            get_combinator_type(combinator.kind()),
+            left.render_html(),
+            right.render_html()
+        )
+    }
 }
 
 impl Render for CssCompoundSelector {
@@ -141,9 +172,11 @@ impl Render for CssQualifiedRule {
             })
             .collect::<String>();
 
+        println!("{:?}", selector);
+
         let selector = format!(
             "<div data-attr=\"selector\">{}</div>",
-            selector.as_css_compound_selector().unwrap().render_html()
+            selector.render_html()
         );
         let properties = format!("<div data-attr=\"properties\">{}</div>", properties);
 
