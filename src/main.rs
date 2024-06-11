@@ -30,30 +30,30 @@ fn delete_property_js() -> String {
 
 #[post("/src/<selector>/<name>", data = "<value>")]
 fn insert(selector: String, name: String, value: Json<String>) {
-    let mut db = DBTree::new();
+    let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
-    let parts = selector.to_path_parts();
+    let parts = selector.to_css_db_path();
     db.insert_mut(selector, &parts, &name, &value);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
 #[delete("/src/<selector>/<name>")]
 fn delete(selector: String, name: String) {
-    let mut db = DBTree::new();
+    let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
-    let path = selector.to_path_parts();
+    let path = selector.to_css_db_path();
     db.delete_mut(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
 #[get("/src/<selector>")]
 fn index(selector: String) -> (ContentType, String) {
-    let mut db = DBTree::new();
+    let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
-    let path = selector.to_path_parts();
+    let path = selector.to_css_db_path();
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);

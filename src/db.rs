@@ -62,14 +62,14 @@ pub struct Rule {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DBTree {
-    children: HashMap<String, DBTree>,
+pub struct CSSDB {
+    children: HashMap<String, CSSDB>,
     pub rule: Option<Rule>,
 }
 
-impl DBTree {
-    pub fn new() -> DBTree {
-        DBTree {
+impl CSSDB {
+    pub fn new() -> CSSDB {
+        CSSDB {
             children: HashMap::new(),
             rule: None,
         }
@@ -104,7 +104,7 @@ impl DBTree {
                     .to_string();
                 self.insert_mut(
                     selector.to_owned(),
-                    &selector.to_path_parts(),
+                    &selector.to_css_db_path(),
                     &name,
                     &value,
                 )
@@ -148,7 +148,7 @@ impl DBTree {
         if !is_root {
             if let Some(path) = self
                 .get(path)
-                .and_then(|n| n.rule.as_ref().map(|r| r.selector.to_path_parts()))
+                .and_then(|n| n.rule.as_ref().map(|r| r.selector.to_css_db_path()))
             {
                 super_paths.push(path)
             }
@@ -288,7 +288,7 @@ impl DBTree {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_mut(selector, parts, name, value),
                 None => {
-                    let mut new_tree = DBTree::new();
+                    let mut new_tree = CSSDB::new();
                     new_tree.insert_mut(selector, parts, name, value);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -296,7 +296,7 @@ impl DBTree {
         }
     }
 
-    pub fn get(&self, path: &[String]) -> Option<&DBTree> {
+    pub fn get(&self, path: &[String]) -> Option<&CSSDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => match self.children.get(part) {
@@ -306,7 +306,7 @@ impl DBTree {
         }
     }
 
-    pub fn get_mut(&mut self, path: &[String]) -> Option<&mut DBTree> {
+    pub fn get_mut(&mut self, path: &[String]) -> Option<&mut CSSDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => match self.children.get_mut(part) {
@@ -328,12 +328,12 @@ fn is_var(property: &CssDeclarationWithSemicolon) -> bool {
 
 #[test]
 fn one_level_super_path() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
     let s2 = parse_selector(&".container .card".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
 
     let paths = tree.super_pathes_of(&s1_path);
@@ -349,12 +349,12 @@ fn one_level_super_path() {
 
 #[test]
 fn two_level_super_path() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
     let s2 = parse_selector(&".main .container .card".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
 
     let paths = tree.super_pathes_of(&s1_path);
@@ -372,12 +372,12 @@ fn two_level_super_path() {
 
 #[test]
 fn no_super_pathes() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
     let s2 = parse_selector(&".main .container".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
 
     let paths = tree.super_pathes_of(&s1_path);
@@ -386,12 +386,12 @@ fn no_super_pathes() {
 
 #[test]
 fn var_is_inherited() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"--var".to_string(), &"red".to_string());
     let s2 = parse_selector(&".card .btn".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(
         s2,
         &s2_path,
@@ -404,12 +404,12 @@ fn var_is_inherited() {
 
 #[test]
 fn color_is_inherited() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
     let s2 = parse_selector(&".card .btn".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("color"), true);
@@ -417,12 +417,12 @@ fn color_is_inherited() {
 
 #[test]
 fn display_is_not_inherited() {
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     tree.insert_mut(s1, &s1_path, &"display".to_string(), &"flex".to_string());
     let s2 = parse_selector(&".card .btn".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("display"), false);
@@ -431,10 +431,10 @@ fn display_is_not_inherited() {
 #[test]
 fn delete() {
     let s1 = parse_selector(&".btn".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     let s2 = parse_selector(&".card".to_owned());
-    let s2_path = s2.to_path_parts();
-    let mut tree = DBTree::new();
+    let s2_path = s2.to_css_db_path();
+    let mut tree = CSSDB::new();
     tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
     tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
     tree.delete_mut(&s1_path, &"font-size".to_owned());
@@ -456,12 +456,12 @@ fn delete() {
 #[test]
 fn siblings() {
     let s1 = parse_selector(&".btn".to_owned());
-    let s1_path = s1.to_path_parts();
+    let s1_path = s1.to_css_db_path();
     let s2 = parse_selector(&".card".to_owned());
-    let s2_path = s2.to_path_parts();
+    let s2_path = s2.to_css_db_path();
     let s3 = parse_selector(&".table".to_owned());
-    let s3_path = s3.to_path_parts();
-    let mut tree = DBTree::new();
+    let s3_path = s3.to_css_db_path();
+    let mut tree = CSSDB::new();
     tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
     tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
     tree.insert_mut(s3, &s3_path, &"display".to_owned(), &"flex".to_owned());
@@ -479,10 +479,10 @@ fn siblings() {
 #[test]
 fn insert_mutable_test() {
     let selector = parse_selector(&".btn".to_owned());
-    let path = selector.to_path_parts();
+    let path = selector.to_css_db_path();
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     tree.insert_mut(selector, &path, &name, &value);
     let node = tree.get(&path).unwrap();
 
@@ -501,10 +501,10 @@ fn insert_mutable_test() {
 #[test]
 fn serialize() {
     let selector = parse_selector(&".btn".to_owned());
-    let path = selector.to_path_parts();
+    let path = selector.to_css_db_path();
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
-    let mut tree = DBTree::new();
+    let mut tree = CSSDB::new();
     tree.insert_mut(selector, &path, &name, &value);
     assert_eq!(
         tree.serialize(),
@@ -513,38 +513,38 @@ fn serialize() {
 }
 
 pub trait Storage {
-    fn to_path_parts(&self) -> Vec<String>;
+    fn to_css_db_path(&self) -> Vec<String>;
 }
 
 impl Storage for biome_css_syntax::AnyCssSelector {
-    fn to_path_parts(&self) -> Vec<String> {
+    fn to_css_db_path(&self) -> Vec<String> {
         match self {
             CssBogusSelector(_) => todo!(),
             CssComplexSelector(s) => {
                 let fields = s.as_fields();
                 let left = fields.left.unwrap();
                 let right = fields.right.unwrap();
-                let mut parts = left.to_path_parts();
+                let mut parts = left.to_css_db_path();
                 parts.push(" ".to_string());
-                parts.extend(right.to_path_parts());
+                parts.extend(right.to_css_db_path());
                 parts
             }
-            CssCompoundSelector(selector) => selector.to_path_parts(),
+            CssCompoundSelector(selector) => selector.to_css_db_path(),
         }
     }
 }
 
 impl Storage for biome_css_syntax::CssCompoundSelector {
-    fn to_path_parts(&self) -> Vec<String> {
+    fn to_css_db_path(&self) -> Vec<String> {
         self.sub_selectors()
             .into_iter()
-            .flat_map(|selector| selector.to_path_parts())
+            .flat_map(|selector| selector.to_css_db_path())
             .collect()
     }
 }
 
 impl Storage for biome_css_syntax::AnyCssSubSelector {
-    fn to_path_parts(&self) -> Vec<String> {
+    fn to_css_db_path(&self) -> Vec<String> {
         match self {
             CssAttributeSelector(_) => todo!(),
             CssBogusSubSelector(_) => todo!(),
