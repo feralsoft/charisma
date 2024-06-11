@@ -57,6 +57,7 @@ fn index(selector: String) -> (ContentType, String) {
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);
+    let inherited_vars = db.inherited_vars_for(&path);
 
     let rule_html = format!(
         "
@@ -64,6 +65,7 @@ fn index(selector: String) -> (ContentType, String) {
         <div data-attr=selector>{}</div>
         <div data-attr=properties>{}</div>
         <div data-attr=inherited_properties>{}</div>
+        <div data-attr=inherited_vars>{}</div>
     </div>
     ",
         rule.selector.render_html(),
@@ -72,6 +74,10 @@ fn index(selector: String) -> (ContentType, String) {
             .map(|p| p.render_html())
             .collect::<String>(),
         inherited_properties
+            .iter()
+            .map(|(_, p)| p.render_html())
+            .collect::<String>(),
+        inherited_vars
             .iter()
             .map(|(_, p)| p.render_html())
             .collect::<String>()
