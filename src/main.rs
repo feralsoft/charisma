@@ -3,14 +3,10 @@ extern crate rocket;
 
 use std::fs;
 
-use biome_css_parser::CssParserOptions;
 use db::*;
 use html::Render;
 use parse_utils::parse_selector;
-use rocket::{
-    http::ContentType,
-    serde::{json::Json, Deserialize},
-};
+use rocket::http::ContentType;
 
 mod db;
 mod html;
@@ -29,7 +25,7 @@ fn delete_property_js() -> String {
 }
 
 #[post("/src/<selector>/<name>", data = "<value>")]
-fn insert(selector: String, name: String, value: Json<String>) {
+fn insert(selector: String, name: String, value: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
