@@ -5,7 +5,7 @@ use std::fs;
 
 use db::*;
 use html::Render;
-use parse_utils::{name_of_item, parse_property, parse_raw_property, parse_selector};
+use parse_utils::{parse_property, parse_selector};
 use rocket::http::ContentType;
 
 mod db;
@@ -25,12 +25,12 @@ fn delete_property_js() -> String {
 }
 
 #[post("/src/<selector>", data = "<property>")]
-fn insert(selector: String, property: String) {
+fn insert(selector: &str, property: &str) {
     println!("{:?}", property);
-    let property = parse_raw_property(&property);
+    let property = parse_property(property);
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(&selector);
+    let selector = parse_selector(selector);
     let parts = selector.to_css_db_path();
     db.insert_mut(selector, &parts, property);
     fs::write("test.css", db.serialize()).unwrap()
