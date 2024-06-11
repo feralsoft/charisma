@@ -118,15 +118,19 @@ impl DBTree {
                 properties,
                 selector,
             }) => format!(
-                "{} {{ {} }}",
-                selector,
-                properties.iter().map(|p| p.to_string()).collect::<String>()
+                "{} {{\n  {}\n}}\n",
+                selector.to_string().trim(),
+                properties
+                    .iter()
+                    .map(|p| p.to_string() + "\n  ")
+                    .collect::<String>()
+                    .trim()
             ),
             None => String::from(""),
         };
 
         format!(
-            "{}\n{}",
+            "{}{}",
             rule,
             self.children
                 .values()

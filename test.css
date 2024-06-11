@@ -1,14 +1,13 @@
 .btn {
-    flex-direction: column;
-    color: red;
-    display: flex;
+  flex-direction: column; 
+  color: red; 
+  display: flex;
 }
-
 .main {
-    color: red;
-    --test: yes;
+  color: red; 
+  --test: yes;
 }
-
 .main .btn {
-    display: flex;
+  color: red; 
+  display: flex;
 }
