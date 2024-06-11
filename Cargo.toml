@@ -7,4 +7,3 @@ edition = "2021"
 biome_css_parser = "0.5.7"
 biome_css_syntax = "0.5.7"
 rocket = { version = "0.5.1", features = ["json"] }
-sha1 = "0.10.6"
