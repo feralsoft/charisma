@@ -2,11 +2,9 @@ function input() {
   let elem = document.createElement("input");
   elem.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      let [name, value] = e.target.value.split(":");
-      value = value.replaceAll(";", "");
-      fetch(`${location.pathname}/${name}`, {
+      fetch(`${location.pathname}`, {
         method: "POST",
-        body: JSON.stringify(value),
+        body: e.target.value,
       }).finally((_) => location.reload());
     }
   });

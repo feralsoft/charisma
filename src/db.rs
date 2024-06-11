@@ -1,4 +1,4 @@
-use crate::parse_utils::{parse_property, parse_selector};
+use crate::parse_utils::{name_of_item, parse_property, parse_selector};
 use std::{collections::HashMap, fs};
 
 use biome_css_syntax::{
@@ -39,19 +39,6 @@ const INHERITABLE_PROPERTIES: [&str; 29] = [
     "word-spacing",
 ];
 
-fn name_of_item(item: &CssDeclarationWithSemicolon) -> String {
-    let decl = item.declaration();
-    let property = decl.unwrap().property().unwrap();
-    let property = property.as_css_generic_property().unwrap();
-    let name_node = property.name().unwrap();
-    let value = name_node
-        .as_css_identifier()
-        .unwrap()
-        .value_token()
-        .unwrap();
-    value.token_text_trimmed().to_string()
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
     pub selector: AnyCssSelector,
@@ -86,25 +73,11 @@ impl CSSDB {
                 .unwrap()
                 .items();
             for property in properties {
-                let property = property.as_css_declaration_with_semicolon().unwrap();
-                let property = property.declaration().unwrap().property().unwrap();
-                let property = property.as_css_generic_property().unwrap();
-                let name = property.name().unwrap().to_string().trim().to_string();
-                let value = property.value();
-                assert!((&value).into_iter().len() == 1);
-                let value = value
-                    .into_iter()
-                    .next()
+                let property = property
+                    .as_css_declaration_with_semicolon()
                     .unwrap()
-                    .to_string()
-                    .trim()
-                    .to_string();
-                self.insert_mut(
-                    selector.to_owned(),
-                    &selector.to_css_db_path(),
-                    &name,
-                    &value,
-                )
+                    .to_owned();
+                self.insert_mut(selector.to_owned(), &selector.to_css_db_path(), property);
             }
         }
     }
@@ -280,26 +253,25 @@ impl CSSDB {
         &mut self,
         selector: AnyCssSelector,
         path: &[String],
-        name: &String,
-        value: &String,
+        property: CssDeclarationWithSemicolon,
     ) {
         match path {
             [] => {
                 match &mut self.rule {
-                    Some(rule) => rule.properties.push(parse_property(name, value)),
+                    Some(rule) => rule.properties.push(property),
                     None => {
                         self.rule = Some(Rule {
                             selector,
-                            properties: vec![parse_property(name, value)],
+                            properties: vec![property],
                         })
                     }
                 };
             }
             [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(tree) => tree.insert_mut(selector, parts, name, value),
+                Some(tree) => tree.insert_mut(selector, parts, property),
                 None => {
                     let mut new_tree = CSSDB::new();
-                    new_tree.insert_mut(selector, parts, name, value);
+                    new_tree.insert_mut(selector, parts, property);
                     self.children.insert(part.to_owned(), new_tree);
                 }
             },
@@ -341,10 +313,18 @@ fn one_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"color".to_string(), &"red".to_string()),
+    );
     let s2 = parse_selector(&".container .card".to_owned());
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"font-size".to_string(), &"20px".to_string()),
+    );
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -362,10 +342,18 @@ fn two_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"color".to_string(), &"red".to_string()),
+    );
     let s2 = parse_selector(&".main .container .card".to_owned());
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"font-size".to_string(), &"20px".to_string()),
+    );
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -385,10 +373,18 @@ fn no_super_pathes() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"color".to_string(), &"red".to_string()),
+    );
     let s2 = parse_selector(&".main .container".to_owned());
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"font-size".to_string(), &"20px".to_string()),
+    );
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(paths, vec![] as Vec<Vec<String>>);
@@ -399,14 +395,17 @@ fn var_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"--var".to_string(), &"red".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"--var".to_string(), &"red".to_string()),
+    );
     let s2 = parse_selector(&".card .btn".to_owned());
     let s2_path = s2.to_css_db_path();
     tree.insert_mut(
         s2,
         &s2_path,
-        &"font-size".to_string(),
-        &"var(--var)".to_string(),
+        parse_property(&"font-size".to_string(), &"var(--var)".to_string()),
     );
     let inhertied_vars = tree.inherited_vars_for(&s2_path);
     assert_eq!(inhertied_vars.contains_key("--var"), true);
@@ -417,10 +416,18 @@ fn color_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"color".to_string(), &"red".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"color".to_string(), &"red".to_string()),
+    );
     let s2 = parse_selector(&".card .btn".to_owned());
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"font-size".to_string(), &"20px".to_string()),
+    );
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("color"), true);
 }
@@ -430,10 +437,18 @@ fn display_is_not_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(&".card".to_owned());
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, &"display".to_string(), &"flex".to_string());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"display".to_string(), &"flex".to_string()),
+    );
     let s2 = parse_selector(&".card .btn".to_owned());
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, &"font-size".to_string(), &"20px".to_string());
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"font-size".to_string(), &"20px".to_string()),
+    );
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("display"), false);
 }
@@ -445,8 +460,16 @@ fn delete() {
     let s2 = parse_selector(&".card".to_owned());
     let s2_path = s2.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
-    tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"font-size".to_owned(), &"20px".to_owned()),
+    );
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"color".to_owned(), &"red".to_owned()),
+    );
     tree.delete_mut(&s1_path, &"font-size".to_owned());
 
     assert_eq!(
@@ -472,9 +495,21 @@ fn siblings() {
     let s3 = parse_selector(&".table".to_owned());
     let s3_path = s3.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(s1, &s1_path, &"font-size".to_owned(), &"20px".to_owned());
-    tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
-    tree.insert_mut(s3, &s3_path, &"display".to_owned(), &"flex".to_owned());
+    tree.insert_mut(
+        s1,
+        &s1_path,
+        parse_property(&"font-size".to_owned(), &"20px".to_owned()),
+    );
+    tree.insert_mut(
+        s2,
+        &s2_path,
+        parse_property(&"color".to_owned(), &"red".to_owned()),
+    );
+    tree.insert_mut(
+        s3,
+        &s3_path,
+        parse_property(&"display".to_owned(), &"flex".to_owned()),
+    );
     let s1_siblings = tree.siblings_for(&s1_path);
     let mut sibling_selectors: Vec<String> = s1_siblings
         .iter()
@@ -502,7 +537,7 @@ fn insert_mutable_test() {
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
     let mut tree = CSSDB::new();
-    tree.insert_mut(selector, &path, &name, &value);
+    tree.insert_mut(selector, &path, parse_property(&name, &value));
     let node = tree.get(&path).unwrap();
 
     assert_eq!(
@@ -524,7 +559,7 @@ fn serialize() {
     let name = "font-size".to_owned();
     let value = "20px".to_owned();
     let mut tree = CSSDB::new();
-    tree.insert_mut(selector, &path, &name, &value);
+    tree.insert_mut(selector, &path, parse_property(&name, &value));
     assert_eq!(
         tree.serialize(),
         String::from(".btn {\n  font-size: 20px;\n}\n")
