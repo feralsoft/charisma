@@ -1,8 +1,5 @@
 use crate::parse_utils::{parse_property, parse_selector};
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-};
+use std::{collections::HashMap, fs};
 
 use biome_css_syntax::{
     AnyCssSelector::{self, *},
@@ -460,8 +457,8 @@ fn delete() {
                 .iter()
                 .map(|p| p.to_string().trim().to_string())
                 .collect::<Vec<_>>())
-            .collect::<HashSet<_>>(),
-        HashSet::from(["color: red;".to_string()])
+            .collect::<Vec<_>>(),
+        vec!["color: red;".to_string()]
     );
 }
 
@@ -478,13 +475,14 @@ fn siblings() {
     tree.insert_mut(s2, &s2_path, &"color".to_owned(), &"red".to_owned());
     tree.insert_mut(s3, &s3_path, &"display".to_owned(), &"flex".to_owned());
     let s1_siblings = tree.siblings_for(&s1_path);
-    let sibling_selectors: HashSet<String> = s1_siblings
+    let mut sibling_selectors: Vec<String> = s1_siblings
         .iter()
         .map(|r| r.selector.to_string().trim().to_string())
         .collect();
+    sibling_selectors.sort();
     assert_eq!(
         sibling_selectors,
-        HashSet::from([".card".to_string(), ".table".to_string()])
+        vec![".card".to_string(), ".table".to_string()]
     );
 }
 
@@ -563,7 +561,7 @@ impl Storage for biome_css_syntax::AnyCssSubSelector {
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                return vec![format!(".{}", name)];
+                vec![format!(".{}", name)]
             }
             CssIdSelector(_) => todo!(),
             CssPseudoClassSelector(_) => todo!(),
