@@ -31,8 +31,8 @@ fn insert(selector: &str, property: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector);
-    let parts = selector.to_css_db_path();
-    db.insert_mut(selector, &parts, property);
+    let path = selector.to_css_db_path();
+    db.insert_mut(selector, &path, property);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -56,7 +56,6 @@ fn index(selector: String) -> (ContentType, String) {
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);
     let inherited_vars = db.inherited_vars_for(&path);
-
     let rule_html = format!(
         "
     <div data-kind=rule>
