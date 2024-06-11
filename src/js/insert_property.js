@@ -4,9 +4,9 @@ function input() {
     if (e.key === "Enter") {
       let [name, value] = e.target.value.split(":");
       value = value.replaceAll(";", "");
-      fetch(`${location.pathname}/insert`, {
+      fetch(`${location.pathname}/${name}`, {
         method: "POST",
-        body: JSON.stringify({ name, value }),
+        body: JSON.stringify(value),
       }).finally((_) => location.reload());
     }
   });

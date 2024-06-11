@@ -248,7 +248,7 @@ impl DBTree {
             .collect()
     }
 
-    fn delete_mut(&mut self, path: &[String], property_name: &String) {
+    pub fn delete_mut(&mut self, path: &[String], property_name: &String) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),

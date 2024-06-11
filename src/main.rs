@@ -21,23 +21,30 @@ fn css() -> String {
 }
 
 fn insert_property_js() -> String {
-    fs::read_to_string("src/insert_property.js").unwrap()
+    fs::read_to_string("src/js/insert_property.js").unwrap()
 }
 
-#[derive(Deserialize)]
-#[serde(crate = "rocket::serde")]
-struct InsertPayload {
-    name: String,
-    value: String,
+fn delete_property_js() -> String {
+    fs::read_to_string("src/js/delete_property.js").unwrap()
 }
 
-#[post("/src/<selector>/insert", data = "<data>")]
-fn insert(selector: String, data: Json<InsertPayload>) {
+#[post("/src/<selector>/<name>", data = "<value>")]
+fn insert(selector: String, name: String, value: Json<String>) {
     let mut db = DBTree::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
     let parts = selector.to_path_parts();
-    db.insert_mut(selector, &parts, &data.name, &data.value);
+    db.insert_mut(selector, &parts, &name, &value);
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
+#[delete("/src/<selector>/<name>")]
+fn delete(selector: String, name: String) {
+    let mut db = DBTree::new();
+    db.load("test.css");
+    let selector = parse_selector(&selector);
+    let path = selector.to_path_parts();
+    db.delete_mut(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -53,10 +60,11 @@ fn index(selector: String) -> (ContentType, String) {
         ContentType::HTML,
         format!(
             "<style>{}</style>
-            <script>{}</script>
+            <script>{}{}</script>
             <div class=\"--editor\" spellcheck=\"false\">{}</div>",
             css(),
             insert_property_js(),
+            delete_property_js(),
             code_html
         ),
     )
@@ -64,5 +72,5 @@ fn index(selector: String) -> (ContentType, String) {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, insert])
+    rocket::build().mount("/", routes![index, insert, delete])
 }
