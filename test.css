@@ -1,23 +1,7 @@
-.btn {
-  flex-direction: column;
-  
-  
-  
-  
-    display: flex;
-  
-  
-  
-  
-    color: rgb(1, 2, 3);
-  
-  
-  
-  
-    flex: var(--x);
-}
 .main {
   color: blue;
+  
+  
   
   
   
@@ -30,10 +14,41 @@
   
   
   
+  
+  
     display: flex;
   
   
   
   
+  
+  
     --test: yo;
+  
+  x: 1;
+  color: red;
+}
+.btn {
+  flex-direction: column;
+  
+  
+  
+  
+  
+  
+    display: flex;
+  
+  
+  
+  
+  
+  
+    color: rgb(1, 2, 3);
+  
+  
+  
+  
+  
+  
+    flex: var(--x);
 }

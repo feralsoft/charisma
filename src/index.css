@@ -177,12 +177,12 @@
     }
 }
 
-[data-kind="rule"]:has(#show-inherited-properties:not(:checked))
+[data-kind="rule"]:has(.show-inherited-properties:not(:checked))
     [data-attr="inherited-properties"] {
     display: none;
 }
 
-[data-kind="rule"]:has(#show-inherited-vars:not(:checked))
+[data-kind="rule"]:has(.show-inherited-vars:not(:checked))
     [data-attr="inherited-vars"] {
     display: none;
 }
