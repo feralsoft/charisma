@@ -1,11 +1,7 @@
-.btn {
-    font-size: 20px;
-}
 
-.main .btn {
-    color: red;
-}
+.btn  { font-size: 20px; display: flex; flex-direction:  column;  }
 
-.btn {
-    display: flex;
-}
+
+
+
+.main .btn  { color: red;  }

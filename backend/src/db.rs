@@ -1,4 +1,4 @@
-use crate::parse_utils::parse_selector;
+use crate::parse_utils::{parse_property, parse_selector};
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -503,26 +503,6 @@ fn serialize() {
         tree.serialize(),
         String::from("\n.btn  { font-size: 20px;  }\n")
     );
-}
-
-fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
-    let rules = biome_css_parser::parse_css(&rule, biome_css_parser::CssParserOptions::default())
-        .tree()
-        .rules();
-    assert!((&rules).into_iter().len() == 1);
-    let rule = rules.into_iter().next().unwrap();
-
-    rule.as_css_qualified_rule().unwrap().to_owned()
-}
-
-fn parse_property(name: &String, value: &String) -> CssDeclarationWithSemicolon {
-    let property_str = format!("{}: {};", name, value);
-    let dummy_rule = parse_one(format!(".a {{ {} }}", property_str));
-    let block = dummy_rule.block().unwrap();
-    let block = block.as_css_declaration_or_rule_block();
-    assert!(block.unwrap().items().into_iter().len() == 1);
-    let item = block.unwrap().items().into_iter().next().unwrap();
-    item.as_css_declaration_with_semicolon().unwrap().to_owned()
 }
 
 pub trait Storage {

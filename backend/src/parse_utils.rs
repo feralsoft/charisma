@@ -1,7 +1,6 @@
-use biome_css_syntax::{AnyCssSelector, CssSyntaxKind};
+use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKind};
 
 pub fn parse_selector(str: &String) -> AnyCssSelector {
-    println!("{:?}", str);
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),
@@ -19,6 +18,26 @@ pub fn parse_selector(str: &String) -> AnyCssSelector {
         .next()
         .unwrap()
         .unwrap()
+}
+
+fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
+    let rules = biome_css_parser::parse_css(&rule, biome_css_parser::CssParserOptions::default())
+        .tree()
+        .rules();
+    assert!((&rules).into_iter().len() == 1);
+    let rule = rules.into_iter().next().unwrap();
+
+    rule.as_css_qualified_rule().unwrap().to_owned()
+}
+
+pub fn parse_property(name: &String, value: &String) -> CssDeclarationWithSemicolon {
+    let property_str = format!("{}: {};", name, value);
+    let dummy_rule = parse_one(format!(".a {{ {} }}", property_str));
+    let block = dummy_rule.block().unwrap();
+    let block = block.as_css_declaration_or_rule_block().unwrap();
+    assert!(block.items().into_iter().len() == 1);
+    let item = block.items().into_iter().next().unwrap();
+    item.as_css_declaration_with_semicolon().unwrap().to_owned()
 }
 
 pub fn get_combinator_type(token_kind: CssSyntaxKind) -> String {

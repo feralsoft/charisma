@@ -172,8 +172,6 @@ impl Render for CssQualifiedRule {
             })
             .collect::<String>();
 
-        println!("{:?}", selector);
-
         let selector = format!(
             "<div data-attr=\"selector\">{}</div>",
             selector.render_html()
