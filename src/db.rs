@@ -200,6 +200,9 @@ impl CSSDB {
     ) -> HashMap<String, CssDeclarationWithSemicolon> {
         let mut properties: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
+        for super_path in self.super_pathes_of(path) {
+            self.inherited_properties_for_aux(&super_path, &mut properties);
+        }
         properties
     }
 
@@ -239,6 +242,9 @@ impl CSSDB {
     ) -> HashMap<String, CssDeclarationWithSemicolon> {
         let mut vars: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
+        for super_path in self.super_pathes_of(path) {
+            self.inherited_vars_for_aux(&super_path, &mut vars);
+        }
         vars
     }
 
@@ -508,7 +514,7 @@ fn serialize() {
     tree.insert_mut(selector, &path, &name, &value);
     assert_eq!(
         tree.serialize(),
-        String::from("\n.btn  { font-size: 20px;  }\n")
+        String::from(".btn {\n  font-size: 20px;\n}\n")
     );
 }
 

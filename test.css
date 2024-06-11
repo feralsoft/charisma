@@ -1,15 +1,15 @@
 .main {
-  color: red; 
-  --test: yes;
+    color: red;
+    --test: yes;
 }
 .main .btn {
-  color: red; 
-  font-size: 20px; 
-  display: flex;
+    color: red;
+    font-size: 20px;
+    display: flex;
 }
 .btn {
-  flex-direction: column; 
-  display: flex; 
-  color: rgb(1, 2, 3); 
-  flex:  var(--x);
+    flex-direction: column;
+    display: flex;
+    color: rgb(1, 2, 3);
+    flex: var(--x);
 }
