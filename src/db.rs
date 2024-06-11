@@ -251,7 +251,7 @@ impl CSSDB {
         vars
     }
 
-    pub fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
+    pub fn siblings_for(&self, path: &[String]) -> Vec<&CSSDB> {
         assert!(path.len() > 0);
         let (last_part, parent_path) = path.split_last().unwrap();
         let root = self.get(parent_path);
@@ -260,7 +260,8 @@ impl CSSDB {
         root.children
             .iter()
             .filter(|(part, _)| *part != last_part)
-            .filter_map(|(_, tree)| tree.rule.clone())
+            .map(|(_, tree)| tree)
+            .filter(|tree| tree.rule.is_some())
             .collect()
     }
 
@@ -477,7 +478,15 @@ fn siblings() {
     let s1_siblings = tree.siblings_for(&s1_path);
     let mut sibling_selectors: Vec<String> = s1_siblings
         .iter()
-        .map(|r| r.selector.to_string().trim().to_string())
+        .map(|r| {
+            r.rule
+                .clone()
+                .unwrap()
+                .selector
+                .to_string()
+                .trim()
+                .to_string()
+        })
         .collect();
     sibling_selectors.sort();
     assert_eq!(
