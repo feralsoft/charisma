@@ -164,21 +164,24 @@ impl CSSDB {
         super_paths
     }
 
+    fn inheritable_properties(&self) -> HashMap<String, CssDeclarationWithSemicolon> {
+        if let Some(rule) = &self.rule {
+            rule.properties
+                .iter()
+                .filter(|p| INHERITABLE_PROPERTIES.contains(&name_of_item(p).as_str()))
+                .map(|p| (name_of_item(p), p.clone()))
+                .collect::<HashMap<_, _>>()
+        } else {
+            HashMap::new()
+        }
+    }
+
     fn inherited_properties_for_aux(
         &self,
         path: &[String],
         inhertied_properties: &mut HashMap<String, CssDeclarationWithSemicolon>,
     ) {
-        let inherited_properties_from_self: HashMap<String, CssDeclarationWithSemicolon> =
-            if let Some(rule) = &self.rule {
-                rule.properties
-                    .iter()
-                    .filter(|p| INHERITABLE_PROPERTIES.contains(&name_of_item(p).as_str()))
-                    .map(|p| (name_of_item(p), p.clone()))
-                    .collect::<HashMap<_, _>>()
-            } else {
-                HashMap::new()
-            };
+        let inherited_properties_from_self = self.inheritable_properties();
         match path {
             [] => panic!("should never reach the end of path"),
             [_part] => {
@@ -201,9 +204,21 @@ impl CSSDB {
         let mut properties: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
         for super_path in self.super_pathes_of(path) {
-            self.inherited_properties_for_aux(&super_path, &mut properties);
+            properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
         properties
+    }
+
+    fn vars(&self) -> HashMap<String, CssDeclarationWithSemicolon> {
+        if let Some(rule) = &self.rule {
+            rule.properties
+                .iter()
+                .filter(|p| is_var(p))
+                .map(|p| (name_of_item(p), p.clone()))
+                .collect::<HashMap<_, _>>()
+        } else {
+            HashMap::new()
+        }
     }
 
     fn inherited_vars_for_aux(
@@ -211,16 +226,7 @@ impl CSSDB {
         path: &[String],
         inherited_vars: &mut HashMap<String, CssDeclarationWithSemicolon>,
     ) {
-        let inherited_vars_from_self: HashMap<String, CssDeclarationWithSemicolon> =
-            if let Some(rule) = &self.rule {
-                rule.properties
-                    .iter()
-                    .filter(|p| is_var(p))
-                    .map(|p| (name_of_item(p), p.clone()))
-                    .collect::<HashMap<_, _>>()
-            } else {
-                HashMap::new()
-            };
+        let inherited_vars_from_self = self.vars();
         match path {
             [] => panic!("should never reach the end of path"),
             [_part] => {
@@ -243,7 +249,7 @@ impl CSSDB {
         let mut vars: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         for super_path in self.super_pathes_of(path) {
-            self.inherited_vars_for_aux(&super_path, &mut vars);
+            vars.extend(self.get(&super_path).unwrap().vars());
         }
         vars
     }

@@ -1,11 +1,11 @@
 .main {
-    color: red;
+    color: blue;
     --test: yes;
 }
 .main .btn {
-    color: red;
     font-size: 20px;
     display: flex;
+    --test: yo;
 }
 .btn {
     flex-direction: column;
