@@ -109,7 +109,8 @@
         width: max-content;
     }
 }
-[data-kind="rule"] > [data-attr="properties"] {
+[data-kind="rule"]
+    > :is([data-attr="properties"], [data-attr="inherited_properties"]) {
     padding-left: 1em;
     display: flex;
     flex-direction: column;
@@ -117,6 +118,15 @@
     padding-top: var(--spacing);
     padding-bottom: var(--spacing);
 }
+
+[data-kind="rule"] > [data-attr="inherited_properties"] {
+    opacity: 0.8;
+    &::before {
+        font-size: 0.5em;
+        content: "inherited properties";
+    }
+}
+
 [data-kind="property"] {
     display: flex;
     gap: 0.25em;

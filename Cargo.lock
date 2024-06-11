@@ -381,7 +381,6 @@ dependencies = [
  "biome_css_syntax",
  "rocket",
  "sha1",
- "smallvec",
 ]
 
 [[package]]

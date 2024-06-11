@@ -11,7 +11,9 @@ function insert_delete_button(src) {
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
-  for (let property of document.querySelectorAll("[data-kind=property]")) {
+  for (let property of document.querySelectorAll(
+    "[data-attr=properties] > [data-kind=property]",
+  )) {
     insert_delete_button(property);
   }
 });

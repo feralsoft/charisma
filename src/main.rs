@@ -53,19 +53,40 @@ fn index(selector: String) -> (ContentType, String) {
     let mut db = DBTree::new();
     db.load("test.css");
     let selector = parse_selector(&selector);
-    let tree = db.get(&selector.to_path_parts()).unwrap();
-    let out = biome_css_parser::parse_css(&tree.serialize(), CssParserOptions::default());
-    let code_html = out.tree().render_html();
+    let path = selector.to_path_parts();
+    let tree = db.get(&path).unwrap();
+    let rule = tree.rule.as_ref().unwrap();
+    let inherited_properties = db.inherited_properties_for(&path);
+
+    let rule_html = format!(
+        "
+    <div data-kind=rule>
+        <div data-attr=selector>{}</div>
+        <div data-attr=properties>{}</div>
+        <div data-attr=inherited_properties>{}</div>
+    </div>
+    ",
+        rule.selector.render_html(),
+        rule.properties
+            .iter()
+            .map(|p| p.render_html())
+            .collect::<String>(),
+        inherited_properties
+            .iter()
+            .map(|(_, p)| p.render_html())
+            .collect::<String>()
+    );
+
     (
         ContentType::HTML,
         format!(
             "<style>{}</style>
             <script>{}{}</script>
-            <div class=\"--editor\" spellcheck=\"false\">{}</div>",
+            <div class=\"--editor\" spellcheck=\"false\">{}<div>",
             css(),
             insert_property_js(),
             delete_property_js(),
-            code_html
+            rule_html
         ),
     )
 }

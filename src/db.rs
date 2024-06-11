@@ -57,8 +57,8 @@ fn name_of_item(item: &CssDeclarationWithSemicolon) -> String {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
-    selector: AnyCssSelector,
-    properties: Vec<CssDeclarationWithSemicolon>,
+    pub selector: AnyCssSelector,
+    pub properties: Vec<CssDeclarationWithSemicolon>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -154,7 +154,7 @@ impl DBTree {
             t.super_pathes_of_aux(path, false, super_paths);
         }
     }
-    fn super_pathes_of(&self, path: &[String]) -> Vec<Vec<String>> {
+    pub fn super_pathes_of(&self, path: &[String]) -> Vec<Vec<String>> {
         let mut super_paths: Vec<Vec<String>> = vec![];
         self.super_pathes_of_aux(path, true, &mut super_paths);
         super_paths
@@ -190,7 +190,7 @@ impl DBTree {
         }
     }
 
-    fn inherited_properties_for(
+    pub fn inherited_properties_for(
         &self,
         path: &[String],
     ) -> HashMap<String, CssDeclarationWithSemicolon> {
@@ -229,13 +229,16 @@ impl DBTree {
         }
     }
 
-    fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, CssDeclarationWithSemicolon> {
+    pub fn inherited_vars_for(
+        &self,
+        path: &[String],
+    ) -> HashMap<String, CssDeclarationWithSemicolon> {
         let mut vars: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         vars
     }
 
-    fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
+    pub fn siblings_for(&self, path: &[String]) -> Vec<Rule> {
         assert!(path.len() > 0);
         let (last_part, parent_path) = path.split_last().unwrap();
         let root = self.get(parent_path);
