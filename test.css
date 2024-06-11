@@ -9,5 +9,6 @@
 }
 .main .btn {
   color: red; 
-  display: flex;
+  font-size: 20px; 
+  display:  flex;
 }
