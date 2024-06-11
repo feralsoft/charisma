@@ -1,7 +1,9 @@
 use biome_css_syntax::{
-    AnyCssDimension, AnyCssSelector, AnyCssSubSelector, AnyCssValue, CssComplexSelector,
-    CssCompoundSelector, CssDeclarationWithSemicolon, CssGenericProperty, CssIdentifier,
-    CssPercentage, CssQualifiedRule, CssRegularDimension, CssRoot, CssSyntaxKind,
+    AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssSelector, AnyCssSubSelector,
+    AnyCssValue, CssComplexSelector, CssComponentValueList, CssCompoundSelector,
+    CssDashedIdentifier, CssDeclarationWithSemicolon, CssFunction, CssGenericProperty,
+    CssIdentifier, CssNumber, CssParameter, CssPercentage, CssQualifiedRule, CssRegularDimension,
+    CssRoot,
 };
 
 use crate::parse_utils::get_combinator_type;
@@ -107,16 +109,93 @@ impl Render for CssIdentifier {
     }
 }
 
+impl Render for CssComponentValueList {
+    fn render_html(&self) -> String {
+        self.into_iter().map(|item| item.render_html()).collect()
+    }
+}
+
+impl Render for AnyCssExpression {
+    fn render_html(&self) -> String {
+        match self {
+            AnyCssExpression::CssBinaryExpression(_) => todo!(),
+            AnyCssExpression::CssListOfComponentValuesExpression(list) => {
+                list.css_component_value_list().render_html()
+            }
+            AnyCssExpression::CssParenthesizedExpression(_) => todo!(),
+        }
+    }
+}
+
+impl Render for CssParameter {
+    fn render_html(&self) -> String {
+        self.any_css_expression().unwrap().render_html()
+    }
+}
+
+impl Render for CssFunction {
+    fn render_html(&self) -> String {
+        let function_name = self.name().unwrap().render_html();
+        let args = self
+            .items()
+            .into_iter()
+            .map(|item| item.unwrap().render_html())
+            .collect::<String>();
+
+        format!(
+            "
+        <div data-kind=function>
+            <div data-attr=name>{}</div>
+            <div data-attr=args>{}</div>
+        </div>
+        ",
+            function_name, args
+        )
+    }
+}
+
+impl Render for AnyCssFunction {
+    fn render_html(&self) -> String {
+        match self {
+            AnyCssFunction::CssFunction(f) => f.render_html(),
+            AnyCssFunction::CssUrlFunction(_) => todo!(),
+        }
+    }
+}
+
+impl Render for CssNumber {
+    fn render_html(&self) -> String {
+        let value = self.value_token().unwrap();
+        let value = value.text_trimmed();
+
+        format!(
+            "<div data-kind=number><div data-value={}>{}</div></div>",
+            value, value
+        )
+    }
+}
+
+impl Render for CssDashedIdentifier {
+    fn render_html(&self) -> String {
+        let value = self.value_token().unwrap();
+        let value = value.text_trimmed();
+        format!(
+            "<div data-kind=dashed-id><div data-value={}>{}</div></div>",
+            value, value
+        )
+    }
+}
+
 impl Render for AnyCssValue {
     fn render_html(&self) -> String {
         match self {
             AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
-            AnyCssValue::AnyCssFunction(_) => todo!(),
+            AnyCssValue::AnyCssFunction(f) => f.render_html(),
             AnyCssValue::CssColor(_) => todo!(),
             AnyCssValue::CssCustomIdentifier(_) => todo!(),
-            AnyCssValue::CssDashedIdentifier(_) => todo!(),
+            AnyCssValue::CssDashedIdentifier(id) => id.render_html(),
             AnyCssValue::CssIdentifier(id) => id.render_html(),
-            AnyCssValue::CssNumber(_) => todo!(),
+            AnyCssValue::CssNumber(num) => num.render_html(),
             AnyCssValue::CssRatio(_) => todo!(),
             AnyCssValue::CssString(_) => todo!(),
         }
