@@ -1,13 +1,6 @@
 const ALL_SELECTOR_PARTS_QUERY =
   '[data-kind="rule"] > [data-attr="selector"] [data-value]';
 
-`<div data-attr="selector">
-  <div data-kind="complex-selector" data-combinator-type="descendent">
-    <div data-attr="left"><div data-kind="class"><div data-value="main" contenteditable="">main</div></div></div>
-    <div data-attr="right"><div data-kind="class"><div data-value="btn" contenteditable="">btn</div></div></div>
-  </div>
-</div>`;
-
 class SerializationError extends Error {}
 class ParseError extends Error {}
 
