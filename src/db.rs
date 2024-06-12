@@ -419,7 +419,7 @@ fn delete() {
     assert_eq!(
         tree.children
             .values()
-            .filter_map(|p| p.rule.clone())
+            .filter_map(|p| p.rule.as_ref())
             .flat_map(|rule| rule
                 .properties
                 .iter()
@@ -447,7 +447,7 @@ fn siblings() {
         .iter()
         .map(|r| {
             r.rule
-                .clone()
+                .as_ref()
                 .unwrap()
                 .selector
                 .to_string()
