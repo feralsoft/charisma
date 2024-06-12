@@ -46,13 +46,17 @@ function serialize_complex_selector(complex_node, leaf_node) {
 
 function discover_path_for_selector_part(value_node) {
   let leaf_node = value_node.closest("[data-kind]");
-  let parent_node = leaf_node.parentElement.closest("[data-kind]");
+  if (leaf_node.parentElement.dataset.attr === "selector") {
+    return serialize_leaf_node(leaf_node);
+  } else {
+    let parent_node = leaf_node.parentElement.closest("[data-kind]");
 
-  switch (parent_node.dataset.kind) {
-    case "complex-selector":
-      return serialize_complex_selector(parent_node, leaf_node);
-    default:
-      throw new SerializationError(parent_node.outerHTML);
+    switch (parent_node.dataset.kind) {
+      case "complex-selector":
+        return serialize_complex_selector(parent_node, leaf_node);
+      default:
+        throw new SerializationError(parent_node.outerHTML);
+    }
   }
 }
 
@@ -80,13 +84,13 @@ function remove_all_dropdowns() {
 document.addEventListener("DOMContentLoaded", (_) => {
   for (let part of document.querySelectorAll(ALL_SELECTOR_PARTS_QUERY)) {
     part.addEventListener("mousedown", async (_) => {
-      let already_has_dropdown = part
+      let existing_dropdown_for_self = part
         .closest("[data-kind]")
         .querySelector(":scope > .siblings-root");
 
       remove_all_dropdowns();
 
-      if (already_has_dropdown) return;
+      if (existing_dropdown_for_self) return;
 
       let path = discover_path_for_selector_part(part);
       let leaf_node = part.closest("[data-kind]");

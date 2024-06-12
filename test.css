@@ -1,54 +1,16 @@
 .main {
-  color: blue;
-  
-  
-  
-  
-  
-  
-  
+    color: blue;
     --test: yes;
 }
 .main .btn {
-  font-size: 20px;
-  
-  
-  
-  
-  
-  
-  
+    font-size: 20px;
     display: flex;
-  
-  
-  
-  
-  
-  
-  
     --test: yo;
-  
-  
-  x: 1;
-  
-  color: red;
+    x: 1;
+    color: red;
 }
 .btn {
-  display: flex;
-  
-  
-  
-  
-  
-  
-  
+    display: flex;
     color: rgb(1, 2, 3);
-  
-  
-  
-  
-  
-  
-  
     flex: var(--x);
 }
