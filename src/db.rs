@@ -45,6 +45,19 @@ pub struct Rule {
     pub properties: Vec<Rc<CssDeclarationWithSemicolon>>,
 }
 
+impl Rule {
+    pub fn new(selector: AnyCssSelector) -> Self {
+        Rule {
+            selector,
+            properties: vec![],
+        }
+    }
+
+    pub fn insert(&mut self, property: CssDeclarationWithSemicolon) {
+        self.properties.push(Rc::new(property))
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct CSSDB {
     children: HashMap<String, CSSDB>,
@@ -258,12 +271,11 @@ impl CSSDB {
         match path {
             [] => {
                 match &mut self.rule {
-                    Some(rule) => rule.properties.push(Rc::new(property)),
+                    Some(rule) => rule.insert(property),
                     None => {
-                        self.rule = Some(Rule {
-                            selector,
-                            properties: vec![Rc::new(property)],
-                        })
+                        let mut rule = Rule::new(selector);
+                        rule.insert(property);
+                        self.rule = Some(rule)
                     }
                 };
             }
@@ -281,20 +293,14 @@ impl CSSDB {
     pub fn get(&self, path: &[String]) -> Option<&CSSDB> {
         match path {
             [] => Some(self),
-            [part, parts @ ..] => match self.children.get(part) {
-                Some(child) => child.get(parts),
-                None => None,
-            },
+            [part, parts @ ..] => self.children.get(part).and_then(|c| c.get(parts)),
         }
     }
 
     pub fn get_mut(&mut self, path: &[String]) -> Option<&mut CSSDB> {
         match path {
             [] => Some(self),
-            [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(child) => child.get_mut(parts),
-                None => None,
-            },
+            [part, parts @ ..] => self.children.get_mut(part).and_then(|c| c.get_mut(parts)),
         }
     }
 }
