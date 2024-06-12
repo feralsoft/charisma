@@ -50,14 +50,16 @@ fn delete(selector: &str, name: String) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[get("/src/<selector>/siblings")]
-fn siblings(selector: &str) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
+#[get("/src/<selector>/<idx>/siblings")]
+fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
+    let sibling_path = &path[0..idx];
+    let rest_of_path = &path[idx..];
     let siblings = db
-        .siblings_for(&path)
+        .siblings_with_subpath(sibling_path, rest_of_path)
         .iter()
         .map(|tree| tree.rule.as_ref().unwrap())
         .map(|rule| {

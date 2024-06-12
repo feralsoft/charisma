@@ -251,6 +251,29 @@ impl CSSDB {
             .collect()
     }
 
+    pub fn siblings_with_subpath(&self, path: &[String], subpath: &[String]) -> Vec<&CSSDB> {
+        assert!(path.len() > 0);
+        let (last_part, parent_path) = path.split_last().unwrap();
+        println!("a = {:?}\nb = {:?}", last_part, parent_path);
+        let root = self.get(parent_path);
+        assert!(root.is_some());
+        let root = root.unwrap();
+        println!(
+            "{:?}",
+            root.children
+                .iter()
+                .map(|(part, _)| part)
+                .collect::<Vec<_>>()
+        );
+        root.children
+            .iter()
+            .filter(|(part, _)| *part != last_part)
+            .map(|(_, tree)| tree)
+            .filter_map(|tree| tree.get(&subpath))
+            .filter(|tree| tree.rule.is_some())
+            .collect()
+    }
+
     pub fn delete(&mut self, path: &[String], property_name: &String) {
         let tree = self.get_mut(path).unwrap();
         assert!(
