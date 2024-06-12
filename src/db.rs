@@ -90,7 +90,7 @@ impl CSSDB {
                     .as_css_declaration_with_semicolon()
                     .unwrap()
                     .to_owned();
-                self.insert_mut(selector.to_owned(), &selector.to_css_db_path(), property);
+                self.insert(selector.to_owned(), &selector.to_css_db_path(), property);
             }
         }
     }
@@ -251,7 +251,7 @@ impl CSSDB {
             .collect()
     }
 
-    pub fn delete_mut(&mut self, path: &[String], property_name: &String) {
+    pub fn delete(&mut self, path: &[String], property_name: &String) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),
@@ -262,7 +262,7 @@ impl CSSDB {
             .retain(|p| &name_of_item(p) != property_name);
     }
 
-    pub fn insert_mut(
+    pub fn insert(
         &mut self,
         selector: AnyCssSelector,
         path: &[String],
@@ -280,10 +280,10 @@ impl CSSDB {
                 };
             }
             [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(tree) => tree.insert_mut(selector, parts, property),
+                Some(tree) => tree.insert(selector, parts, property),
                 None => {
                     let mut new_tree = CSSDB::new();
-                    new_tree.insert_mut(selector, parts, property);
+                    new_tree.insert(selector, parts, property);
                     self.children.insert(part.to_owned(), new_tree);
                 }
             },
@@ -319,10 +319,10 @@ fn one_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red"));
     let s2 = parse_selector(".container .card");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -340,10 +340,10 @@ fn two_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("color: red;"));
+    tree.insert(s1, &s1_path, parse_property("color: red;"));
     let s2 = parse_selector(".main .container .card");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -363,10 +363,10 @@ fn no_super_pathes() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red"));
     let s2 = parse_selector(".main .container");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(paths, vec![] as Vec<Vec<String>>);
@@ -377,10 +377,10 @@ fn var_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("--var: red;"));
+    tree.insert(s1, &s1_path, parse_property("--var: red;"));
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: var(--var);"));
+    tree.insert(s2, &s2_path, parse_property("font-size: var(--var);"));
     let inhertied_vars = tree.inherited_vars_for(&s2_path);
     assert_eq!(inhertied_vars.contains_key("--var"), true);
 }
@@ -390,10 +390,10 @@ fn color_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red"));
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("color"), true);
 }
@@ -403,10 +403,10 @@ fn display_is_not_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert_mut(s1, &s1_path, parse_property("display: flex"));
+    tree.insert(s1, &s1_path, parse_property("display: flex"));
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert_mut(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("display"), false);
 }
@@ -418,9 +418,9 @@ fn delete() {
     let s2 = parse_selector(".card");
     let s2_path = s2.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(s1, &s1_path, parse_property("font-size: 20px"));
-    tree.insert_mut(s2, &s2_path, parse_property("color: red"));
-    tree.delete_mut(&s1_path, &"font-size".to_owned());
+    tree.insert(s1, &s1_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("color: red"));
+    tree.delete(&s1_path, &"font-size".to_owned());
 
     assert_eq!(
         tree.children
@@ -445,9 +445,9 @@ fn siblings() {
     let s3 = parse_selector(".table");
     let s3_path = s3.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(s1, &s1_path, parse_property("font-size: 20px"));
-    tree.insert_mut(s2, &s2_path, parse_property("color: red"));
-    tree.insert_mut(s3, &s3_path, parse_property("display: flex"));
+    tree.insert(s1, &s1_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("color: red"));
+    tree.insert(s3, &s3_path, parse_property("display: flex"));
     let s1_siblings = tree.siblings_for(&s1_path);
     let mut sibling_selectors: Vec<String> = s1_siblings
         .iter()
@@ -473,7 +473,7 @@ fn insert_mutable_test() {
     let selector = parse_selector(".btn");
     let path = selector.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(selector, &path, parse_property("font-size: 20px;"));
+    tree.insert(selector, &path, parse_property("font-size: 20px;"));
     let node = tree.get(&path).unwrap();
 
     assert_eq!(
@@ -494,7 +494,7 @@ fn serialize() {
     let selector = parse_selector(".btn");
     let path = selector.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert_mut(selector, &path, parse_property("font-size: 20px;"));
+    tree.insert(selector, &path, parse_property("font-size: 20px;"));
     assert_eq!(
         tree.serialize(),
         String::from(".btn {\n  font-size: 20px;\n}\n")

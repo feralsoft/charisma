@@ -32,7 +32,7 @@ fn insert(selector: &str, property: &str) {
     db.load("test.css");
     let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
-    db.insert_mut(selector, &path, property);
+    db.insert(selector, &path, property);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -42,7 +42,7 @@ fn delete(selector: String, name: String) {
     db.load("test.css");
     let selector = parse_selector(&selector);
     let path = selector.to_css_db_path();
-    db.delete_mut(&path, &name);
+    db.delete(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
