@@ -1,6 +1,7 @@
 use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKind};
 
 pub fn parse_selector(str: &str) -> AnyCssSelector {
+    println!("{:?}", str);
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),

@@ -9,6 +9,10 @@
     x: 1;
     color: red;
 }
+.main .container {
+    color: blue;
+}
+
 .btn {
     display: flex;
     color: rgb(1, 2, 3);

@@ -64,7 +64,14 @@ fn siblings(selector: &str) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
             rule.selector
                 .to_css_db_path()
                 .iter()
-                .map(|part| (part.to_owned(), parse_selector(&part).render_html()))
+                .map(|part| {
+                    let selector_html = if part == " " {
+                        "so sad, what to do here :(".to_owned()
+                    } else {
+                        parse_selector(&part).render_html()
+                    };
+                    (part.to_owned(), selector_html)
+                })
                 .collect::<Vec<(String, String)>>()
         })
         .collect::<Vec<Vec<(String, String)>>>();
