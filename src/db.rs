@@ -1,5 +1,5 @@
 use crate::parse_utils::{name_of_item, parse_property, parse_selector};
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
     AnyCssSelector::{self, *},
@@ -42,7 +42,7 @@ const INHERITABLE_PROPERTIES: [&str; 29] = [
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
     pub selector: AnyCssSelector,
-    pub properties: Vec<CssDeclarationWithSemicolon>,
+    pub properties: Vec<Rc<CssDeclarationWithSemicolon>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -134,7 +134,7 @@ impl CSSDB {
         super_paths
     }
 
-    fn inheritable_properties(&self) -> HashMap<String, CssDeclarationWithSemicolon> {
+    fn inheritable_properties(&self) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
@@ -149,7 +149,7 @@ impl CSSDB {
     fn inherited_properties_for_aux(
         &self,
         path: &[String],
-        inhertied_properties: &mut HashMap<String, CssDeclarationWithSemicolon>,
+        inhertied_properties: &mut HashMap<String, Rc<CssDeclarationWithSemicolon>>,
     ) {
         let inherited_properties_from_self = self.inheritable_properties();
         match path {
@@ -170,8 +170,8 @@ impl CSSDB {
     pub fn inherited_properties_for(
         &self,
         path: &[String],
-    ) -> HashMap<String, CssDeclarationWithSemicolon> {
-        let mut properties: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
+    ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
+        let mut properties: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
         for super_path in self.super_pathes_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
@@ -179,7 +179,7 @@ impl CSSDB {
         properties
     }
 
-    fn vars(&self) -> HashMap<String, CssDeclarationWithSemicolon> {
+    fn vars(&self) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
@@ -194,7 +194,7 @@ impl CSSDB {
     fn inherited_vars_for_aux(
         &self,
         path: &[String],
-        inherited_vars: &mut HashMap<String, CssDeclarationWithSemicolon>,
+        inherited_vars: &mut HashMap<String, Rc<CssDeclarationWithSemicolon>>,
     ) {
         let inherited_vars_from_self = self.vars();
         match path {
@@ -215,8 +215,8 @@ impl CSSDB {
     pub fn inherited_vars_for(
         &self,
         path: &[String],
-    ) -> HashMap<String, CssDeclarationWithSemicolon> {
-        let mut vars: HashMap<String, CssDeclarationWithSemicolon> = HashMap::new();
+    ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
+        let mut vars: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         for super_path in self.super_pathes_of(path) {
             vars.extend(self.get(&super_path).unwrap().vars());
@@ -258,11 +258,11 @@ impl CSSDB {
         match path {
             [] => {
                 match &mut self.rule {
-                    Some(rule) => rule.properties.push(property),
+                    Some(rule) => rule.properties.push(Rc::new(property)),
                     None => {
                         self.rule = Some(Rule {
                             selector,
-                            properties: vec![property],
+                            properties: vec![Rc::new(property)],
                         })
                     }
                 };
