@@ -492,3 +492,15 @@ button {
 [data-kind="rule"] {
     width: calc(99% - 1em);
 }
+
+[data-kind]:has(> .siblings-root) {
+    > [data-value] {
+        opacity: 0.75;
+        user-select: none;
+    }
+    .siblings-root {
+        background: rgba(30, 30, 30, 0.9);
+        position: absolute;
+        margin-top: 1.25em;
+    }
+}

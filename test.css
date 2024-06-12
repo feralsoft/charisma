@@ -6,6 +6,7 @@
   
   
   
+  
     --test: yes;
 }
 .main .btn {
@@ -16,7 +17,9 @@
   
   
   
+  
     display: flex;
+  
   
   
   
@@ -25,18 +28,14 @@
   
     --test: yo;
   
+  
   x: 1;
+  
   color: red;
 }
 .btn {
-  flex-direction: column;
+  display: flex;
   
-  
-  
-  
-  
-  
-    display: flex;
   
   
   
@@ -44,6 +43,7 @@
   
   
     color: rgb(1, 2, 3);
+  
   
   
   

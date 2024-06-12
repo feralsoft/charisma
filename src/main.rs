@@ -6,7 +6,7 @@ use std::fs;
 use db::*;
 use html::Render;
 use parse_utils::{parse_property, parse_selector};
-use rocket::http::ContentType;
+use rocket::{http::ContentType, serde::json::Json};
 
 mod db;
 mod html;
@@ -24,6 +24,10 @@ fn delete_property_js() -> String {
     fs::read_to_string("src/js/delete_property.js").unwrap()
 }
 
+fn explore_siblings_js() -> String {
+    fs::read_to_string("src/js/explore_siblings.js").unwrap()
+}
+
 #[post("/src/<selector>", data = "<property>")]
 fn insert(selector: &str, property: &str) {
     println!("{:?}", property);
@@ -37,13 +41,35 @@ fn insert(selector: &str, property: &str) {
 }
 
 #[delete("/src/<selector>/<name>")]
-fn delete(selector: String, name: String) {
+fn delete(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(&selector);
+    let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
     db.delete(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
+}
+
+#[get("/src/<selector>/siblings")]
+fn siblings(selector: &str) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let selector = parse_selector(selector);
+    let path = selector.to_css_db_path();
+    let siblings = db
+        .siblings_for(&path)
+        .iter()
+        .map(|tree| tree.rule.as_ref().unwrap())
+        .map(|rule| {
+            rule.selector
+                .to_css_db_path()
+                .iter()
+                .map(|part| (part.to_owned(), parse_selector(&part).render_html()))
+                .collect::<Vec<(String, String)>>()
+        })
+        .collect::<Vec<Vec<(String, String)>>>();
+
+    (ContentType::JSON, Json::from(siblings))
 }
 
 #[get("/src/<selector>")]
@@ -88,11 +114,12 @@ fn index(selector: String) -> (ContentType, String) {
         ContentType::HTML,
         format!(
             "<style>{}</style>
-            <script>{}{}</script>
+            <script>{}{}{}</script>
             <div class=\"--editor\" spellcheck=\"false\">{}<div>",
             css(),
             insert_property_js(),
             delete_property_js(),
+            explore_siblings_js(),
             rule_html
         ),
     )
@@ -100,5 +127,5 @@ fn index(selector: String) -> (ContentType, String) {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, insert, delete])
+    rocket::build().mount("/", routes![index, insert, delete, siblings])
 }
