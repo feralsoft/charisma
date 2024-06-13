@@ -6,7 +6,7 @@ use std::fs;
 use db::*;
 use html::Render;
 use parse_utils::{parse_property, parse_selector};
-use rocket::{http::ContentType, serde::json::Json};
+use rocket::{http::ContentType, response::Redirect, serde::json::Json};
 
 mod db;
 mod html;
@@ -81,6 +81,15 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
     (ContentType::JSON, Json::from(siblings))
 }
 
+#[get("/src/<selector>/<idx>")]
+fn index_at(selector: &str, idx: usize) -> Redirect {
+    let selector = parse_selector(selector);
+    let path = selector.to_css_db_path();
+    let sibling_path = &path[0..idx];
+
+    Redirect::to(format!("/src/{}", sibling_path.join("")))
+}
+
 #[get("/src/<selector>")]
 fn index(selector: String) -> (ContentType, String) {
     let mut db = CSSDB::new();
@@ -136,5 +145,5 @@ fn index(selector: String) -> (ContentType, String) {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, insert, delete, siblings])
+    rocket::build().mount("/", routes![index, insert, delete, siblings, index_at])
 }

@@ -20,6 +20,8 @@ function option(path, html) {
 function remove_all_dropdowns() {
   for (let dropdown of document.querySelectorAll(".siblings-root"))
     dropdown.remove();
+  for (let self_link of document.querySelectorAll(".self-link"))
+    self_link.replaceWith(self_link.querySelector("[data-kind]"));
 }
 
 function find_idx_for(part) {
@@ -45,10 +47,11 @@ document.addEventListener("DOMContentLoaded", (_) => {
         (r) => r.json(),
       );
       // ahh this is kind of hacky, but I'm just replacing the part with a link... :| it works though
-      // let self_link = document.createElement("a");
-      // self_link.href = path;
-      // leaf_node.insertAdjacentElement("afterend", self_link);
-      // self_link.append(leaf_node);
+      let self_link = document.createElement("a");
+      self_link.classList.add("self-link");
+      self_link.href = `${location.pathname}/${idx}`;
+      leaf_node.insertAdjacentElement("afterend", self_link);
+      self_link.append(leaf_node);
       leaf_node.append(
         siblings_root(
           true,
