@@ -1,29 +1,30 @@
+.test .btn {
+  color: red;
+}
+.btn {
+  display: flex;
+  
+    color: rgb(1, 2, 3);
+  
+    flex: var(--x);
+}
 .main {
-    color: blue;
+  color: blue;
+  
     --test: yes;
 }
-
 .main .btn {
-    font-size: 20px;
-    display: flex;
+  display: flex;
+  
     --test: yo;
+  
     x: 1;
+  
     color: red;
 }
-
-.test .btn {
-    color: red;
+.main .container {
+  color: blue;
 }
 .main .main {
-    color: green;
-}
-
-.main .container {
-    color: blue;
-}
-
-.btn {
-    display: flex;
-    color: rgb(1, 2, 3);
-    flex: var(--x);
+  color: green;
 }
