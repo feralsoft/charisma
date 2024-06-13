@@ -1,19 +1,20 @@
-function insert_delete_button(src) {
+function insert_soft_delete_button(src) {
   let button = document.createElement("button");
-  button.addEventListener("click", (_) => {
+  button.innerText = "⤫";
+  button.classList.add("soft-delete");
+  button.addEventListener("click", async (_) => {
+    button.dataset.active = button.dataset.active !== "true";
     let name = src.querySelector("[data-attr=name]").textContent;
-    fetch(`${location.pathname}/${name}`, { method: "DELETE" }).then((_) =>
-      location.reload(),
-    );
+    await fetch(`${location.pathname}/${name}`, { method: "DELETE" });
+    // location.reload()
   });
-  button.innerText = "delete";
-  src.append(button);
+  src.prepend(button);
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
   for (let property of document.querySelectorAll(
     "[data-attr=properties] > [data-kind=property]",
   )) {
-    insert_delete_button(property);
+    insert_soft_delete_button(property);
   }
 });
