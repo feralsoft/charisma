@@ -105,7 +105,7 @@ impl CSSDB {
                 selector.to_string().trim(),
                 properties
                     .iter()
-                    .map(|p| p.to_string() + "\n  ")
+                    .map(|p| p.to_string().trim().to_string() + "\n  ")
                     .collect::<String>()
                     .trim()
             ),
