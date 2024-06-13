@@ -28,6 +28,19 @@ fn explore_siblings_js() -> String {
     fs::read_to_string("src/js/explore_siblings.js").unwrap()
 }
 
+fn module(js_src: String) -> String {
+    format!("<script type=\"module\">{}</script>", js_src)
+}
+
+fn editor_js() -> String {
+    format!(
+        "{}{}{}",
+        module(insert_property_js()),
+        module(delete_property_js()),
+        module(explore_siblings_js())
+    )
+}
+
 #[post("/src/<selector>", data = "<property>")]
 fn insert(selector: &str, property: &str) {
     println!("{:?}", property);
@@ -132,12 +145,10 @@ fn index(selector: String) -> (ContentType, String) {
         ContentType::HTML,
         format!(
             "<style>{}</style>
-            <script>{}{}{}</script>
+            {}
             <div class=\"--editor\" spellcheck=\"false\">{}<div>",
             css(),
-            insert_property_js(),
-            delete_property_js(),
-            explore_siblings_js(),
+            editor_js(),
             rule_html
         ),
     )
