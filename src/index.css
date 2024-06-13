@@ -27,6 +27,23 @@
     padding: 1em;
 }
 
+[data-kind="color"][data-hash="#"] [data-value]::before {
+    content: "#";
+    color: var(--function-color);
+}
+
+[data-kind="multi-part-value"] {
+    display: flex;
+    gap: 0.25em;
+}
+
+[data-kind="pseudo-class-id"] [data-value] {
+    color: var(--class-color);
+    &::before {
+        content: ":";
+    }
+}
+
 [data-attr] {
     display: flex;
 }

@@ -1,25 +1,19 @@
-.test .btn {
-  color: red;
-}
-.main {
-  color: blue;
-  --test: yes;
-  font-size: 20px;
-}
-.main .container {
-  color: blue;
-}
-.main .main {
-  color: green;
-}
-.main .btn {
-  display: flex;
-  --test: yo;
-  x: 1;
-  color: red;
-}
-.btn {
-  display: flex;
-  color: rgb(1, 2, 3);
-  flex: var(--x);
+:root {
+    background-color: rgb(31, 31, 31);
+    margin-top: 2em;
+    --spacing: 0.25em;
+    --brace-color: #d8a90c;
+    --outline-color: #ffffff17;
+    --number-color: #b5cea8;
+    --class-color: #d7ba7d;
+    --function-color: #dcdcaa;
+    --property-name-color: #9cdcfe;
+    --variable-color: #9cdcfe;
+    --string-color: #ce9178;
+    --attribute-color: var(--property-name-color);
+    --foreground-color: #ccc;
+    --at-rule-color: #c586c0;
+    color: var(--foreground-color);
+    font-size: 18px;
+    font-family: Berkeley Mono;
 }

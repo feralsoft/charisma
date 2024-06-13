@@ -2,9 +2,10 @@ use crate::parse_utils::{name_of_item, parse_property, parse_selector};
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
+    AnyCssPseudoClass,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::*,
-    CssDeclarationWithSemicolon,
+    CssDeclarationWithSemicolon, CssPseudoClassSelector,
 };
 
 const INHERITABLE_PROPERTIES: [&str; 29] = [
@@ -237,34 +238,12 @@ impl CSSDB {
         vars
     }
 
-    pub fn siblings_for(&self, path: &[String]) -> Vec<&CSSDB> {
-        assert!(path.len() > 0);
-        let (last_part, parent_path) = path.split_last().unwrap();
-        let root = self.get(parent_path);
-        assert!(root.is_some());
-        let root = root.unwrap();
-        root.children
-            .iter()
-            .filter(|(part, _)| *part != last_part)
-            .map(|(_, tree)| tree)
-            .filter(|tree| tree.rule.is_some())
-            .collect()
-    }
-
     pub fn siblings_with_subpath(&self, path: &[String], subpath: &[String]) -> Vec<&CSSDB> {
         assert!(path.len() > 0);
         let (last_part, parent_path) = path.split_last().unwrap();
-        println!("a = {:?}\nb = {:?}", last_part, parent_path);
         let root = self.get(parent_path);
         assert!(root.is_some());
         let root = root.unwrap();
-        println!(
-            "{:?}",
-            root.children
-                .iter()
-                .map(|(part, _)| part)
-                .collect::<Vec<_>>()
-        );
         root.children
             .iter()
             .filter(|(part, _)| *part != last_part)
@@ -460,38 +439,6 @@ fn delete() {
 }
 
 #[test]
-fn siblings() {
-    let s1 = parse_selector(".btn");
-    let s1_path = s1.to_css_db_path();
-    let s2 = parse_selector(".card");
-    let s2_path = s2.to_css_db_path();
-    let s3 = parse_selector(".table");
-    let s3_path = s3.to_css_db_path();
-    let mut tree = CSSDB::new();
-    tree.insert(s1, &s1_path, parse_property("font-size: 20px"));
-    tree.insert(s2, &s2_path, parse_property("color: red"));
-    tree.insert(s3, &s3_path, parse_property("display: flex"));
-    let s1_siblings = tree.siblings_for(&s1_path);
-    let mut sibling_selectors: Vec<String> = s1_siblings
-        .iter()
-        .map(|r| {
-            r.rule
-                .as_ref()
-                .unwrap()
-                .selector
-                .to_string()
-                .trim()
-                .to_string()
-        })
-        .collect();
-    sibling_selectors.sort();
-    assert_eq!(
-        sibling_selectors,
-        vec![".card".to_string(), ".table".to_string()]
-    );
-}
-
-#[test]
 fn insert_mutable_test() {
     let selector = parse_selector(".btn");
     let path = selector.to_css_db_path();
@@ -555,6 +502,27 @@ impl Storage for biome_css_syntax::CssCompoundSelector {
     }
 }
 
+impl Storage for AnyCssPseudoClass {
+    fn to_css_db_path(&self) -> Vec<String> {
+        match self {
+            AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
+                let name = id.name().unwrap().value_token().unwrap();
+                let name = name.text_trimmed();
+                vec![format!(":{}", name)]
+            }
+        }
+    }
+}
+
 impl Storage for biome_css_syntax::AnyCssSubSelector {
     fn to_css_db_path(&self) -> Vec<String> {
         match self {
@@ -566,7 +534,7 @@ impl Storage for biome_css_syntax::AnyCssSubSelector {
                 vec![format!(".{}", name)]
             }
             CssIdSelector(_) => todo!(),
-            CssPseudoClassSelector(_) => todo!(),
+            CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_path(),
             CssPseudoElementSelector(_) => todo!(),
         }
     }

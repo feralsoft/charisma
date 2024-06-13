@@ -1,9 +1,9 @@
 use biome_css_syntax::{
-    AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssSelector, AnyCssSubSelector,
-    AnyCssValue, CssComplexSelector, CssComponentValueList, CssCompoundSelector,
-    CssDashedIdentifier, CssDeclarationWithSemicolon, CssFunction, CssGenericProperty,
-    CssIdentifier, CssNumber, CssParameter, CssPercentage, CssQualifiedRule, CssRegularDimension,
-    CssRoot,
+    AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssPseudoClass, AnyCssSelector,
+    AnyCssSubSelector, AnyCssValue, CssColor, CssComplexSelector, CssComponentValueList,
+    CssCompoundSelector, CssDashedIdentifier, CssDeclarationWithSemicolon, CssFunction,
+    CssGenericProperty, CssIdentifier, CssNumber, CssParameter, CssPercentage, CssQualifiedRule,
+    CssRegularDimension, CssRoot,
 };
 
 use crate::parse_utils::get_combinator_type;
@@ -59,7 +59,22 @@ impl Render for CssCompoundSelector {
                 (class.name().unwrap().to_string(), "class")
             }
             AnyCssSubSelector::CssIdSelector(_) => todo!(),
-            AnyCssSubSelector::CssPseudoClassSelector(_) => todo!(),
+            AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => {
+                match pseudo_class.class().unwrap() {
+                    AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
+                    AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
+                        (id.name().unwrap().to_string(), "pseudo-class-id")
+                    }
+                }
+            }
             AnyCssSubSelector::CssPseudoElementSelector(_) => todo!(),
         };
 
@@ -105,7 +120,11 @@ impl Render for AnyCssDimension {
 
 impl Render for CssIdentifier {
     fn render_html(&self) -> String {
-        self.value_token().unwrap().text_trimmed().to_string()
+        let value = self.value_token().unwrap().text_trimmed().to_string();
+        format!(
+            "<div data-kind=\"identifier\">{}</div>",
+            render_value(value)
+        )
     }
 }
 
@@ -186,12 +205,30 @@ impl Render for CssDashedIdentifier {
     }
 }
 
+impl Render for CssColor {
+    fn render_html(&self) -> String {
+        let hash = self.as_fields().hash_token.unwrap();
+        let hash = hash.text_trimmed();
+        let value = self.as_fields().value_token.unwrap();
+        let value = value.text_trimmed();
+        // todo: wtf is this hash?
+        format!(
+            "
+        <div data-kind=\"color\" data-hash=\"{}\">
+            <div data-value=\"{}\">{}</div>
+        </div>
+        ",
+            hash, value, value
+        )
+    }
+}
+
 impl Render for AnyCssValue {
     fn render_html(&self) -> String {
         match self {
             AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
             AnyCssValue::AnyCssFunction(f) => f.render_html(),
-            AnyCssValue::CssColor(_) => todo!(),
+            AnyCssValue::CssColor(color) => color.render_html(),
             AnyCssValue::CssCustomIdentifier(_) => todo!(),
             AnyCssValue::CssDashedIdentifier(id) => id.render_html(),
             AnyCssValue::CssIdentifier(id) => id.render_html(),
@@ -205,9 +242,19 @@ impl Render for AnyCssValue {
 impl Render for CssGenericProperty {
     fn render_html(&self) -> String {
         let name = self.name().unwrap().to_string();
-        assert!(self.value().into_iter().into_iter().len() == 1);
-        let value = self.value().into_iter().next().unwrap();
-        let value = value.as_any_css_value().unwrap();
+        let value = if self.value().into_iter().len() == 1 {
+            let value = self.value().into_iter().next().unwrap();
+            let value = value.as_any_css_value().unwrap();
+            value.render_html()
+        } else {
+            format!(
+                "<div data-kind=\"multi-part-value\">{}</div>",
+                self.value()
+                    .into_iter()
+                    .map(|value| value.as_any_css_value().unwrap().render_html())
+                    .collect::<String>()
+            )
+        };
         let property_kind = if name.starts_with("--") {
             "variable"
         } else {
@@ -215,10 +262,13 @@ impl Render for CssGenericProperty {
         };
 
         format!(
-            "<div data-kind=\"property\" data-property-kind=\"{}\"><div data-attr=\"name\">{}</div><div data-attr=\"value\">{}</div></div>",
+            "<div data-kind=\"property\" data-property-kind=\"{}\">
+                <div data-attr=\"name\">{}</div>
+                <div data-attr=\"value\">{}</div>
+            </div>",
             property_kind,
             render_value(name.to_string().trim().to_string()),
-            value.render_html()
+            value
         )
     }
 }
