@@ -1,18 +1,27 @@
 use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssPseudoClass, AnyCssSelector,
-    AnyCssSubSelector, AnyCssValue, CssColor, CssComplexSelector, CssComponentValueList,
-    CssCompoundSelector, CssDashedIdentifier, CssDeclarationWithSemicolon, CssFunction,
-    CssGenericProperty, CssIdentifier, CssNumber, CssParameter, CssPercentage, CssQualifiedRule,
-    CssRegularDimension, CssRoot,
+    AnyCssSubSelector, AnyCssValue, CssAttributeSelector, CssClassSelector, CssColor,
+    CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
+    CssDeclarationWithSemicolon, CssFunction, CssGenericProperty, CssIdentifier, CssNumber,
+    CssParameter, CssPercentage, CssPseudoClassIdentifier, CssPseudoClassSelector,
+    CssPseudoElementSelector, CssQualifiedRule, CssRegularDimension, CssRoot, CssString,
 };
 
 use crate::parse_utils::get_combinator_type;
 
-pub fn render_value(value: String) -> String {
+pub fn render_value(value: &str) -> String {
     format!(
         "<div data-value=\"{}\" contenteditable>{}</div>",
         value, value
     )
+}
+
+pub fn render_kind(kind: &str, children: Vec<String>) -> String {
+    format!("<div data-kind=\"{}\">{}</div>", kind, children.join(""))
+}
+
+pub fn render_attr(name: &str, child: String) -> String {
+    format!("<div data-attr=\"{}\">{}</div>", name, child)
 }
 
 pub trait Render {
@@ -48,41 +57,127 @@ impl Render for CssComplexSelector {
     }
 }
 
+impl Render for CssClassSelector {
+    fn render_html(&self) -> String {
+        let name = self.name().unwrap();
+        format!(
+            "<div data-kind=\"class\">{}</div>",
+            render_value(name.to_string().trim())
+        )
+    }
+}
+
+impl Render for CssPseudoClassIdentifier {
+    fn render_html(&self) -> String {
+        let name = self.name().unwrap();
+        format!(
+            "<div data-kind=\"pseudo-class-id\">{}</div>",
+            render_value(name.to_string().trim())
+        )
+    }
+}
+
+impl Render for CssPseudoClassSelector {
+    fn render_html(&self) -> String {
+        match self.class().unwrap() {
+            AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassIdentifier(id) => id.render_html(),
+        }
+    }
+}
+
+impl Render for CssAttributeSelector {
+    fn render_html(&self) -> String {
+        match self.matcher() {
+            Some(matcher) => {
+                let name = self.name().unwrap();
+                assert!(matcher.modifier().is_none());
+                let operator = matcher.operator().unwrap();
+                let value = matcher.value().unwrap().name();
+
+                format!(
+                    "
+                <div data-kind=\"attribute-selector\">
+                    <div data-attr=\"name\">{}</div>
+                    <div data-attr=\"operator\">{}</div>
+                    <div data-attr=\"value\">{}</div>
+                </div>",
+                    render_value(name.to_string().trim()),
+                    render_value(operator.text_trimmed()),
+                    render_value(value.unwrap().to_string().trim())
+                )
+            }
+            None => {
+                let name = self.name().unwrap();
+                format!(
+                    "
+                <div data-kind=\"attribute-selector\">
+                    <div data-attr=\"name\">{}</div>
+                </div>",
+                    render_value(name.to_string().trim())
+                )
+            }
+        }
+    }
+}
+
+impl Render for CssPseudoElementSelector {
+    fn render_html(&self) -> String {
+        let element = self.element().unwrap();
+        let element = element.as_css_pseudo_element_identifier().unwrap();
+        format!(
+            "<div data-kind=\"pseudo-element-selector\">{}</div>",
+            render_value(element.name().unwrap().to_string().trim())
+        )
+    }
+}
+
+impl Render for AnyCssSubSelector {
+    fn render_html(&self) -> String {
+        match self {
+            AnyCssSubSelector::CssAttributeSelector(attribute_selector) => {
+                attribute_selector.render_html()
+            }
+            AnyCssSubSelector::CssBogusSubSelector(_) => todo!(),
+            AnyCssSubSelector::CssClassSelector(class) => class.render_html(),
+            AnyCssSubSelector::CssIdSelector(_) => todo!(),
+            AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => pseudo_class.render_html(),
+            AnyCssSubSelector::CssPseudoElementSelector(pseudo_element) => {
+                pseudo_element.render_html()
+            }
+        }
+    }
+}
 impl Render for CssCompoundSelector {
     fn render_html(&self) -> String {
-        assert!(self.sub_selectors().into_iter().len() == 1);
-        let selector = self.sub_selectors().into_iter().next().unwrap();
-        let (name, kind) = match selector {
-            AnyCssSubSelector::CssAttributeSelector(_) => todo!(),
-            AnyCssSubSelector::CssBogusSubSelector(_) => todo!(),
-            AnyCssSubSelector::CssClassSelector(class) => {
-                (class.name().unwrap().to_string(), "class")
-            }
-            AnyCssSubSelector::CssIdSelector(_) => todo!(),
-            AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => {
-                match pseudo_class.class().unwrap() {
-                    AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
-                    AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
-                        (id.name().unwrap().to_string(), "pseudo-class-id")
-                    }
-                }
-            }
-            AnyCssSubSelector::CssPseudoElementSelector(_) => todo!(),
-        };
+        assert!(self.simple_selector().is_none());
+        assert!(self.nesting_selector_token().is_none());
 
-        format!(
-            "<div data-kind=\"{}\">{}</div>",
-            kind,
-            render_value(name.trim().to_string())
-        )
+        match self
+            .sub_selectors()
+            .into_iter()
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            [selector] => selector.render_html(),
+            selectors => {
+                format!(
+                    "<div data-kind=\"compound-selector\">{}</div>",
+                    selectors
+                        .iter()
+                        .map(|selector| selector.render_html())
+                        .collect::<String>()
+                )
+            }
+        }
     }
 }
 
@@ -93,7 +188,7 @@ impl Render for CssRegularDimension {
         format!(
             "<div data-kind=\"unit\" data-unit-type=\"{}\">{}</div>",
             unit_type,
-            render_value(value)
+            render_value(value.trim())
         )
     }
 }
@@ -103,7 +198,7 @@ impl Render for CssPercentage {
         let value = self.value_token().unwrap().to_string();
         format!(
             "<div data-kind=\"unit\" data-unit-type=\"percentage\">{}</div>",
-            render_value(value)
+            render_value(value.trim())
         )
     }
 }
@@ -120,10 +215,10 @@ impl Render for AnyCssDimension {
 
 impl Render for CssIdentifier {
     fn render_html(&self) -> String {
-        let value = self.value_token().unwrap().text_trimmed().to_string();
+        let value = self.value_token().unwrap();
         format!(
             "<div data-kind=\"identifier\">{}</div>",
-            render_value(value)
+            render_value(value.text_trimmed())
         )
     }
 }
@@ -163,9 +258,9 @@ impl Render for CssFunction {
 
         format!(
             "
-        <div data-kind=function>
-            <div data-attr=name>{}</div>
-            <div data-attr=args>{}</div>
+        <div data-kind=\"function\">
+            <div data-attr=\"name\">{}</div>
+            <div data-attr=\"args\">{}</div>
         </div>
         ",
             function_name, args
@@ -187,10 +282,7 @@ impl Render for CssNumber {
         let value = self.value_token().unwrap();
         let value = value.text_trimmed();
 
-        format!(
-            "<div data-kind=number><div data-value={}>{}</div></div>",
-            value, value
-        )
+        format!("<div data-kind=\"number\">{}</div>", render_value(value))
     }
 }
 
@@ -198,10 +290,7 @@ impl Render for CssDashedIdentifier {
     fn render_html(&self) -> String {
         let value = self.value_token().unwrap();
         let value = value.text_trimmed();
-        format!(
-            "<div data-kind=dashed-id><div data-value={}>{}</div></div>",
-            value, value
-        )
+        format!("<div data-kind=\"dashed-id\">{}</div>", render_value(value))
     }
 }
 
@@ -213,13 +302,18 @@ impl Render for CssColor {
         let value = value.text_trimmed();
         // todo: wtf is this hash?
         format!(
-            "
-        <div data-kind=\"color\" data-hash=\"{}\">
-            <div data-value=\"{}\">{}</div>
-        </div>
-        ",
-            hash, value, value
+            "<div data-kind=\"color\" data-hash=\"{}\">{}</div>",
+            hash,
+            render_value(value)
         )
+    }
+}
+
+impl Render for CssString {
+    fn render_html(&self) -> String {
+        let str = self.value_token().unwrap();
+        let str = str.text();
+        format!("<div data-kind=\"string\">{}</div>", render_value(str))
     }
 }
 
@@ -234,7 +328,7 @@ impl Render for AnyCssValue {
             AnyCssValue::CssIdentifier(id) => id.render_html(),
             AnyCssValue::CssNumber(num) => num.render_html(),
             AnyCssValue::CssRatio(_) => todo!(),
-            AnyCssValue::CssString(_) => todo!(),
+            AnyCssValue::CssString(css_string) => css_string.render_html(),
         }
     }
 }
@@ -267,7 +361,7 @@ impl Render for CssGenericProperty {
                 <div data-attr=\"value\">{}</div>
             </div>",
             property_kind,
-            render_value(name.to_string().trim().to_string()),
+            render_value(name.to_string().trim()),
             value
         )
     }

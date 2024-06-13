@@ -2,10 +2,10 @@ use crate::parse_utils::{name_of_item, parse_property, parse_selector};
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
-    AnyCssPseudoClass,
+    AnyCssPseudoClass, AnyCssPseudoElement,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::*,
-    CssDeclarationWithSemicolon, CssPseudoClassSelector,
+    CssAttributeSelector, CssDeclarationWithSemicolon,
 };
 
 const INHERITABLE_PROPERTIES: [&str; 29] = [
@@ -523,11 +523,51 @@ impl Storage for AnyCssPseudoClass {
     }
 }
 
+impl Storage for CssAttributeSelector {
+    fn to_css_db_path(&self) -> Vec<String> {
+        let name = self.name().unwrap();
+        match self.matcher() {
+            Some(matcher) => {
+                assert!(matcher.modifier().is_none());
+                let operator = matcher.operator().unwrap();
+                let value = matcher.value().unwrap();
+
+                // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
+                // so that you can explore siblings along [data-kind]
+                vec![
+                    format!("[{}]", name),
+                    format!("[{}{}{}]", name, operator, value),
+                ]
+            }
+            None => {
+                vec![format!("[{}]", name)]
+            }
+        }
+    }
+}
+
+impl Storage for AnyCssPseudoElement {
+    fn to_css_db_path(&self) -> Vec<String> {
+        match self {
+            AnyCssPseudoElement::CssBogusPseudoElement(_) => todo!(),
+            AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(_) => todo!(),
+            AnyCssPseudoElement::CssPseudoElementFunctionSelector(_) => todo!(),
+            AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
+                let name = id.name().unwrap().value_token().unwrap();
+                vec![format!("::{}", name.text_trimmed())]
+            }
+        }
+    }
+}
+
 impl Storage for biome_css_syntax::AnyCssSubSelector {
     fn to_css_db_path(&self) -> Vec<String> {
         match self {
-            CssAttributeSelector(_) => todo!(),
-            CssBogusSubSelector(_) => todo!(),
+            CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_path(),
+            CssBogusSubSelector(s) => {
+                println!("{:?}", s);
+                todo!()
+            }
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
@@ -535,7 +575,9 @@ impl Storage for biome_css_syntax::AnyCssSubSelector {
             }
             CssIdSelector(_) => todo!(),
             CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_path(),
-            CssPseudoElementSelector(_) => todo!(),
+            CssPseudoElementSelector(pseudo_element) => {
+                pseudo_element.element().unwrap().to_css_db_path()
+            }
         }
     }
 }

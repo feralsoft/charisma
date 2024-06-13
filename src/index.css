@@ -114,7 +114,7 @@
     }
 }
 
-[data-kind="pseudo_element_selector"] > [data-attr="name"] {
+[data-kind="pseudo-element-selector"] {
     color: var(--class-color);
 
     [data-value]::before {
@@ -312,67 +312,28 @@ input {
     }
 }
 
-[data-kind="attribute_selector_no_match"] > [data-attr="name"] {
-    color: var(--attribute-color);
-
-    [data-value] {
-        &::before,
-        &::after {
-            color: var(--brace-color);
-        }
-
-        &::before {
-            content: "[";
-        }
-
-        &::after {
-            content: "]";
-        }
-    }
+[data-kind="compound-selector"] {
+    display: flex;
 }
 
-:is(
-        [data-kind="attribute_selector_equals"],
-        [data-kind="attribute_selector_contains"]
-    ) {
+[data-kind="attribute-selector"] {
     display: flex;
+    color: var(--attribute-color);
 
-    [data-value]::before,
-    [data-value]::after {
+    &::before,
+    &::after {
         color: var(--brace-color);
     }
 
-    & > [data-attr="name"] {
-        color: var(--attribute-color);
-
-        [data-value]::before {
-            content: "[";
-        }
+    &::before {
+        content: "[";
     }
 
-    &[data-kind="attribute_selector_equals"] > [data-attr="name"]::after {
-        color: var(--foreground-color);
-        content: "=";
+    &::after {
+        content: "]";
     }
-
-    &[data-kind="attribute_selector_contains"] > [data-attr="name"]::after {
-        color: var(--foreground-color);
-        content: "*=";
-    }
-
-    & > [data-attr="value"] {
+    > [data-attr="value"] {
         color: var(--string-color);
-
-        [data-value]::before,
-        [data-value]::after {
-            color: var(--string-color);
-            content: '"';
-        }
-
-        &::after {
-            color: var(--brace-color);
-            content: "]";
-        }
     }
 }
 
@@ -471,7 +432,7 @@ input {
     }
 }
 
-[data-kind="pseudo_element_selector"] {
+[data-kind="pseudo-element-selector"] {
     display: flex;
     flex-direction: column;
     justify-content: end;
