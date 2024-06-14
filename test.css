@@ -1,3 +1,15 @@
+.--editor {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1em;
+  font-size: 20px;
+}
+[data-kind="color"][data-hash] [data-value]::before {
+  content: "#";
+}
 :root {
   background-color: rgb(31, 31, 31);
   margin-top: 2em;
@@ -16,15 +28,4 @@
   color: var(--foreground-color);
   font-size: 18px;
   font-family: Berkeley Mono;
-}
-.--editor {
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing);
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 1em;
-}
-[data-kind="color"][data-hash] [data-value]::before {
-  content: "#";
 }

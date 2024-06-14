@@ -181,12 +181,18 @@ impl CSSDB {
         }
     }
 
+    pub fn get_root(&self) -> Option<&Self> {
+        self.get(&[":root".to_string()])
+    }
+
     pub fn inherited_properties_for(
         &self,
         path: &[String],
     ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
         let mut properties: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
+        self.get_root()
+            .inspect(|tree| properties.extend(tree.inheritable_properties()));
         for super_path in self.super_pathes_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
@@ -197,6 +203,7 @@ impl CSSDB {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
+                // .inspect(|p| println!("PROP = {:?}", p))
                 .filter(|p| is_var(p))
                 .map(|p| (name_of_item(p), p.clone()))
                 .collect::<HashMap<_, _>>()
@@ -232,6 +239,7 @@ impl CSSDB {
     ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
         let mut vars: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
+        self.get_root().inspect(|tree| vars.extend(tree.vars()));
         for super_path in self.super_pathes_of(path) {
             vars.extend(self.get(&super_path).unwrap().vars());
         }
@@ -313,7 +321,8 @@ fn is_var(property: &CssDeclarationWithSemicolon) -> bool {
     let property = property.as_css_generic_property().unwrap();
     let name = property.as_fields().name.unwrap();
     let name = name.as_css_identifier().unwrap();
-    name.to_string().starts_with("--")
+    let name = name.value_token().unwrap();
+    name.text_trimmed().starts_with("--")
 }
 
 #[test]

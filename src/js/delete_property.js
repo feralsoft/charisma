@@ -4,8 +4,8 @@ function insert_soft_delete_button(src) {
   button.classList.add("soft-delete");
   button.addEventListener("click", async (_) => {
     button.dataset.active = button.dataset.active !== "true";
-    let name = src.querySelector("[data-attr=name]").textContent;
-    await fetch(`${location.pathname}/${name}`, { method: "DELETE" });
+    // let name = src.querySelector("[data-attr=name]").textContent;
+    // await fetch(`${location.pathname}/${name}/comment`, { method: "POST" });
     // location.reload()
   });
   src.prepend(button);
