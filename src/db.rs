@@ -283,7 +283,6 @@ impl CSSDB {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
-                // .inspect(|p| println!("PROP = {:?}", p))
                 .filter(|p| p.is_var())
                 .map(|p| (p.name(), p.clone()))
                 .collect::<HashMap<_, _>>()

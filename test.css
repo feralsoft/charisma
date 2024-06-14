@@ -1,8 +1,8 @@
-.--editor {
-  color: red;
-  display: flex;
-  padding: 0.5rem;
-}
 :root {
   font-size: 20px;
+}
+.--editor {
+  padding: 0.5rem;
+  display: flex;
+  color: red;
 }

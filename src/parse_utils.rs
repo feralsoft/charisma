@@ -1,7 +1,6 @@
 use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKind};
 
 pub fn parse_selector(str: &str) -> AnyCssSelector {
-    println!("{:?}", str);
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),
@@ -37,7 +36,6 @@ pub fn parse_property(property_str: &str) -> Option<CssDeclarationWithSemicolon>
     let block = block.as_css_declaration_or_rule_block()?;
     assert!(block.items().into_iter().len() == 1);
     let item = block.items().into_iter().next().unwrap();
-    println!("{:?}", item);
     item.as_css_declaration_with_semicolon()
         .map(|item| item.to_owned())
 }

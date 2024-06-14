@@ -43,7 +43,6 @@ fn editor_js() -> String {
 
 #[post("/src/<selector>", data = "<property>")]
 fn insert(selector: &str, property: &str) {
-    println!("{:?}", property);
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
