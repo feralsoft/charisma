@@ -1,10 +1,8 @@
 function insert_comment_button(src) {
   let button = document.createElement("button");
   button.innerText = "⤫";
-  button.classList.add("soft-delete");
-  button.dataset.active = src.dataset.commented === "true";
+  button.classList.add("toggle-comment");
   button.addEventListener("click", async (_) => {
-    button.dataset.active = button.dataset.active !== "true";
     let name = src.querySelector("[data-attr=name]").textContent;
     await fetch(`${location.pathname}/${name}/toggle_comment`, {
       method: "POST",
