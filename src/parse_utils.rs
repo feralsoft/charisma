@@ -31,27 +31,15 @@ fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
     rule.as_css_qualified_rule().unwrap().to_owned()
 }
 
-pub fn name_of_item(item: &CssDeclarationWithSemicolon) -> String {
-    let decl = item.declaration();
-    let property = decl.unwrap().property().unwrap();
-    let property = property.as_css_generic_property().unwrap();
-    let name_node = property.name().unwrap();
-    let value = name_node
-        .as_css_identifier()
-        .unwrap()
-        .value_token()
-        .unwrap();
-    value.token_text_trimmed().to_string()
-}
-
-pub fn parse_property(property_str: &str) -> CssDeclarationWithSemicolon {
+pub fn parse_property(property_str: &str) -> Option<CssDeclarationWithSemicolon> {
     let dummy_rule = parse_one(format!(".a {{ {} }}", property_str));
     let block = dummy_rule.block().unwrap();
-    let block = block.as_css_declaration_or_rule_block().unwrap();
+    let block = block.as_css_declaration_or_rule_block()?;
     assert!(block.items().into_iter().len() == 1);
     let item = block.items().into_iter().next().unwrap();
     println!("{:?}", item);
-    item.as_css_declaration_with_semicolon().unwrap().to_owned()
+    item.as_css_declaration_with_semicolon()
+        .map(|item| item.to_owned())
 }
 
 pub fn get_combinator_type(token_kind: CssSyntaxKind) -> String {

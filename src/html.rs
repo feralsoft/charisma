@@ -7,7 +7,7 @@ use biome_css_syntax::{
     CssPseudoElementSelector, CssQualifiedRule, CssRegularDimension, CssRoot, CssString,
 };
 
-use crate::parse_utils::get_combinator_type;
+use crate::{parse_utils::get_combinator_type, Property, State};
 
 pub fn render_value(value: &str) -> String {
     format!(
@@ -333,17 +333,21 @@ impl Render for AnyCssValue {
     }
 }
 
-impl Render for CssGenericProperty {
+impl Render for Property {
     fn render_html(&self) -> String {
-        let name = self.name().unwrap().to_string();
-        let value = if self.value().into_iter().len() == 1 {
-            let value = self.value().into_iter().next().unwrap();
+        let property = self.node.declaration().unwrap().property().unwrap();
+        let property = property.as_css_generic_property().unwrap();
+
+        let name = self.name();
+        let value = if property.value().into_iter().len() == 1 {
+            let value = property.value().into_iter().next().unwrap();
             let value = value.as_any_css_value().unwrap();
             value.render_html()
         } else {
             format!(
                 "<div data-kind=\"multi-part-value\">{}</div>",
-                self.value()
+                property
+                    .value()
                     .into_iter()
                     .map(|value| value.as_any_css_value().unwrap().render_html())
                     .collect::<String>()
@@ -356,60 +360,14 @@ impl Render for CssGenericProperty {
         };
 
         format!(
-            "<div data-kind=\"property\" data-property-kind=\"{}\">
+            "<div data-kind=\"property\" data-property-kind=\"{}\" data-commented=\"{}\">
                 <div data-attr=\"name\">{}</div>
                 <div data-attr=\"value\">{}</div>
             </div>",
             property_kind,
-            render_value(name.to_string().trim()),
+            self.state == State::Commented,
+            render_value(&name),
             value
         )
-    }
-}
-
-impl Render for CssDeclarationWithSemicolon {
-    fn render_html(&self) -> String {
-        self.declaration()
-            .unwrap()
-            .property()
-            .unwrap()
-            .as_css_generic_property()
-            .unwrap()
-            .render_html()
-    }
-}
-
-impl Render for CssQualifiedRule {
-    fn render_html(&self) -> String {
-        assert!(self.prelude().into_iter().collect::<Vec<_>>().len() == 1);
-        let selector = self.prelude().into_iter().next().unwrap().unwrap();
-
-        let b = self.block().unwrap();
-        let items = b.as_css_declaration_or_rule_block().unwrap().items();
-        let properties = items
-            .into_iter()
-            .map(|item| {
-                item.as_css_declaration_with_semicolon()
-                    .unwrap()
-                    .render_html()
-            })
-            .collect::<String>();
-
-        let selector = format!(
-            "<div data-attr=\"selector\">{}</div>",
-            selector.render_html()
-        );
-        let properties = format!("<div data-attr=\"properties\">{}</div>", properties);
-
-        format!("<div data-kind=\"rule\">{}{}</div>", selector, properties)
-    }
-}
-
-impl Render for CssRoot {
-    fn render_html(&self) -> String {
-        self.rules()
-            .into_iter()
-            .map(|r| r.as_css_qualified_rule().unwrap().render_html())
-            .collect()
     }
 }

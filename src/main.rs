@@ -44,12 +44,22 @@ fn editor_js() -> String {
 #[post("/src/<selector>", data = "<property>")]
 fn insert(selector: &str, property: &str) {
     println!("{:?}", property);
-    let property = parse_property(property);
+    let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
     db.insert(selector, &path, property);
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
+#[post("/src/<selector>/<name>/toggle_comment")]
+fn toggle_comment(selector: &str, name: String) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let selector = parse_selector(selector);
+    let path = selector.to_css_db_path();
+    db.toggle_comment(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -156,5 +166,8 @@ fn index(selector: String) -> (ContentType, String) {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, insert, delete, siblings, index_at])
+    rocket::build().mount(
+        "/",
+        routes![index, insert, delete, toggle_comment, siblings, index_at],
+    )
 }

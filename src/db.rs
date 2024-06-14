@@ -1,11 +1,12 @@
-use crate::parse_utils::{name_of_item, parse_property, parse_selector};
+use crate::parse_utils::{parse_property, parse_selector};
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
     AnyCssPseudoClass, AnyCssPseudoElement,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::*,
-    CssAttributeSelector, CssDeclarationWithSemicolon,
+    CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon, CssSyntaxKind,
+    CssSyntaxToken,
 };
 
 const INHERITABLE_PROPERTIES: [&str; 29] = [
@@ -41,9 +42,64 @@ const INHERITABLE_PROPERTIES: [&str; 29] = [
 ];
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum State {
+    Valid,
+    Commented,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Property {
+    pub state: State,
+    pub node: CssDeclarationWithSemicolon,
+}
+
+impl Property {
+    pub fn to_string(&self) -> String {
+        let property_str = format!("{}: {};", self.name(), self.value());
+        match self.state {
+            State::Valid => property_str,
+            State::Commented => format!("/* {} */", property_str),
+        }
+    }
+
+    pub fn name(&self) -> String {
+        let decl = self.node.declaration().unwrap();
+        let property = decl.property().unwrap();
+        let property = property.as_css_generic_property().unwrap();
+        let name = property.name().unwrap();
+        let name = name.as_css_identifier().unwrap();
+        let name = name.value_token().unwrap();
+        name.text_trimmed().to_string()
+    }
+
+    pub fn value(&self) -> String {
+        let decl = self.node.declaration().unwrap();
+        let property = decl.property().unwrap();
+        let property = property.as_css_generic_property().unwrap();
+        property
+            .value()
+            .into_iter()
+            .map(|item| item.to_string() + " ")
+            .collect::<String>()
+            .trim()
+            .to_string()
+    }
+
+    pub fn is_var(&self) -> bool {
+        let decl = self.node.as_fields().declaration.unwrap();
+        let property = decl.as_fields().property.unwrap();
+        let property = property.as_css_generic_property().unwrap();
+        let name = property.as_fields().name.unwrap();
+        let name = name.as_css_identifier().unwrap();
+        let name = name.value_token().unwrap();
+        name.text_trimmed().starts_with("--")
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
     pub selector: AnyCssSelector,
-    pub properties: Vec<Rc<CssDeclarationWithSemicolon>>,
+    pub properties: Vec<Rc<Property>>,
 }
 
 impl Rule {
@@ -54,7 +110,7 @@ impl Rule {
         }
     }
 
-    pub fn insert(&mut self, property: CssDeclarationWithSemicolon) {
+    pub fn insert(&mut self, property: Property) {
         self.properties.push(Rc::new(property))
     }
 }
@@ -63,6 +119,16 @@ impl Rule {
 pub struct CSSDB {
     children: HashMap<String, CSSDB>,
     pub rule: Option<Rule>,
+}
+
+fn get_comment(property: &CssDeclarationWithSemicolon) -> Option<String> {
+    let str = property.to_string();
+    assert!(str.chars().filter(|c| c == &'*').count() <= 2); // if there's more than 2 it means there's more than 1 comment
+    match (str.find("/*"), str.find("*/")) {
+        (Some(start), Some(end)) => Some(str[(start + 2)..end].to_string()),
+        (None, None) => None,
+        _ => panic!("unexpected pattern"),
+    }
 }
 
 impl CSSDB {
@@ -81,16 +147,22 @@ impl CSSDB {
             let selector = rule.prelude();
             assert!((&selector).into_iter().collect::<Vec<_>>().len() == 1);
             let selector = selector.into_iter().next().unwrap().unwrap();
-            let properties = rule.block().unwrap();
-            let properties = properties
-                .as_css_declaration_or_rule_block()
-                .unwrap()
-                .items();
-            for property in properties {
+            let block = rule.block().unwrap();
+            let block = block.as_css_declaration_or_rule_block().unwrap();
+
+            for property in block.items() {
                 let property = property
                     .as_css_declaration_with_semicolon()
                     .unwrap()
                     .to_owned();
+                if let Some(property) = get_comment(&property).and_then(|str| parse_property(&str))
+                {
+                    self.insert_commented(
+                        selector.to_owned(),
+                        &selector.to_css_db_path(),
+                        property,
+                    );
+                }
                 self.insert(selector.to_owned(), &selector.to_css_db_path(), property);
             }
         }
@@ -106,7 +178,7 @@ impl CSSDB {
                 selector.to_string().trim(),
                 properties
                     .iter()
-                    .map(|p| p.to_string().trim().to_string() + "\n  ")
+                    .map(|p| p.to_string() + "\n  ")
                     .collect::<String>()
                     .trim()
             ),
@@ -148,12 +220,12 @@ impl CSSDB {
         super_paths
     }
 
-    fn inheritable_properties(&self) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
+    fn inheritable_properties(&self) -> HashMap<String, Rc<Property>> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
-                .filter(|p| INHERITABLE_PROPERTIES.contains(&name_of_item(p).as_str()))
-                .map(|p| (name_of_item(p), p.clone()))
+                .filter(|p| INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
+                .map(|p| (p.name(), p.clone()))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -163,7 +235,7 @@ impl CSSDB {
     fn inherited_properties_for_aux(
         &self,
         path: &[String],
-        inhertied_properties: &mut HashMap<String, Rc<CssDeclarationWithSemicolon>>,
+        inhertied_properties: &mut HashMap<String, Rc<Property>>,
     ) {
         let inherited_properties_from_self = self.inheritable_properties();
         match path {
@@ -185,11 +257,8 @@ impl CSSDB {
         self.get(&[":root".to_string()])
     }
 
-    pub fn inherited_properties_for(
-        &self,
-        path: &[String],
-    ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
-        let mut properties: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
+    pub fn inherited_properties_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
+        let mut properties: HashMap<String, Rc<Property>> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
         self.get_root()
             .inspect(|tree| properties.extend(tree.inheritable_properties()));
@@ -199,13 +268,13 @@ impl CSSDB {
         properties
     }
 
-    fn vars(&self) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
+    fn vars(&self) -> HashMap<String, Rc<Property>> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 // .inspect(|p| println!("PROP = {:?}", p))
-                .filter(|p| is_var(p))
-                .map(|p| (name_of_item(p), p.clone()))
+                .filter(|p| p.is_var())
+                .map(|p| (p.name(), p.clone()))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -215,7 +284,7 @@ impl CSSDB {
     fn inherited_vars_for_aux(
         &self,
         path: &[String],
-        inherited_vars: &mut HashMap<String, Rc<CssDeclarationWithSemicolon>>,
+        inherited_vars: &mut HashMap<String, Rc<Property>>,
     ) {
         let inherited_vars_from_self = self.vars();
         match path {
@@ -233,11 +302,8 @@ impl CSSDB {
         }
     }
 
-    pub fn inherited_vars_for(
-        &self,
-        path: &[String],
-    ) -> HashMap<String, Rc<CssDeclarationWithSemicolon>> {
-        let mut vars: HashMap<String, Rc<CssDeclarationWithSemicolon>> = HashMap::new();
+    pub fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
+        let mut vars: HashMap<String, Rc<Property>> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         self.get_root().inspect(|tree| vars.extend(tree.vars()));
         for super_path in self.super_pathes_of(path) {
@@ -261,6 +327,33 @@ impl CSSDB {
             .collect()
     }
 
+    pub fn toggle_comment(&mut self, path: &[String], property_name: &String) {
+        let tree = self.get_mut(path).unwrap();
+        assert!(
+            tree.rule.is_some(),
+            "can't delete property from rule that doesn't exist"
+        );
+        let rule = tree.rule.as_mut().unwrap();
+        rule.properties = rule
+            .properties
+            .iter()
+            .map(|p| {
+                if &p.name() == property_name {
+                    Rc::new(Property {
+                        node: p.node.clone(),
+                        state: if p.state == State::Commented {
+                            State::Valid
+                        } else {
+                            State::Commented
+                        },
+                    })
+                } else {
+                    p.clone()
+                }
+            })
+            .collect::<Vec<_>>();
+    }
+
     pub fn delete(&mut self, path: &[String], property_name: &String) {
         let tree = self.get_mut(path).unwrap();
         assert!(
@@ -268,16 +361,10 @@ impl CSSDB {
             "can't delete property from rule that doesn't exist"
         );
         let rule = tree.rule.as_mut().unwrap();
-        rule.properties
-            .retain(|p| &name_of_item(p) != property_name);
+        rule.properties.retain(|p| &p.name() != property_name);
     }
 
-    pub fn insert(
-        &mut self,
-        selector: AnyCssSelector,
-        path: &[String],
-        property: CssDeclarationWithSemicolon,
-    ) {
+    fn insert_raw(&mut self, selector: AnyCssSelector, path: &[String], property: Property) {
         match path {
             [] => {
                 match &mut self.rule {
@@ -290,14 +377,46 @@ impl CSSDB {
                 };
             }
             [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(tree) => tree.insert(selector, parts, property),
+                Some(tree) => tree.insert_raw(selector, parts, property),
                 None => {
                     let mut new_tree = CSSDB::new();
-                    new_tree.insert(selector, parts, property);
+                    new_tree.insert_raw(selector, parts, property);
                     self.children.insert(part.to_owned(), new_tree);
                 }
             },
         }
+    }
+
+    fn insert_commented(
+        &mut self,
+        selector: AnyCssSelector,
+        path: &[String],
+        property: CssDeclarationWithSemicolon,
+    ) {
+        self.insert_raw(
+            selector,
+            path,
+            Property {
+                node: property,
+                state: State::Commented,
+            },
+        )
+    }
+
+    pub fn insert(
+        &mut self,
+        selector: AnyCssSelector,
+        path: &[String],
+        property: CssDeclarationWithSemicolon,
+    ) {
+        self.insert_raw(
+            selector,
+            path,
+            Property {
+                node: property,
+                state: State::Valid,
+            },
+        )
     }
 
     pub fn get(&self, path: &[String]) -> Option<&CSSDB> {
@@ -315,25 +434,15 @@ impl CSSDB {
     }
 }
 
-fn is_var(property: &CssDeclarationWithSemicolon) -> bool {
-    let decl = property.as_fields().declaration.unwrap();
-    let property = decl.as_fields().property.unwrap();
-    let property = property.as_css_generic_property().unwrap();
-    let name = property.as_fields().name.unwrap();
-    let name = name.as_css_identifier().unwrap();
-    let name = name.value_token().unwrap();
-    name.text_trimmed().starts_with("--")
-}
-
 #[test]
 fn one_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
     let s2 = parse_selector(".container .card");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -351,10 +460,10 @@ fn two_level_super_path() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red;"));
+    tree.insert(s1, &s1_path, parse_property("color: red;").unwrap());
     let s2 = parse_selector(".main .container .card");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(
@@ -374,10 +483,10 @@ fn no_super_pathes() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
     let s2 = parse_selector(".main .container");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
 
     let paths = tree.super_pathes_of(&s1_path);
     assert_eq!(paths, vec![] as Vec<Vec<String>>);
@@ -388,10 +497,14 @@ fn var_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("--var: red;"));
+    tree.insert(s1, &s1_path, parse_property("--var: red;").unwrap());
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: var(--var);"));
+    tree.insert(
+        s2,
+        &s2_path,
+        parse_property("font-size: var(--var);").unwrap(),
+    );
     let inhertied_vars = tree.inherited_vars_for(&s2_path);
     assert_eq!(inhertied_vars.contains_key("--var"), true);
 }
@@ -401,10 +514,10 @@ fn color_is_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("color"), true);
 }
@@ -414,10 +527,10 @@ fn display_is_not_inherited() {
     let mut tree = CSSDB::new();
     let s1 = parse_selector(".card");
     let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("display: flex"));
+    tree.insert(s1, &s1_path, parse_property("display: flex").unwrap());
     let s2 = parse_selector(".card .btn");
     let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px"));
+    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
     let inherited_properties = tree.inherited_properties_for(&s2_path);
     assert_eq!(inherited_properties.contains_key("display"), false);
 }
@@ -429,8 +542,8 @@ fn delete() {
     let s2 = parse_selector(".card");
     let s2_path = s2.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert(s1, &s1_path, parse_property("font-size: 20px"));
-    tree.insert(s2, &s2_path, parse_property("color: red"));
+    tree.insert(s1, &s1_path, parse_property("font-size: 20px").unwrap());
+    tree.insert(s2, &s2_path, parse_property("color: red").unwrap());
     tree.delete(&s1_path, &"font-size".to_owned());
 
     assert_eq!(
@@ -452,7 +565,7 @@ fn insert_mutable_test() {
     let selector = parse_selector(".btn");
     let path = selector.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert(selector, &path, parse_property("font-size: 20px;"));
+    tree.insert(selector, &path, parse_property("font-size: 20px;").unwrap());
     let node = tree.get(&path).unwrap();
 
     assert_eq!(
@@ -473,7 +586,7 @@ fn serialize() {
     let selector = parse_selector(".btn");
     let path = selector.to_css_db_path();
     let mut tree = CSSDB::new();
-    tree.insert(selector, &path, parse_property("font-size: 20px;"));
+    tree.insert(selector, &path, parse_property("font-size: 20px;").unwrap());
     assert_eq!(
         tree.serialize(),
         String::from(".btn {\n  font-size: 20px;\n}\n")
