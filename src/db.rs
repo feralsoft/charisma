@@ -5,8 +5,7 @@ use biome_css_syntax::{
     AnyCssPseudoClass, AnyCssPseudoElement,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::*,
-    CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon, CssSyntaxKind,
-    CssSyntaxToken,
+    CssAttributeSelector, CssDeclarationWithSemicolon,
 };
 
 const INHERITABLE_PROPERTIES: [&str; 29] = [
@@ -121,14 +120,21 @@ pub struct CSSDB {
     pub rule: Option<Rule>,
 }
 
-fn get_comment(property: &CssDeclarationWithSemicolon) -> Option<String> {
-    let str = property.to_string();
-    assert!(str.chars().filter(|c| c == &'*').count() <= 2); // if there's more than 2 it means there's more than 1 comment
-    match (str.find("/*"), str.find("*/")) {
-        (Some(start), Some(end)) => Some(str[(start + 2)..end].to_string()),
-        (None, None) => None,
-        _ => panic!("unexpected pattern"),
+fn get_comments(str: &str) -> Vec<String> {
+    let mut idx = 0;
+    let mut comments: Vec<String> = vec![];
+    while str[idx..].contains('*') {
+        assert!(str.chars().skip(idx).filter(|c| c == &'*').count() >= 2);
+        match (str[idx..].find("/*"), str[idx..].find("*/")) {
+            (Some(start), Some(end)) => {
+                comments.push(str[(idx + start + 2)..(idx + end)].to_string());
+                idx += end + 2;
+            }
+            (None, None) => {}
+            _ => panic!("unexpected pattern"),
+        }
     }
+    comments
 }
 
 impl CSSDB {
@@ -150,20 +156,25 @@ impl CSSDB {
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
 
+            let mut comments: Vec<String> = vec![];
+            comments.extend(get_comments(
+                block.l_curly_token().unwrap().token_text().text(),
+            ));
+            comments.extend(get_comments(
+                block.r_curly_token().unwrap().token_text().text(),
+            ));
+
             for property in block.items() {
                 let property = property
                     .as_css_declaration_with_semicolon()
                     .unwrap()
                     .to_owned();
-                if let Some(property) = get_comment(&property).and_then(|str| parse_property(&str))
-                {
-                    self.insert_commented(
-                        selector.to_owned(),
-                        &selector.to_css_db_path(),
-                        property,
-                    );
-                }
+                comments.extend(get_comments(&property.to_string()));
                 self.insert(selector.to_owned(), &selector.to_css_db_path(), property);
+            }
+
+            for property in comments.iter().filter_map(|str| parse_property(&str)) {
+                self.insert_commented(selector.to_owned(), &selector.to_css_db_path(), property);
             }
         }
     }

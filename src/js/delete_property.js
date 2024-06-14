@@ -1,6 +1,6 @@
 function insert_comment_button(src) {
   let button = document.createElement("button");
-  button.innerText = "⤫";
+  button.innerHTML = "<div class='text'>⤫</div>";
   button.classList.add("toggle-comment");
   button.addEventListener("click", async (_) => {
     let name = src.querySelector("[data-attr=name]").textContent;

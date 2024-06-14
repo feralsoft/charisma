@@ -1,5 +1,8 @@
 .--editor {
-    /* item: black; */
-    padding: 0.5rem;
-    color: red;
+  color: red;
+  display: flex;
+  padding: 0.5rem;
+}
+:root {
+  font-size: 20px;
 }

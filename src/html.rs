@@ -2,9 +2,8 @@ use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssPseudoClass, AnyCssSelector,
     AnyCssSubSelector, AnyCssValue, CssAttributeSelector, CssClassSelector, CssColor,
     CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
-    CssDeclarationWithSemicolon, CssFunction, CssGenericProperty, CssIdentifier, CssNumber,
-    CssParameter, CssPercentage, CssPseudoClassIdentifier, CssPseudoClassSelector,
-    CssPseudoElementSelector, CssQualifiedRule, CssRegularDimension, CssRoot, CssString,
+    CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage, CssPseudoClassIdentifier,
+    CssPseudoClassSelector, CssPseudoElementSelector, CssRegularDimension, CssString,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -14,14 +13,6 @@ pub fn render_value(value: &str) -> String {
         "<div data-value=\"{}\" contenteditable>{}</div>",
         value, value
     )
-}
-
-pub fn render_kind(kind: &str, children: Vec<String>) -> String {
-    format!("<div data-kind=\"{}\">{}</div>", kind, children.join(""))
-}
-
-pub fn render_attr(name: &str, child: String) -> String {
-    format!("<div data-attr=\"{}\">{}</div>", name, child)
 }
 
 pub trait Render {

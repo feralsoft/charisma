@@ -1,5 +1,6 @@
 function input() {
   let elem = document.createElement("input");
+  elem.placeholder = "insert property...";
   elem.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       fetch(`${location.pathname}`, {
