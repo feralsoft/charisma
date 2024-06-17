@@ -213,28 +213,32 @@
     margin-left: 1em;
     background: none;
     padding-bottom: 0.1em;
-    border-bottom: 0.1em solid rgb(20, 20, 20);
     height: 0.5em;
     &:is(:hover, :focus, :focus-within) {
-        animation: expand 100ms linear forwards;
+        animation: expand 50ms linear forwards;
+        &:before {
+            display: none;
+        }
     }
-    &:not(:hover) {
+    &:not(:hover, :focus-within, :focus) {
         border: none;
     }
     &::before {
         content: "+";
         position: absolute;
         margin-top: -0.25em;
-        margin-left: -1em;
+        /* margin-left: -1em; */
     }
 }
 
 @keyframes expand {
     0% {
-        height: 5px;
+        height: 0.5em;
+        border-bottom: 0 solid rgb(0, 0, 0, 0);
     }
     100% {
         height: 1em;
+        border-bottom: 0.1em solid rgb(20, 20, 20);
     }
 }
 
@@ -501,22 +505,18 @@ button {
 
 [data-kind] {
     height: min-content;
+    display: flex;
 }
 
 [data-kind="rule"] {
     width: calc(99% - 1em);
+    flex-direction: column;
 }
 
-[data-kind]:has(> .siblings-root) {
-    > [data-value] {
-        user-select: none;
-    }
-
-    .siblings-root {
-        background: rgba(30, 30, 30, 0.9);
-        position: absolute;
-        margin-top: 1.25em;
-    }
+[data-kind] .siblings-root {
+    background: rgba(30, 30, 30, 0.9);
+    position: absolute;
+    margin-top: 1.25em;
 }
 
 [data-kind="property"] {
