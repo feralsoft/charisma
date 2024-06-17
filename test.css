@@ -1,8 +1,10 @@
 :root {
   font-size: 20px;
+  /* color: red; */
 }
 .--editor {
-  padding: 0.5rem;
   display: flex;
+  padding: 0.5rem;
   color: red;
+  flex-direction: column;
 }

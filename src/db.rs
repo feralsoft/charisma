@@ -337,7 +337,7 @@ impl CSSDB {
             .collect()
     }
 
-    pub fn toggle_comment(&mut self, path: &[String], property_name: &String) {
+    pub fn set_state(&mut self, path: &[String], property_name: &String, state: State) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),
@@ -351,11 +351,7 @@ impl CSSDB {
                 if &p.name() == property_name {
                     Rc::new(Property {
                         node: p.node.clone(),
-                        state: if p.state == State::Commented {
-                            State::Valid
-                        } else {
-                            State::Commented
-                        },
+                        state: state.clone(),
                     })
                 } else {
                     p.clone()

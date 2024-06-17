@@ -21,7 +21,7 @@ fn insert_property_js() -> String {
 }
 
 fn delete_property_js() -> String {
-    fs::read_to_string("src/js/delete_property.js").unwrap()
+    fs::read_to_string("src/js/toggle_property.js").unwrap()
 }
 
 fn explore_siblings_js() -> String {
@@ -52,13 +52,23 @@ fn insert(selector: &str, property: &str) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[post("/src/<selector>/<name>/toggle_comment")]
-fn toggle_comment(selector: &str, name: String) {
+#[post("/src/<selector>/<name>/disable")]
+fn disable(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
-    db.toggle_comment(&path, &name);
+    db.set_state(&path, &name, State::Commented);
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
+#[post("/src/<selector>/<name>/enable")]
+fn enable(selector: &str, name: String) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let selector = parse_selector(selector);
+    let path = selector.to_css_db_path();
+    db.set_state(&path, &name, State::Valid);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -167,6 +177,6 @@ fn index(selector: String) -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, insert, delete, toggle_comment, siblings, index_at],
+        routes![index, insert, delete, enable, disable, siblings, index_at],
     )
 }

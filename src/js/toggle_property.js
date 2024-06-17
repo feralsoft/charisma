@@ -4,9 +4,10 @@ function insert_comment_button(src) {
   button.classList.add("toggle-comment");
   button.addEventListener("click", async (_) => {
     let name = src.querySelector("[data-attr=name]").textContent;
-    await fetch(`${location.pathname}/${name}/toggle_comment`, {
-      method: "POST",
-    });
+    let is_commented =
+      src.closest('[data-kind="property"]').dataset.commented === "true";
+    let action = is_commented ? "enable" : "disable";
+    await fetch(`${location.pathname}/${name}/${action}`, { method: "POST" });
     location.reload();
   });
   src.prepend(button);

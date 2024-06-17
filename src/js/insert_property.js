@@ -1,11 +1,13 @@
 function input() {
-  let elem = document.createElement("input");
+  let elem = document.createElement("div");
+  elem.classList.add("input");
+  elem.contentEditable = true;
   elem.placeholder = "insert property...";
   elem.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       fetch(`${location.pathname}`, {
         method: "POST",
-        body: e.target.value,
+        body: e.target.innerText,
       }).finally((_) => location.reload());
     }
   });
