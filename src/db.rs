@@ -235,6 +235,7 @@ impl CSSDB {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
+                .filter(|p| p.state == State::Valid)
                 .filter(|p| INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
                 .map(|p| (p.name(), p.clone()))
                 .collect::<HashMap<_, _>>()
@@ -268,11 +269,20 @@ impl CSSDB {
         self.get(&[":root".to_string()])
     }
 
+    pub fn is_root(&self) -> bool {
+        self.rule
+            .as_ref()
+            .map(|rule| rule.selector.to_string().trim() == ":root")
+            .unwrap_or(false)
+    }
+
     pub fn inherited_properties_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
         let mut properties: HashMap<String, Rc<Property>> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
-        self.get_root()
-            .inspect(|tree| properties.extend(tree.inheritable_properties()));
+        if !self.get(path).unwrap().is_root() {
+            self.get_root()
+                .inspect(|tree| properties.extend(tree.inheritable_properties()));
+        }
         for super_path in self.super_pathes_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
