@@ -4,7 +4,7 @@ extern crate rocket;
 use std::fs;
 
 use db::*;
-use html::Render;
+use html::{Render, RenderOptions};
 use parse_utils::{parse_property, parse_selector};
 use rocket::{http::ContentType, response::Redirect, serde::json::Json};
 
@@ -16,34 +16,20 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-fn insert_property_js() -> String {
-    fs::read_to_string("src/js/insert_property.js").unwrap()
-}
-
-fn delete_property_js() -> String {
-    fs::read_to_string("src/js/toggle_property.js").unwrap()
-}
-
-fn explore_siblings_js() -> String {
-    fs::read_to_string("src/js/explore_siblings.js").unwrap()
-}
-
-fn highlight_property_js() -> String {
-    fs::read_to_string("src/js/highlight_property.js").unwrap()
-}
-
-fn module(js_src: String) -> String {
-    format!("<script type=\"module\">{}</script>", js_src)
-}
+const JS_FILE_NAMES: [&str; 5] = [
+    "insert_property",
+    "toggle_property",
+    "explore_siblings",
+    "highlight_property",
+    "update_value",
+];
 
 fn editor_js() -> String {
-    format!(
-        "{}{}{}{}",
-        module(insert_property_js()),
-        module(delete_property_js()),
-        module(explore_siblings_js()),
-        module(highlight_property_js())
-    )
+    JS_FILE_NAMES
+        .iter()
+        .map(|name| fs::read_to_string(format!("src/js/{}.js", name)).unwrap())
+        .map(|js| format!("<script type=\"module\">{}</script>", js))
+        .collect()
 }
 
 #[post("/src/<selector>", data = "<property>")]
@@ -77,6 +63,19 @@ fn enable(selector: &str, name: String) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
+#[post("/src/<selector>/<name>/value", data = "<value>")]
+fn set_value(selector: &str, name: String, value: String) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let selector = parse_selector(selector);
+    let path = selector.to_css_db_path();
+    let property = parse_property(&format!("{}: {};", name, value)).unwrap();
+    println!("{:?}", value);
+    db.delete(&path, &name);
+    db.insert(selector, &path, property);
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
 #[delete("/src/<selector>/<name>")]
 fn delete(selector: &str, name: String) {
     let mut db = CSSDB::new();
@@ -107,7 +106,7 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
                     let selector_html = if part == " " {
                         "so sad, what to do here :(".to_owned()
                     } else {
-                        parse_selector(&part).render_html()
+                        parse_selector(&part).render_html(&RenderOptions::default())
                     };
                     (part.to_owned(), selector_html)
                 })
@@ -145,10 +144,10 @@ fn index(selector: String) -> (ContentType, String) {
         <div data-attr=inherited-properties>{}</div>
     </div>
     ",
-        rule.selector.render_html(),
+        rule.selector.render_html(&RenderOptions::default()),
         rule.properties
             .iter()
-            .map(|p| p.render_html())
+            .map(|p| p.render_html(&RenderOptions::default()))
             .collect::<String>(),
         inherited_properties
             .iter()
@@ -156,7 +155,7 @@ fn index(selector: String) -> (ContentType, String) {
                 "<a href=\"{}?highlight_property_name={}\">{}</a>",
                 selector.trim(),
                 p.name(),
-                p.render_html()
+                p.render_html(&RenderOptions::default())
             ))
             .collect::<String>()
             + &inherited_vars
@@ -165,7 +164,7 @@ fn index(selector: String) -> (ContentType, String) {
                     "<a href=\"{}?highlight_property_name={}\">{}</a>",
                     selector.trim(),
                     p.name(),
-                    p.render_html()
+                    p.render_html(&RenderOptions::default())
                 ))
                 .collect::<String>()
     );
@@ -187,6 +186,6 @@ fn index(selector: String) -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, insert, delete, enable, disable, siblings, index_at],
+        routes![index, insert, set_value, delete, enable, disable, siblings, index_at],
     )
 }

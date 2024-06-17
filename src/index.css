@@ -18,6 +18,10 @@
     font-family: Berkeley Mono;
 }
 
+.plain-text-node {
+    width: max-content;
+}
+
 .--editor {
     padding: 0.5rem;
     display: flex;
