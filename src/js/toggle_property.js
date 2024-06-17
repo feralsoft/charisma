@@ -8,7 +8,7 @@ function insert_comment_button(src) {
       src.closest('[data-kind="property"]').dataset.commented === "true";
     let action = is_commented ? "enable" : "disable";
     await fetch(`${location.pathname}/${name}/${action}`, { method: "POST" });
-    location.reload();
+    location.search = "";
   });
   src.prepend(button);
 }

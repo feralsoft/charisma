@@ -2,12 +2,13 @@
   font-size: 20px;
   color: red;
   --spacing: 0.5em;
+  /* --blah: ah; */
 }
 .--editor {
   display: flex;
   padding: var(--spacing);
   flex-direction: column;
   color: red;
-  font-size: 25px;
   --spacing: 0.75em;
+  /* font-size: 25px; */
 }

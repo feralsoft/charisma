@@ -8,7 +8,7 @@ function input() {
       fetch(`${location.pathname}`, {
         method: "POST",
         body: e.target.innerText,
-      }).finally((_) => location.reload());
+      }).finally((_) => (location.search = ""));
     }
   });
   return elem;
