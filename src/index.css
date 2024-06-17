@@ -182,30 +182,6 @@
     content: "inherited variables";
 }
 
-.options {
-    background: rgba(255, 255, 255, 0.5);
-    color: black;
-    padding: 0.25em;
-
-    &::before {
-        content: "[options]";
-    }
-
-    * {
-        font-size: 0.75em;
-    }
-}
-
-[data-kind="rule"]:has(.show-inherited-properties:not(:checked))
-    [data-attr="inherited-properties"] {
-    display: none;
-}
-
-[data-kind="rule"]:has(.show-inherited-vars:not(:checked))
-    [data-attr="inherited-vars"] {
-    display: none;
-}
-
 [data-kind="rule"] [data-attr="properties"] .input {
     font-size: 1em;
     color: var(--foreground-color);
