@@ -68,15 +68,6 @@
     color: var(--property-name-color);
 }
 
-[data-kind="selector_modifier"] {
-    display: flex;
-}
-
-[data-kind="child_selector"] {
-    display: flex;
-    gap: 0.25em;
-}
-
 [data-attr="properties"] {
     [data-value]:hover,
     [data-value]:focus {
@@ -96,32 +87,8 @@
     outline: var(--outline-color) solid 0.1em;
 }
 
-[data-kind="rem"],
-[data-kind="em"] {
-    display: flex;
-}
-
-[data-kind="rem"] > [data-attr="value"]::after {
-    content: "rem";
-    color: var(--function-color);
-}
-
-[data-kind="em"] > [data-attr="value"]::after {
-    content: "em";
-    color: var(--function-color);
-}
-
 [data-kind="property"][data-property-kind="variable"] > [data-attr="name"] {
     color: var(--variable-color);
-}
-
-[data-kind="pseudo_selector_without_args"] > [data-attr="name"] {
-    color: var(--class-color);
-
-    &::before {
-        content: ":";
-        color: var(--class-color);
-    }
 }
 
 [data-kind="pseudo-element-selector"] {
@@ -130,10 +97,6 @@
     [data-value]::before {
         content: "::";
     }
-}
-
-[data-kind="element_selector"] {
-    color: var(--class-color);
 }
 
 [data-kind="string"] {
@@ -315,43 +278,6 @@
     }
 }
 
-[data-kind="hex"],
-[data-kind="hex_short"],
-[data-kind="hex_a"] {
-    display: flex;
-
-    &::before {
-        content: "#";
-        color: var(--function-color);
-    }
-
-    [data-attr] {
-        color: var(--foreground-color);
-    }
-}
-
-[data-kind="hex"],
-[data-kind="hex_a"],
-[data-kind="hex_short"],
-[data-kind="rgb"],
-[data-kind="rgba"] {
-    & > [data-attr="r"] [data-value] {
-        background-color: rgba(255, 0, 0, 0.1);
-    }
-
-    & > [data-attr="g"] [data-value] {
-        background-color: rgba(0, 255, 0, 0.1);
-    }
-
-    & > [data-attr="b"] [data-value] {
-        background-color: rgba(0, 0, 255, 0.1);
-    }
-
-    & > [data-attr="a"] [data-value] {
-        background-color: var(--outline-color);
-    }
-}
-
 [data-kind="compound-selector"] {
     display: flex;
 }
@@ -382,58 +308,6 @@
     color: var(--variable-color);
 }
 
-[data-kind="pseudo_selector_with_args"] {
-    display: flex;
-    color: var(--class-color);
-
-    &::before,
-    &::after,
-    ::before,
-    ::after {
-        color: var(--foreground-color);
-    }
-
-    & > [data-attr="args"] {
-        display: flex;
-
-        & > [data-kind]:not(:last-child)::after {
-            content: ",";
-        }
-    }
-
-    & > [data-attr="name"] > [data-value]::before {
-        content: ":";
-        color: var(--class-color);
-    }
-
-    & > [data-attr="name"]::after {
-        content: "(";
-    }
-
-    &::after {
-        display: flex;
-        flex-direction: column;
-        justify-content: end;
-        content: ")";
-    }
-}
-
-[data-kind="nth_expr_with_plus"] {
-    display: flex;
-
-    & > [data-attr="factor"]::after {
-        content: "n+";
-    }
-}
-
-[data-kind="nth_expr_without_plus"] {
-    display: flex;
-
-    & > [data-attr="factor"]::after {
-        content: "n";
-    }
-}
-
 [data-kind="complex-selector"] {
     display: flex;
     gap: 0.25em;
@@ -444,43 +318,14 @@
     color: var(--brace-color);
 }
 
-[data-kind="multi_part_value"] > [data-attr="parts"] {
-    display: flex;
-    gap: 0.5em;
-}
-
-[data-kind="self_selector"] {
-    display: flex;
-
-    &::before {
-        content: "&";
-    }
-}
-
 :focus {
     outline: none;
-}
-
-[data-kind="or"] {
-    display: flex;
-
-    & > [data-attr="lhs"] {
-        display: flex;
-
-        &::after {
-            content: ",";
-        }
-    }
 }
 
 [data-kind="pseudo-element-selector"] {
     display: flex;
     flex-direction: column;
     justify-content: end;
-}
-
-[data-kind="wildcard"]::before {
-    content: "*";
 }
 
 [data-kind] {
