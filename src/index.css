@@ -231,6 +231,9 @@
         border: none;
         cursor: pointer;
     }
+    &:hover::before {
+        color: white;
+    }
 
     &::before {
         content: "+";

@@ -9,8 +9,11 @@ function input() {
         method: "POST",
         body: e.target.innerText,
       }).finally((_) => (location.search = ""));
+    } else if (e.key === "Escape") {
+      elem.blur();
     }
   });
+  elem.addEventListener("blur", (_) => (elem.innerText = ""));
   return elem;
 }
 
