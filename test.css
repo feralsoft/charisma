@@ -8,6 +8,6 @@
   padding: var(--spacing);
   flex-direction: column;
   color: red;
-  /* font-size: 25px; */
+  font-size: 25px;
   --spacing: 0.75em;
 }

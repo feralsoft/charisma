@@ -162,7 +162,12 @@ fn index(selector: String) -> (ContentType, String) {
             .collect::<String>(),
         inherited_vars
             .iter()
-            .map(|(_, p)| p.render_html())
+            .map(|(_, (selector, p))| format!(
+                "<a href=\"{}?highlight_property_name={}\">{}</a>",
+                selector.trim(),
+                p.name(),
+                p.render_html()
+            ))
             .collect::<String>()
     );
 

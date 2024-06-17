@@ -298,12 +298,12 @@ impl CSSDB {
         properties
     }
 
-    fn valid_vars(&self) -> HashMap<String, Rc<Property>> {
+    fn valid_vars_with_selector_str(&self) -> HashMap<String, (String, Rc<Property>)> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 .filter(|p| p.is_var() && p.state == State::Valid)
-                .map(|p| (p.name(), p.clone()))
+                .map(|p| (p.name(), (rule.selector.to_string(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -325,9 +325,9 @@ impl CSSDB {
     fn inherited_vars_for_aux(
         &self,
         path: &[String],
-        inherited_vars: &mut HashMap<String, Rc<Property>>,
+        inherited_vars: &mut HashMap<String, (String, Rc<Property>)>,
     ) {
-        let inherited_vars_from_self = self.valid_vars();
+        let inherited_vars_from_self = self.valid_vars_with_selector_str();
         match path {
             [] => panic!("should never reach the end of path"),
             [_part] => {
@@ -343,18 +343,22 @@ impl CSSDB {
         }
     }
 
-    pub fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
+    pub fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, (String, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut vars: HashMap<String, Rc<Property>> = HashMap::new();
+        let mut vars: HashMap<String, (String, Rc<Property>)> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         if !tree.is_root() {
             self.get_root()
-                .inspect(|tree| vars.extend(tree.valid_vars()));
+                .inspect(|tree| vars.extend(tree.valid_vars_with_selector_str()));
         }
         for super_path in self.super_pathes_of(path) {
-            vars.extend(self.get(&super_path).unwrap().valid_vars());
+            vars.extend(
+                self.get(&super_path)
+                    .unwrap()
+                    .valid_vars_with_selector_str(),
+            );
         }
-        for name in tree.valid_vars().keys() {
+        for name in tree.valid_vars_with_selector_str().keys() {
             vars.remove(name);
         }
         vars
