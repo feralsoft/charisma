@@ -190,14 +190,15 @@
     background: none;
     padding-bottom: 0.1em;
     height: 0.5em;
-    &:is(:hover, :focus, :focus-within) {
+    &:is(:focus, :focus-within) {
         animation: expand 50ms linear forwards;
         &:before {
             display: none;
         }
     }
-    &:not(:hover, :focus-within, :focus) {
+    &:not(:focus-within, :focus) {
         border: none;
+        cursor: pointer;
     }
     &::before {
         content: "+";
