@@ -277,15 +277,26 @@ impl CSSDB {
     }
 
     pub fn inherited_properties_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
+        let tree = self.get(path).unwrap();
         let mut properties: HashMap<String, Rc<Property>> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
-        if !self.get(path).unwrap().is_root() {
+        if !tree.is_root() {
             self.get_root()
                 .inspect(|tree| properties.extend(tree.inheritable_properties()));
         }
         for super_path in self.super_pathes_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
+        let tree_property_names = tree
+            .rule
+            .as_ref()
+            .map(|r| r.properties.iter().map(|p| p.name()).collect::<Vec<_>>())
+            .unwrap_or(vec![]);
+
+        for property_name in tree_property_names {
+            properties.remove(&property_name);
+        }
+
         properties
     }
 
