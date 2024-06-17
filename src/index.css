@@ -21,7 +21,9 @@
 .plain-text-node {
     width: max-content;
 }
-
+[data-kind="identifier"] {
+    color: var(--foreground-color);
+}
 .--editor {
     padding: 0.5rem;
     display: flex;

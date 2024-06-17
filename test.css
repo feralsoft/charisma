@@ -1,14 +1,14 @@
+.--editor {
+  display: flex;
+  /* color: red; */
+  padding: var(--spacing);
+  --spacing: 0.25em;
+  flex-direction: row;
+  /* font-size: 40px; */
+}
 :root {
   color: red;
   --spacing: 0.5em;
   font-size: 30px;
   /* --blah: ah; */
-}
-.--editor {
-  display: flex;
-  color: red;
-  flex-direction: row;
-  padding: var(--spacing);
-  font-size: 20px;
-  --spacing: 0.25em;
 }
