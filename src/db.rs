@@ -287,28 +287,35 @@ impl CSSDB {
         for super_path in self.super_pathes_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
-        let tree_property_names = tree
-            .rule
-            .as_ref()
-            .map(|r| r.properties.iter().map(|p| p.name()).collect::<Vec<_>>())
-            .unwrap_or(vec![]);
 
-        for property_name in tree_property_names {
+        for property_name in tree.valid_properties_names() {
             properties.remove(&property_name);
         }
 
         properties
     }
 
-    fn vars(&self) -> HashMap<String, Rc<Property>> {
+    fn valid_vars(&self) -> HashMap<String, Rc<Property>> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
-                .filter(|p| p.is_var())
+                .filter(|p| p.is_var() && p.state == State::Valid)
                 .map(|p| (p.name(), p.clone()))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
+        }
+    }
+
+    fn valid_properties_names(&self) -> Vec<String> {
+        if let Some(rule) = &self.rule {
+            rule.properties
+                .iter()
+                .filter(|p| !p.is_var() && p.state == State::Valid)
+                .map(|p| p.name())
+                .collect()
+        } else {
+            vec![]
         }
     }
 
@@ -317,7 +324,7 @@ impl CSSDB {
         path: &[String],
         inherited_vars: &mut HashMap<String, Rc<Property>>,
     ) {
-        let inherited_vars_from_self = self.vars();
+        let inherited_vars_from_self = self.valid_vars();
         match path {
             [] => panic!("should never reach the end of path"),
             [_part] => {
@@ -338,12 +345,13 @@ impl CSSDB {
         let mut vars: HashMap<String, Rc<Property>> = HashMap::new();
         self.inherited_vars_for_aux(path, &mut vars);
         if !tree.is_root() {
-            self.get_root().inspect(|tree| vars.extend(tree.vars()));
+            self.get_root()
+                .inspect(|tree| vars.extend(tree.valid_vars()));
         }
         for super_path in self.super_pathes_of(path) {
-            vars.extend(self.get(&super_path).unwrap().vars());
+            vars.extend(self.get(&super_path).unwrap().valid_vars());
         }
-        for name in tree.vars().keys() {
+        for name in tree.valid_vars().keys() {
             vars.remove(name);
         }
         vars

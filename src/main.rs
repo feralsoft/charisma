@@ -135,10 +135,6 @@ fn index(selector: String) -> (ContentType, String) {
     let rule_html = format!(
         "
     <div data-kind=rule>
-        <div class=options>
-            <label>inherited properties<input type=checkbox class=show-inherited-properties checked></label>
-            <label>inherited vars<input type=checkbox class=show-inherited-vars checked></label>
-        </div>
         <div data-attr=selector>{}</div>
         <div data-attr=properties>{}</div>
         <div data-attr=inherited-properties>{}</div>

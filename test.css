@@ -1,14 +1,13 @@
 :root {
   font-size: 20px;
   color: red;
-  --name: yo;
+  --spacing: 0.5em;
 }
 .--editor {
   display: flex;
-  padding: 0.5rem;
+  padding: var(--spacing);
   flex-direction: column;
-  color: blue;
   color: red;
   font-size: 25px;
-  --name: hey;
+  --spacing: 0.75em;
 }
