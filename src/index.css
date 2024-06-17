@@ -174,14 +174,23 @@
     }
 }
 
-[data-kind="rule"] > [data-attr="inherited-properties"]::before {
-    content: "inherited properties";
+[data-kind="rule"] > [data-attr="inherited-properties"] {
+    &:not(:has([data-kind])) {
+        display: none;
+    }
+    &:has([data-kind])::before {
+        content: "inherited properties";
+    }
 }
 
-[data-kind="rule"] > [data-attr="inherited-vars"]::before {
-    content: "inherited variables";
+[data-kind="rule"] > [data-attr="inherited-vars"] {
+    &:not(:has([data-kind])) {
+        display: none;
+    }
+    &:has([data-kind])::before {
+        content: "inherited variables";
+    }
 }
-
 [data-kind="rule"] [data-attr="properties"] .input {
     font-size: 1em;
     color: var(--foreground-color);
