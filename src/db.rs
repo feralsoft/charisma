@@ -231,13 +231,13 @@ impl CSSDB {
         super_paths
     }
 
-    fn inheritable_properties(&self) -> HashMap<String, Rc<Property>> {
+    fn inheritable_properties(&self) -> HashMap<String, (String, Rc<Property>)> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 .filter(|p| p.state == State::Valid)
                 .filter(|p| INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
-                .map(|p| (p.name(), p.clone()))
+                .map(|p| (p.name(), (rule.selector.to_string(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -247,7 +247,7 @@ impl CSSDB {
     fn inherited_properties_for_aux(
         &self,
         path: &[String],
-        inhertied_properties: &mut HashMap<String, Rc<Property>>,
+        inhertied_properties: &mut HashMap<String, (String, Rc<Property>)>,
     ) {
         let inherited_properties_from_self = self.inheritable_properties();
         match path {
@@ -276,9 +276,12 @@ impl CSSDB {
             .unwrap_or(false)
     }
 
-    pub fn inherited_properties_for(&self, path: &[String]) -> HashMap<String, Rc<Property>> {
+    pub fn inherited_properties_for(
+        &self,
+        path: &[String],
+    ) -> HashMap<String, (String, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut properties: HashMap<String, Rc<Property>> = HashMap::new();
+        let mut properties: HashMap<String, (String, Rc<Property>)> = HashMap::new();
         self.inherited_properties_for_aux(path, &mut properties);
         if !tree.is_root() {
             self.get_root()

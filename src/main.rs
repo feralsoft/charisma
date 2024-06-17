@@ -28,16 +28,21 @@ fn explore_siblings_js() -> String {
     fs::read_to_string("src/js/explore_siblings.js").unwrap()
 }
 
+fn highlight_property_js() -> String {
+    fs::read_to_string("src/js/highlight_property.js").unwrap()
+}
+
 fn module(js_src: String) -> String {
     format!("<script type=\"module\">{}</script>", js_src)
 }
 
 fn editor_js() -> String {
     format!(
-        "{}{}{}",
+        "{}{}{}{}",
         module(insert_property_js()),
         module(delete_property_js()),
-        module(explore_siblings_js())
+        module(explore_siblings_js()),
+        module(highlight_property_js())
     )
 }
 
@@ -148,7 +153,12 @@ fn index(selector: String) -> (ContentType, String) {
             .collect::<String>(),
         inherited_properties
             .iter()
-            .map(|(_, p)| p.render_html())
+            .map(|(_, (selector, p))| format!(
+                "<a href=\"{}?highlight_property_name={}\">{}</a>",
+                selector.trim(),
+                p.name(),
+                p.render_html()
+            ))
             .collect::<String>(),
         inherited_vars
             .iter()
