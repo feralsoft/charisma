@@ -1,6 +1,7 @@
 :root {
   font-size: 20px;
   color: red;
+  --name: yo;
 }
 .--editor {
   display: flex;
@@ -9,4 +10,5 @@
   color: blue;
   color: red;
   font-size: 25px;
+  --name: hey;
 }
