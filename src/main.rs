@@ -143,7 +143,6 @@ fn index(selector: String) -> (ContentType, String) {
         <div data-attr=selector>{}</div>
         <div data-attr=properties>{}</div>
         <div data-attr=inherited-properties>{}</div>
-        <div data-attr=inherited-vars>{}</div>
     </div>
     ",
         rule.selector.render_html(),
@@ -159,16 +158,16 @@ fn index(selector: String) -> (ContentType, String) {
                 p.name(),
                 p.render_html()
             ))
-            .collect::<String>(),
-        inherited_vars
-            .iter()
-            .map(|(_, (selector, p))| format!(
-                "<a href=\"{}?highlight_property_name={}\">{}</a>",
-                selector.trim(),
-                p.name(),
-                p.render_html()
-            ))
             .collect::<String>()
+            + &inherited_vars
+                .iter()
+                .map(|(_, (selector, p))| format!(
+                    "<a href=\"{}?highlight_property_name={}\">{}</a>",
+                    selector.trim(),
+                    p.name(),
+                    p.render_html()
+                ))
+                .collect::<String>()
     );
 
     (

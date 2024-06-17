@@ -86,11 +86,8 @@
     }
     /* TODO: end */
 }
-[data-attr="inherited-properties"],
-[data-attr="inherited-vars"] {
-    [data-kind="property"]:hover {
-        outline: var(--outline-color) solid 0.1em;
-    }
+[data-attr="inherited-properties"] > [data-kind="property"]:hover {
+    outline: var(--outline-color) solid 0.1em;
 }
 
 [data-kind="rem"],
@@ -160,11 +157,7 @@
 }
 
 [data-kind="rule"]
-    > :is(
-        [data-attr="properties"],
-        [data-attr="inherited-properties"],
-        [data-attr="inherited-vars"]
-    ) {
+    > :is([data-attr="properties"], [data-attr="inherited-properties"]) {
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
@@ -172,8 +165,7 @@
     padding-bottom: var(--spacing);
 }
 
-[data-kind="rule"]
-    > :is([data-attr="inherited-properties"], [data-attr="inherited-vars"]) {
+[data-kind="rule"] > [data-attr="inherited-properties"] {
     opacity: 0.8;
 
     &::before {
@@ -187,17 +179,7 @@
     }
 
     &:has([data-kind])::before {
-        content: "inherited properties";
-    }
-}
-
-[data-kind="rule"] > [data-attr="inherited-vars"] {
-    &:not(:has([data-kind])) {
-        display: none;
-    }
-
-    &:has([data-kind])::before {
-        content: "inherited variables";
+        content: "inherited";
     }
 }
 
