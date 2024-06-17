@@ -259,7 +259,7 @@
 [data-kind="function"] {
     display: flex;
 
-    [data-attr="name"] {
+    [data-attr="name"] [data-value] {
         color: var(--function-color);
     }
 
