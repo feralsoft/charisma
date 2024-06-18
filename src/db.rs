@@ -133,7 +133,7 @@ impl Property {
         property
             .value()
             .into_iter()
-            .map(|item| item.to_string() + " ")
+            .map(|item| item.to_string())
             .collect::<String>()
             .trim()
             .to_string()
@@ -255,11 +255,11 @@ impl CSSDB {
                 properties,
                 selector,
             }) => format!(
-                "{} {{\n  {}\n}}\n",
+                "{} {{\n    {}\n}}\n",
                 selector.string,
                 properties
                     .iter()
-                    .map(|p| p.to_string() + "\n  ")
+                    .map(|p| p.to_string() + "\n    ")
                     .collect::<String>()
                     .trim()
             ),
