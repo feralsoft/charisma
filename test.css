@@ -1,6 +1,6 @@
-[data-kind="pseudo-class-id"] > [data-value] {
-    color: var(--class-color);
-}
-[data-kind="pseudo-class-id"] > [data-value]::before {
-    content: ":";
+[data-attr="properties"] {
+    [data-value]:hover,
+    [data-value]:focus {
+        outline: var(--outline-color) solid 0.1em;
+    }
 }

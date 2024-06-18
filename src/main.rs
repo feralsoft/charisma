@@ -39,7 +39,7 @@ fn insert(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
-    db.insert(&parse_selector(selector).to_selector(None), property);
+    db.insert(&parse_selector(selector).to_selector(None), &property);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -47,8 +47,13 @@ fn insert(selector: &str, property: &str) {
 fn disable(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).to_selector(None);
-    db.set_state(&selector.path, &name, State::Commented);
+
+    db.set_state(
+        &parse_selector(selector).to_selector(None).path,
+        &name,
+        State::Commented,
+    );
+
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -66,10 +71,12 @@ fn enable(selector: &str, name: String) {
 fn set_value(selector: &str, name: String, value: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).to_selector(None);
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
+    let selector = parse_selector(selector).to_selector(None);
+
     db.delete(&selector.path, &name);
-    db.insert(&selector, property);
+    db.insert(&selector, &property);
+
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -129,6 +136,7 @@ fn index(selector: String) -> (ContentType, String) {
     db.load("test.css");
     let selector = parse_selector(&selector);
     let path = selector.to_css_db_path();
+    println!("{}", db.serialize());
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);

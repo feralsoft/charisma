@@ -69,16 +69,21 @@ impl ToSelector for AnyCssRelativeSelector {
         let sel = sel.selector().unwrap();
         let sel = sel.as_css_compound_selector().unwrap();
         assert!(sel.simple_selector().is_none());
-        assert!(sel.sub_selectors().into_iter().count() == 1);
-        let sel = sel.sub_selectors().into_iter().next().unwrap();
+        let sep = match sel.nesting_selector_token() {
+            Some(_) => todo!(),
+            None => " ".to_string(),
+        };
+
         Selector {
             string: parent
                 .as_ref()
                 .map(|p| p.string.clone())
                 .unwrap_or("".to_string())
+                + &sep
                 + sel.to_string().trim(),
             path: [
                 parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                vec![sep],
                 sel.to_css_db_path(),
             ]
             .concat(),
@@ -195,12 +200,7 @@ impl CSSDB {
         }
     }
 
-    fn load_rule(
-        &mut self,
-        selector: Selector,
-        block: &CssDeclarationOrRuleBlock,
-        parent_path: &Vec<String>,
-    ) {
+    fn load_rule(&mut self, selector: Selector, block: &CssDeclarationOrRuleBlock) {
         let mut comments: Vec<String> = vec![];
         comments.extend(get_comments(
             block.l_curly_token().unwrap().token_text().text(),
@@ -209,24 +209,23 @@ impl CSSDB {
             block.r_curly_token().unwrap().token_text().text(),
         ));
 
-        let path = [parent_path.clone(), selector.clone().path].concat();
-
         for property in block.items() {
             match property {
                 biome_css_syntax::AnyCssDeclarationOrRule::AnyCssRule(rule) => {
                     let rule = rule.as_css_nested_qualified_rule().unwrap();
-                    let child = rule.prelude().into_iter().next().unwrap().unwrap();
                     let block = rule.block().unwrap();
                     let block = block.as_css_declaration_or_rule_block().unwrap();
-
-                    self.load_rule(child.to_selector(Some(&selector)), block, &path);
+                    for child in rule.prelude() {
+                        let child = child.unwrap();
+                        self.load_rule(child.to_selector(Some(&selector)), block);
+                    }
                 }
                 biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => todo!(),
                 biome_css_syntax::AnyCssDeclarationOrRule::CssDeclarationWithSemicolon(
                     property,
                 ) => {
                     comments.extend(get_comments(&property.to_string()));
-                    self.insert(&selector, property);
+                    self.insert(&selector, &property);
                 }
             }
         }
@@ -246,7 +245,7 @@ impl CSSDB {
             let selector = selector.into_iter().next().unwrap().unwrap();
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
-            self.load_rule(selector.to_selector(None), block, &vec![]);
+            self.load_rule(selector.to_selector(None), block);
         }
     }
 
@@ -517,12 +516,12 @@ impl CSSDB {
         )
     }
 
-    pub fn insert(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
+    pub fn insert(&mut self, selector: &Selector, property: &CssDeclarationWithSemicolon) {
         self.insert_raw(
             selector.clone(),
             &selector.path,
             Property {
-                node: property,
+                node: property.clone(),
                 state: State::Valid,
             },
         )

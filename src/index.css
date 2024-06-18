@@ -33,9 +33,12 @@
     padding: 1em;
 }
 
-[data-kind="color"][data-hash="#"] [data-value]::before {
-    content: "#";
-    color: var(--function-color);
+[data-kind="color"][data-hash="#"] [data-value] {
+    color: var(--foreground-color);
+    &::before {
+        content: "#";
+        color: var(--function-color);
+    }
 }
 
 [data-kind="multi-part-value"] {
