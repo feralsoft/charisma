@@ -181,6 +181,7 @@ fn index(selector: String) -> (ContentType, String) {
         format!(
             "<style>{}</style>
             {}
+            <input type=\"search\">
             <div class=\"--editor\" spellcheck=\"false\">{}<div>",
             css(),
             editor_js(),
