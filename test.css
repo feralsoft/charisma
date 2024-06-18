@@ -1,7 +1,6 @@
 [data-kind="pseudo-class-id"] > [data-value] {
     color: var(--class-color);
-
-    &::before {
-        content: ":";
-    }
+}
+[data-kind="pseudo-class-id"] > [data-value]::before {
+    content: ":";
 }

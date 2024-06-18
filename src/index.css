@@ -265,14 +265,17 @@
 
     [data-attr="args"] {
         &::before {
+            color: var(--foreground-color);
             content: "(";
         }
 
         > [data-kind]:not(:last-child)::after {
+            color: var(--foreground-color);
             content: ",";
         }
 
         &::after {
+            color: var(--foreground-color);
             content: ")";
         }
     }

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use std::fs;
+use std::{fs, rc::Rc};
 
 use db::*;
 use html::{Render, RenderOptions};
@@ -134,6 +134,18 @@ fn index(selector: String) -> (ContentType, String) {
     let inherited_properties = db.inherited_properties_for(&path);
     let inherited_vars = db.inherited_vars_for(&path);
 
+    fn link_for(selector_str: &String, property: &Rc<Property>) -> String {
+        assert!(!selector_str.contains('\''));
+        let selector = selector_str.trim();
+        format!(
+            "<a href=\"{}?highlight_property_name={}\" title='{}'>{}</a>",
+            url::form_urlencoded::byte_serialize(selector.as_bytes()).collect::<String>(),
+            property.name(),
+            selector,
+            property.render_html(&RenderOptions::default())
+        )
+    }
+
     let rule_html = format!(
         "
     <div data-kind=rule>
@@ -149,23 +161,11 @@ fn index(selector: String) -> (ContentType, String) {
             .collect::<String>(),
         inherited_properties
             .iter()
-            .map(|(_, (selector, p))| format!(
-                "<a href=\"{}?highlight_property_name={}\">{}</a>",
-                url::form_urlencoded::byte_serialize(selector.trim().as_bytes())
-                    .collect::<String>(),
-                p.name(),
-                p.render_html(&RenderOptions::default())
-            ))
+            .map(|(_, (selector, p))| link_for(selector, p))
             .collect::<String>()
             + &inherited_vars
                 .iter()
-                .map(|(_, (selector, p))| format!(
-                    "<a href=\"{}?highlight_property_name={}\">{}</a>",
-                    url::form_urlencoded::byte_serialize(selector.trim().as_bytes())
-                        .collect::<String>(),
-                    p.name(),
-                    p.render_html(&RenderOptions::default())
-                ))
+                .map(|(_, (selector, p))| link_for(selector, p))
                 .collect::<String>()
     );
 
