@@ -148,10 +148,10 @@ fn index(selector: String) -> (ContentType, String) {
 
     let rule_html = format!(
         "
-    <div data-kind=rule>
-        <div data-attr=selector>{}</div>
-        <div data-attr=properties>{}</div>
-        <div data-attr=inherited-properties>{}</div>
+    <div data-kind=\"rule\">
+        <div data-attr=\"selector\">{}</div>
+        <div data-attr=\"properties\">{}</div>
+        <div data-attr=\"inherited-properties\">{}</div>
     </div>
     ",
         parse_selector(&rule.selector.string).render_html(&RenderOptions::default()),
