@@ -381,7 +381,12 @@ impl Render for Property {
             value.render_html(options)
         } else {
             format!(
-                "<div data-kind=\"multi-part-value\">{}</div>",
+                "<div data-kind=\"multi-part-value\" data-string-value=\"{}\">{}</div>",
+                property
+                    .value()
+                    .into_iter()
+                    .map(|value| value.to_string())
+                    .collect::<String>(),
                 property
                     .value()
                     .into_iter()

@@ -301,6 +301,10 @@
         content: "[";
     }
 
+    > [data-attr="operator"] {
+        color: var(--foreground-color);
+    }
+
     &::after {
         content: "]";
     }
