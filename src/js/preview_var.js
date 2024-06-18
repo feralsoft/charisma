@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
     let property = document.querySelector(
       `[data-kind="property"][data-property-kind="variable"][data-commented="false"]:has([data-attr="name"] [data-value="${name}"])`,
     );
+    if (!property) {
+      console.warn(`can't dereference ${name}`);
+      return;
+    }
     let value = property.querySelector('[data-attr="value"] [data-kind]');
     let cloned_value = value.cloneNode(true);
     cloned_value.classList.add("preview");
