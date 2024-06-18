@@ -16,12 +16,13 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 5] = [
+const JS_FILE_NAMES: [&str; 6] = [
     "insert_property",
     "toggle_property",
     "explore_siblings",
     "highlight_property",
     "update_value",
+    "preview_var",
 ];
 
 fn editor_js() -> String {

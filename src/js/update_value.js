@@ -1,6 +1,3 @@
-const VALUE_SELECTOR =
-  '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]';
-
 function plain_text_node(name, text) {
   let node = document.createElement("div");
   node.classList.add("plain-text-node");
@@ -24,6 +21,9 @@ function plain_text_node(name, text) {
   });
   return node;
 }
+
+const VALUE_SELECTOR =
+  '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]';
 
 document.addEventListener("DOMContentLoaded", (_) => {
   for (let value of document.querySelectorAll(VALUE_SELECTOR)) {
