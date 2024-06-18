@@ -7,6 +7,7 @@ use db::*;
 use html::{Render, RenderOptions};
 use parse_utils::{parse_property, parse_selector};
 use rocket::{http::ContentType, response::Redirect, serde::json::Json};
+use url;
 
 mod db;
 mod html;
@@ -38,9 +39,7 @@ fn insert(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
-    let path = selector.to_css_db_path();
-    db.insert(selector, &path, property);
+    db.insert(&parse_selector(selector).to_selector(None), property);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -48,9 +47,8 @@ fn insert(selector: &str, property: &str) {
 fn disable(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
-    let path = selector.to_css_db_path();
-    db.set_state(&path, &name, State::Commented);
+    let selector = parse_selector(selector).to_selector(None);
+    db.set_state(&selector.path, &name, State::Commented);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -68,12 +66,10 @@ fn enable(selector: &str, name: String) {
 fn set_value(selector: &str, name: String, value: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
-    let path = selector.to_css_db_path();
+    let selector = parse_selector(selector).to_selector(None);
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
-    println!("{:?}", value);
-    db.delete(&path, &name);
-    db.insert(selector, &path, property);
+    db.delete(&selector.path, &name);
+    db.insert(&selector, property);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -101,7 +97,7 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
         .map(|tree| tree.rule.as_ref().unwrap())
         .map(|rule| {
             rule.selector
-                .to_css_db_path()
+                .path
                 .iter()
                 .map(|part| {
                     let selector_html = if part == " " {
@@ -137,6 +133,7 @@ fn index(selector: String) -> (ContentType, String) {
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);
     let inherited_vars = db.inherited_vars_for(&path);
+
     let rule_html = format!(
         "
     <div data-kind=rule>
@@ -145,7 +142,7 @@ fn index(selector: String) -> (ContentType, String) {
         <div data-attr=inherited-properties>{}</div>
     </div>
     ",
-        rule.selector.render_html(&RenderOptions::default()),
+        parse_selector(&rule.selector.string).render_html(&RenderOptions::default()),
         rule.properties
             .iter()
             .map(|p| p.render_html(&RenderOptions::default()))
@@ -154,7 +151,8 @@ fn index(selector: String) -> (ContentType, String) {
             .iter()
             .map(|(_, (selector, p))| format!(
                 "<a href=\"{}?highlight_property_name={}\">{}</a>",
-                selector.trim(),
+                url::form_urlencoded::byte_serialize(selector.trim().as_bytes())
+                    .collect::<String>(),
                 p.name(),
                 p.render_html(&RenderOptions::default())
             ))
@@ -163,7 +161,8 @@ fn index(selector: String) -> (ContentType, String) {
                 .iter()
                 .map(|(_, (selector, p))| format!(
                     "<a href=\"{}?highlight_property_name={}\">{}</a>",
-                    selector.trim(),
+                    url::form_urlencoded::byte_serialize(selector.trim().as_bytes())
+                        .collect::<String>(),
                     p.name(),
                     p.render_html(&RenderOptions::default())
                 ))

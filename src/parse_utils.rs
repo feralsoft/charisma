@@ -54,7 +54,7 @@ pub fn get_combinator_type(token_kind: CssSyntaxKind) -> String {
         CssSyntaxKind::L_BRACK => todo!(),
         CssSyntaxKind::R_BRACK => todo!(),
         CssSyntaxKind::L_ANGLE => todo!(),
-        CssSyntaxKind::R_ANGLE => todo!(),
+        CssSyntaxKind::R_ANGLE => "direct-descendant".to_string(),
         CssSyntaxKind::TILDE => todo!(),
         CssSyntaxKind::HASH => todo!(),
         CssSyntaxKind::AMP => todo!(),

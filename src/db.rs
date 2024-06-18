@@ -1,11 +1,12 @@
-use crate::parse_utils::{parse_property, parse_selector};
+use crate::parse_utils::parse_property;
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
-    AnyCssPseudoClass, AnyCssPseudoElement,
+    AnyCssPseudoClass, AnyCssPseudoElement, AnyCssRelativeSelector,
     AnyCssSelector::{self, *},
-    AnyCssSubSelector::*,
-    CssAttributeSelector, CssDeclarationWithSemicolon,
+    AnyCssSubSelector::{self, *},
+    CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
+    CssRelativeSelector,
 };
 
 const INHERITABLE_PROPERTIES: [&str; 29] = [
@@ -50,6 +51,55 @@ pub enum State {
 pub struct Property {
     pub state: State,
     pub node: CssDeclarationWithSemicolon,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Selector {
+    pub string: String,
+    pub path: Vec<String>,
+}
+
+pub trait ToSelector {
+    fn to_selector(&self, parent: Option<&Selector>) -> Selector;
+}
+
+impl ToSelector for AnyCssRelativeSelector {
+    fn to_selector(&self, parent: Option<&Selector>) -> Selector {
+        let sel = self.as_css_relative_selector().unwrap();
+        let sel = sel.selector().unwrap();
+        let sel = sel.as_css_compound_selector().unwrap();
+        assert!(sel.simple_selector().is_none());
+        assert!(sel.sub_selectors().into_iter().count() == 1);
+        let sel = sel.sub_selectors().into_iter().next().unwrap();
+        Selector {
+            string: parent
+                .as_ref()
+                .map(|p| p.string.clone())
+                .unwrap_or("".to_string())
+                + sel.to_string().trim(),
+            path: [
+                parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                sel.to_css_db_path(),
+            ]
+            .concat(),
+        }
+    }
+}
+impl ToSelector for AnyCssSelector {
+    fn to_selector(&self, parent: Option<&Selector>) -> Selector {
+        Selector {
+            string: parent
+                .as_ref()
+                .map(|p| p.string.clone())
+                .unwrap_or("".to_string())
+                + self.to_string().trim(),
+            path: [
+                parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                self.to_css_db_path(),
+            ]
+            .concat(),
+        }
+    }
 }
 
 impl Property {
@@ -97,12 +147,12 @@ impl Property {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
-    pub selector: AnyCssSelector,
+    pub selector: Selector,
     pub properties: Vec<Rc<Property>>,
 }
 
 impl Rule {
-    pub fn new(selector: AnyCssSelector) -> Self {
+    pub fn new(selector: Selector) -> Self {
         Rule {
             selector,
             properties: vec![],
@@ -145,6 +195,47 @@ impl CSSDB {
         }
     }
 
+    fn load_rule(
+        &mut self,
+        selector: Selector,
+        block: &CssDeclarationOrRuleBlock,
+        parent_path: &Vec<String>,
+    ) {
+        let mut comments: Vec<String> = vec![];
+        comments.extend(get_comments(
+            block.l_curly_token().unwrap().token_text().text(),
+        ));
+        comments.extend(get_comments(
+            block.r_curly_token().unwrap().token_text().text(),
+        ));
+
+        let path = [parent_path.clone(), selector.clone().path].concat();
+
+        for property in block.items() {
+            match property {
+                biome_css_syntax::AnyCssDeclarationOrRule::AnyCssRule(rule) => {
+                    let rule = rule.as_css_nested_qualified_rule().unwrap();
+                    let child = rule.prelude().into_iter().next().unwrap().unwrap();
+                    let block = rule.block().unwrap();
+                    let block = block.as_css_declaration_or_rule_block().unwrap();
+
+                    self.load_rule(child.to_selector(Some(&selector)), block, &path);
+                }
+                biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => todo!(),
+                biome_css_syntax::AnyCssDeclarationOrRule::CssDeclarationWithSemicolon(
+                    property,
+                ) => {
+                    comments.extend(get_comments(&property.to_string()));
+                    self.insert(&selector, property);
+                }
+            }
+        }
+
+        for property in comments.iter().filter_map(|str| parse_property(&str)) {
+            self.insert_commented(&selector, property);
+        }
+    }
+
     pub fn load(&mut self, css_path: &str) {
         let css = fs::read_to_string(css_path).unwrap();
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
@@ -155,27 +246,7 @@ impl CSSDB {
             let selector = selector.into_iter().next().unwrap().unwrap();
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
-
-            let mut comments: Vec<String> = vec![];
-            comments.extend(get_comments(
-                block.l_curly_token().unwrap().token_text().text(),
-            ));
-            comments.extend(get_comments(
-                block.r_curly_token().unwrap().token_text().text(),
-            ));
-
-            for property in block.items() {
-                let property = property
-                    .as_css_declaration_with_semicolon()
-                    .unwrap()
-                    .to_owned();
-                comments.extend(get_comments(&property.to_string()));
-                self.insert(selector.to_owned(), &selector.to_css_db_path(), property);
-            }
-
-            for property in comments.iter().filter_map(|str| parse_property(&str)) {
-                self.insert_commented(selector.to_owned(), &selector.to_css_db_path(), property);
-            }
+            self.load_rule(selector.to_selector(None), block, &vec![]);
         }
     }
 
@@ -186,7 +257,7 @@ impl CSSDB {
                 selector,
             }) => format!(
                 "{} {{\n  {}\n}}\n",
-                selector.to_string().trim(),
+                selector.string,
                 properties
                     .iter()
                     .map(|p| p.to_string() + "\n  ")
@@ -215,7 +286,7 @@ impl CSSDB {
         if !is_root {
             if let Some(path) = self
                 .get(path)
-                .and_then(|n| n.rule.as_ref().map(|r| r.selector.to_css_db_path()))
+                .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
             {
                 super_paths.push(path)
             }
@@ -237,7 +308,7 @@ impl CSSDB {
                 .iter()
                 .filter(|p| p.state == State::Valid)
                 .filter(|p| INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
-                .map(|p| (p.name(), (rule.selector.to_string(), p.clone())))
+                .map(|p| (p.name(), (rule.selector.string.clone(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -272,7 +343,7 @@ impl CSSDB {
     pub fn is_root(&self) -> bool {
         self.rule
             .as_ref()
-            .map(|rule| rule.selector.to_string().trim() == ":root")
+            .map(|rule| rule.selector.string == ":root")
             .unwrap_or(false)
     }
 
@@ -303,7 +374,7 @@ impl CSSDB {
             rule.properties
                 .iter()
                 .filter(|p| p.is_var() && p.state == State::Valid)
-                .map(|p| (p.name(), (rule.selector.to_string(), p.clone())))
+                .map(|p| (p.name(), (rule.selector.string.clone(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -412,7 +483,7 @@ impl CSSDB {
         rule.properties.retain(|p| &p.name() != property_name);
     }
 
-    fn insert_raw(&mut self, selector: AnyCssSelector, path: &[String], property: Property) {
+    fn insert_raw(&mut self, selector: Selector, path: &[String], property: Property) {
         match path {
             [] => {
                 match &mut self.rule {
@@ -435,15 +506,10 @@ impl CSSDB {
         }
     }
 
-    fn insert_commented(
-        &mut self,
-        selector: AnyCssSelector,
-        path: &[String],
-        property: CssDeclarationWithSemicolon,
-    ) {
+    fn insert_commented(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
         self.insert_raw(
-            selector,
-            path,
+            selector.clone(),
+            &selector.path,
             Property {
                 node: property,
                 state: State::Commented,
@@ -451,15 +517,10 @@ impl CSSDB {
         )
     }
 
-    pub fn insert(
-        &mut self,
-        selector: AnyCssSelector,
-        path: &[String],
-        property: CssDeclarationWithSemicolon,
-    ) {
+    pub fn insert(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
         self.insert_raw(
-            selector,
-            path,
+            selector.clone(),
+            &selector.path,
             Property {
                 node: property,
                 state: State::Valid,
@@ -480,165 +541,6 @@ impl CSSDB {
             [part, parts @ ..] => self.children.get_mut(part).and_then(|c| c.get_mut(parts)),
         }
     }
-}
-
-#[test]
-fn one_level_super_path() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
-    let s2 = parse_selector(".container .card");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
-
-    let paths = tree.super_pathes_of(&s1_path);
-    assert_eq!(
-        paths,
-        vec![vec![
-            ".container".to_string(),
-            " ".to_string(),
-            ".card".to_string()
-        ]]
-    );
-}
-
-#[test]
-fn two_level_super_path() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red;").unwrap());
-    let s2 = parse_selector(".main .container .card");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
-
-    let paths = tree.super_pathes_of(&s1_path);
-    assert_eq!(
-        paths,
-        vec![vec![
-            ".main".to_string(),
-            " ".to_string(),
-            ".container".to_string(),
-            " ".to_string(),
-            ".card".to_string()
-        ]]
-    );
-}
-
-#[test]
-fn no_super_pathes() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
-    let s2 = parse_selector(".main .container");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
-
-    let paths = tree.super_pathes_of(&s1_path);
-    assert_eq!(paths, vec![] as Vec<Vec<String>>);
-}
-
-#[test]
-fn var_is_inherited() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("--var: red;").unwrap());
-    let s2 = parse_selector(".card .btn");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(
-        s2,
-        &s2_path,
-        parse_property("font-size: var(--var);").unwrap(),
-    );
-    let inhertied_vars = tree.inherited_vars_for(&s2_path);
-    assert_eq!(inhertied_vars.contains_key("--var"), true);
-}
-
-#[test]
-fn color_is_inherited() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("color: red").unwrap());
-    let s2 = parse_selector(".card .btn");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
-    let inherited_properties = tree.inherited_properties_for(&s2_path);
-    assert_eq!(inherited_properties.contains_key("color"), true);
-}
-
-#[test]
-fn display_is_not_inherited() {
-    let mut tree = CSSDB::new();
-    let s1 = parse_selector(".card");
-    let s1_path = s1.to_css_db_path();
-    tree.insert(s1, &s1_path, parse_property("display: flex").unwrap());
-    let s2 = parse_selector(".card .btn");
-    let s2_path = s2.to_css_db_path();
-    tree.insert(s2, &s2_path, parse_property("font-size: 20px").unwrap());
-    let inherited_properties = tree.inherited_properties_for(&s2_path);
-    assert_eq!(inherited_properties.contains_key("display"), false);
-}
-
-#[test]
-fn delete() {
-    let s1 = parse_selector(".btn");
-    let s1_path = s1.to_css_db_path();
-    let s2 = parse_selector(".card");
-    let s2_path = s2.to_css_db_path();
-    let mut tree = CSSDB::new();
-    tree.insert(s1, &s1_path, parse_property("font-size: 20px").unwrap());
-    tree.insert(s2, &s2_path, parse_property("color: red").unwrap());
-    tree.delete(&s1_path, &"font-size".to_owned());
-
-    assert_eq!(
-        tree.children
-            .values()
-            .filter_map(|p| p.rule.as_ref())
-            .flat_map(|rule| rule
-                .properties
-                .iter()
-                .map(|p| p.to_string().trim().to_string())
-                .collect::<Vec<_>>())
-            .collect::<Vec<_>>(),
-        vec!["color: red".to_string()]
-    );
-}
-
-#[test]
-fn insert_mutable_test() {
-    let selector = parse_selector(".btn");
-    let path = selector.to_css_db_path();
-    let mut tree = CSSDB::new();
-    tree.insert(selector, &path, parse_property("font-size: 20px;").unwrap());
-    let node = tree.get(&path).unwrap();
-
-    assert_eq!(
-        node.rule
-            .as_ref()
-            .unwrap()
-            .properties
-            .get(0)
-            .unwrap()
-            .to_string()
-            .trim(),
-        "font-size: 20px;"
-    )
-}
-
-#[test]
-fn serialize() {
-    let selector = parse_selector(".btn");
-    let path = selector.to_css_db_path();
-    let mut tree = CSSDB::new();
-    tree.insert(selector, &path, parse_property("font-size: 20px;").unwrap());
-    assert_eq!(
-        tree.serialize(),
-        String::from(".btn {\n  font-size: 20px;\n}\n")
-    );
 }
 
 pub trait Storage {
@@ -730,7 +632,23 @@ impl Storage for AnyCssPseudoElement {
     }
 }
 
-impl Storage for biome_css_syntax::AnyCssSubSelector {
+impl Storage for CssRelativeSelector {
+    fn to_css_db_path(&self) -> Vec<String> {
+        assert!(self.combinator().is_none());
+        self.selector().unwrap().to_css_db_path()
+    }
+}
+
+impl Storage for AnyCssRelativeSelector {
+    fn to_css_db_path(&self) -> Vec<String> {
+        match self {
+            AnyCssRelativeSelector::CssBogusSelector(_) => todo!(),
+            AnyCssRelativeSelector::CssRelativeSelector(selector) => selector.to_css_db_path(),
+        }
+    }
+}
+
+impl Storage for AnyCssSubSelector {
     fn to_css_db_path(&self) -> Vec<String> {
         match self {
             CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_path(),

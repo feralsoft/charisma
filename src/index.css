@@ -311,6 +311,10 @@
 [data-kind="complex-selector"] {
     display: flex;
     gap: 0.25em;
+    &[data-combinator-type="direct-descendant"] > [data-attr="left"]::after {
+        content: ">";
+        margin-left: var(--spacing);
+    }
 }
 
 [data-kind="rule"]::after,
