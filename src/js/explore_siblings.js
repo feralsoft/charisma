@@ -63,6 +63,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
         siblings_dropdown(
           siblings.map((path) => {
             let [_, elem] = path.at(idx - 1);
+            // this is broken for attribute selectors since
+            // [data-value="hey"] when parsed to parts becomes ['[data-value]', '[data-value="hey"]']
+            // so either on the backend we simplify selectors (i think this is the right call)
+            // or on the frontend we de-dup this pattern (i don't think this is a good idea)
             return option(path.map(([part, _]) => part).join(""), elem);
           }),
         ),

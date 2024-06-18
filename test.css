@@ -1,6 +1,6 @@
-[data-attr="properties"] {
-    [data-value]:hover,
-    [data-value]:focus {
-        outline: var(--outline-color) solid 0.1em;
-    }
+[data-attr="properties"] [data-value]:focus {
+  outline: var(--outline-color)     solid     0.1em;
+}
+[data-attr="properties"] [data-value]:hover {
+  outline: var(--outline-color)     solid     0.1em;
 }

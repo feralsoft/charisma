@@ -136,7 +136,6 @@ fn index(selector: String) -> (ContentType, String) {
     db.load("test.css");
     let selector = parse_selector(&selector);
     let path = selector.to_css_db_path();
-    println!("{}", db.serialize());
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let inherited_properties = db.inherited_properties_for(&path);

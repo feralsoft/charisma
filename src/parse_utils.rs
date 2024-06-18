@@ -13,13 +13,11 @@ pub fn parse_selector(str: &str) -> AnyCssSelector {
     .next()
     .unwrap();
 
-    rule.as_css_qualified_rule()
-        .unwrap()
-        .prelude()
-        .into_iter()
-        .next()
-        .unwrap()
-        .unwrap()
+    let prelude = rule.as_css_qualified_rule().unwrap().prelude();
+
+    assert!((&prelude).into_iter().count() == 1);
+
+    prelude.into_iter().next().unwrap().unwrap()
 }
 
 fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
