@@ -80,7 +80,7 @@ body.draggable-editor-prototype {
         transform: translateX(var(--dx)) translateY(var(--dy));
     }
 
-    .dragging [data-kind="rule"] {
+    .dragging {
         outline: rgba(255, 255, 0, 0.2) solid 0.1em;
     }
 
@@ -565,6 +565,9 @@ a {
 
     .minimize.active {
         background: rgba(0, 255, 0, 0.1);
+        &:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
     }
 }
 
