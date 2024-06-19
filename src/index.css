@@ -18,14 +18,7 @@
     font-size: 18px;
     font-family: Berkeley Mono;
 }
-body {
-    background-size: 25px 25px;
-    background-image: radial-gradient(
-        circle,
-        rgba(200, 200, 200, 0.5) 1px,
-        rgba(0, 0, 0, 0) 1px
-    );
-}
+
 .plain-text-node {
     width: max-content;
 }
@@ -45,6 +38,7 @@ body {
         color: white;
         height: 1.5em;
         min-width: 15em;
+        z-index: 10;
     }
 }
 
@@ -56,7 +50,29 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
-    width: 50vw;
+}
+
+body.draggable-editor-prototype {
+    background-position-x: var(--dx, 0px);
+    background-position-y: var(--dy, 0px);
+
+    background-size: 25px 25px;
+    background-image: radial-gradient(
+        circle,
+        rgba(200, 200, 200, 0.5) 1px,
+        rgba(0, 0, 0, 0) 1px
+    );
+    .--editor {
+        position: absolute;
+        top: 10em;
+        left: 10em;
+        margin-left: var(--dx);
+        margin-top: var(--dy);
+    }
+
+    .dragging [data-kind="rule"] {
+        outline: rgba(255, 255, 0, 0.2) solid 0.1em;
+    }
 }
 
 [data-kind="property"] {
@@ -173,6 +189,7 @@ body {
 
 [data-kind="rule"] > [data-attr="inherited-properties"] {
     opacity: 0.8;
+
     &:not(:has([data-kind])) {
         display: none;
     }
@@ -210,6 +227,7 @@ body {
     padding-bottom: 0.1em;
     height: 0.5em;
     width: min-content;
+
     &:is(:focus, :focus-within) {
         animation: expand 50ms linear forwards;
 
@@ -383,9 +401,6 @@ button {
     padding: var(--spacing);
     background-color: rgba(40, 40, 40, 0.8);
 }
-.dragging [data-kind="rule"] {
-    outline: rgba(255, 255, 0, 0.2) solid 0.1em;
-}
 
 [data-kind="keyframe"] {
     width: 100%;
@@ -453,6 +468,7 @@ button {
     background-color: rgb(60, 60, 60);
     display: none;
 }
+
 a {
     width: min-content;
 }
