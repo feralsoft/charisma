@@ -1,10 +1,25 @@
-function menu(editor) {
-  let menu_elem = document.createElement("div");
-  menu_elem.classList.add("menu");
+function close(editor) {
   let close_btn = document.createElement("button");
   close_btn.classList.add("close");
   close_btn.addEventListener("mousedown", (_) => editor.remove());
-  menu_elem.append(close_btn);
+  return close_btn;
+}
+
+function minimize() {
+  let close_btn = document.createElement("button");
+  close_btn.classList.add("minimize");
+  close_btn.addEventListener("mousedown", (_) =>
+    close_btn.classList.toggle("active"),
+  );
+  return close_btn;
+}
+
+function menu(editor) {
+  let menu_elem = document.createElement("div");
+  menu_elem.classList.add("menu");
+
+  menu_elem.append(close(editor));
+  menu_elem.append(minimize());
   return menu_elem;
 }
 

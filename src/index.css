@@ -51,11 +51,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
+
+    outline: 0.1em solid black;
+    background-color: rgba(40, 40, 40, 0.8);
 }
 
 body.draggable-editor-prototype {
     overscroll-behavior: none;
     overflow: hidden;
+
     .canvas {
         width: 100%;
         height: 100%;
@@ -68,6 +72,7 @@ body.draggable-editor-prototype {
             rgba(0, 0, 0, 0) 1px
         );
     }
+
     .--editor {
         position: absolute;
         top: 10em;
@@ -78,6 +83,7 @@ body.draggable-editor-prototype {
     .dragging [data-kind="rule"] {
         outline: rgba(255, 255, 0, 0.2) solid 0.1em;
     }
+
     &.panning {
         cursor: grabbing;
     }
@@ -407,7 +413,6 @@ button {
 
 [data-kind="rule"] {
     padding: var(--spacing);
-    background-color: rgba(40, 40, 40, 0.8);
 }
 
 [data-kind="keyframe"] {
@@ -522,23 +527,53 @@ a {
 }
 
 .--editor .menu {
+    /* basic positioning */
     position: absolute;
-    right: -0.5em;
+    display: flex;
     top: -1em;
-    .close {
+
+    /* basic menu item styling */
+    button {
         font-size: 0.75em;
         background-color: rgb(0, 0, 0, 0.25);
         cursor: pointer;
+        border: none;
+
         &:hover {
             background-color: rgb(0, 0, 0, 0.1);
         }
+
         &:active {
             background-color: rgb(0, 0, 0, 0.5);
         }
-        border: none;
+
         &::before {
-            content: "x";
             color: white;
         }
     }
+
+    /* unicode icons */
+    .close::before {
+        content: "⤫";
+    }
+    .minimize::before {
+        content: "-";
+    }
+    .minimize.active::before {
+        content: "+";
+    }
+
+    .minimize.active {
+        background: rgba(0, 255, 0, 0.1);
+    }
+}
+
+.--editor:has(> .menu .minimize.active) {
+    outline: none;
+    [data-kind="rule"] {
+        display: none;
+    }
+}
+.--editor:is(:focus, :focus-within) {
+    z-index: 5;
 }

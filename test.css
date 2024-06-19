@@ -1,9 +1,9 @@
 [data-attr="properties"] [data-value]:hover {
-    outline: var(--outline-color) solid 0.1em;
-    font-size: 30px;
     display: flex;
     color: red;
-    /* --outline-color: white; */
+    outline: var(--outline-color) solid 0.1em;
+    font-size: 30px;
+    --outline-color: white;
 }
 [data-attr="properties"] [data-value]:focus {
     outline: var(--outline-color) solid 0.1em;

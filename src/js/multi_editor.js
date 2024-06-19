@@ -1,6 +1,5 @@
 function catch_links(editor) {
   for (let a of editor.querySelectorAll("a")) {
-    // a.addEventListener("click", (e) => );
     a.addEventListener("click", async (e) => {
       e.preventDefault();
       let url = new URL(a.href);
