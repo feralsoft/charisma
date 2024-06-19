@@ -66,8 +66,7 @@ body.draggable-editor-prototype {
         position: absolute;
         top: 10em;
         left: 10em;
-        margin-left: var(--dx);
-        margin-top: var(--dy);
+        transform: translateX(var(--dx)) translateY(var(--dy));
     }
 
     .dragging [data-kind="rule"] {

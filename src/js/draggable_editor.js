@@ -1,5 +1,3 @@
-// hella prototype, dragging works, and panning, but the combo does not work
-
 document.addEventListener("DOMContentLoaded", (_) => {
   document.body.classList.add("draggable-editor-prototype");
   let current_editor = null;
@@ -10,10 +8,18 @@ document.addEventListener("DOMContentLoaded", (_) => {
     current_editor.style.left = x;
     current_editor.style.top = y;
   };
+  function current_editor_x() {
+    return Number(current_editor.style.left.split("px")[0]);
+  }
+
+  function current_editor_y() {
+    return Number(current_editor.style.top.split("px")[0]);
+  }
   function finish() {
     dragging_board = false;
     if (!current_editor) return;
-    let { left: x, top: y } = current_editor.getBoundingClientRect();
+    let x = current_editor_x();
+    let y = current_editor_y();
     current_editor.style.left = x - (x % 25) - 7;
     current_editor.style.top = y - (y % 25) - 7;
     current_editor.classList.remove("dragging");
@@ -22,8 +28,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
     dy = null;
   }
   for (let editor of document.querySelectorAll(".--editor")) {
+    let rect = editor.getBoundingClientRect();
+    editor.style.left = rect.left;
+    editor.style.top = rect.top;
     editor.addEventListener("mousedown", (e) => {
-      console.log(e.target);
       if (
         !(
           e.target.dataset.kind === "rule" ||
@@ -32,12 +40,13 @@ document.addEventListener("DOMContentLoaded", (_) => {
         )
       )
         return;
-      let rect = editor.getBoundingClientRect();
-      dx = e.clientX - rect.left;
-      dy = e.clientY - rect.top;
       current_editor = editor;
+      let x = current_editor_x();
+      let y = current_editor_y();
+      dx = e.clientX - x;
+      dy = e.clientY - y;
       current_editor.classList.add("dragging");
-      set_position(rect.left, rect.top);
+      set_position(x, y);
     });
   }
 
