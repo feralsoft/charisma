@@ -19,8 +19,18 @@ function finish() {
   if (!current_editor) return;
   let x = current_editor_x();
   let y = current_editor_y();
-  current_editor.style.left = x - (x % 25) - 7;
-  current_editor.style.top = y - (y % 25) - 7;
+
+  if (x % 25 < 9) {
+    current_editor.style.left = x - (x % 25) - 7;
+  } else {
+    current_editor.style.left = x + (25 - (x % 25)) - 7;
+  }
+  if (y % 25 < 9) {
+    current_editor.style.top = y - (y % 25) - 7;
+  } else {
+    current_editor.style.top = y + (25 - (y % 25)) - 7;
+  }
+
   current_editor.classList.remove("dragging");
   current_editor = null;
   dx = null;
