@@ -1,6 +1,7 @@
 :root {
     background-color: rgb(31, 31, 31);
-    margin-top: 2em;
+    padding: 0;
+    margin: 0;
     --spacing: 0.25em;
     --brace-color: #d8a90c;
     --outline-color: #ffffff17;
@@ -17,7 +18,14 @@
     font-size: 18px;
     font-family: Berkeley Mono;
 }
-
+body {
+    background-size: 25px 25px;
+    background-image: radial-gradient(
+        circle,
+        rgba(200, 200, 200, 0.5) 1px,
+        rgba(0, 0, 0, 0) 1px
+    );
+}
 .plain-text-node {
     width: max-content;
 }
@@ -45,7 +53,6 @@ body {
 }
 
 .--editor {
-    padding: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
@@ -202,7 +209,7 @@ body {
     background: none;
     padding-bottom: 0.1em;
     height: 0.5em;
-
+    width: min-content;
     &:is(:focus, :focus-within) {
         animation: expand 50ms linear forwards;
 
@@ -230,11 +237,13 @@ body {
 @keyframes expand {
     0% {
         height: 0.5em;
+        width: 0;
         border-bottom: 0 solid rgb(0, 0, 0, 0);
     }
 
     100% {
         height: 1.25em;
+        width: 100%;
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
@@ -254,12 +263,6 @@ body {
         content: ";";
         color: var(--foreground-color);
     }
-}
-
-&::after {
-    margin-left: -0.25em;
-    content: ";";
-    color: var(--foreground-color);
 }
 
 [data-unit-type]::after {
@@ -377,13 +380,11 @@ button {
 }
 
 [data-kind="rule"] {
-    overflow-y: hidden;
+    padding: var(--spacing);
+    background-color: rgba(40, 40, 40, 0.8);
 }
-
-[data-kind="rule"],
-[data-kind="keyframes"] {
-    padding: 0.25em;
-    background-color: rgb(40, 40, 40);
+.dragging [data-kind="rule"] {
+    outline: rgba(255, 255, 0, 0.2) solid 0.1em;
 }
 
 [data-kind="keyframe"] {
@@ -451,6 +452,9 @@ button {
 [data-kind="property"][data-commented="false"] .toggle-comment {
     background-color: rgb(60, 60, 60);
     display: none;
+}
+a {
+    width: min-content;
 }
 
 [data-kind="property"][data-commented="false"]:hover .toggle-comment {
