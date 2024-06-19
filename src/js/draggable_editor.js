@@ -3,8 +3,8 @@ let dragging_board = false;
 let board_old_x, board_old_y, start_x, start_y;
 let dx, dy;
 let set_position = (x, y) => {
-  current_editor.style.left = x;
-  current_editor.style.top = y;
+  current_editor.style.left = `${x}px`;
+  current_editor.style.top = `${y}px`;
 };
 function current_editor_x() {
   return Number(current_editor.style.left.split("px")[0]);
@@ -20,16 +20,11 @@ function finish() {
   let x = current_editor_x();
   let y = current_editor_y();
 
-  if (x % 25 < 9) {
-    current_editor.style.left = x - (x % 25) - 7;
-  } else {
-    current_editor.style.left = x + (25 - (x % 25)) - 7;
-  }
-  if (y % 25 < 9) {
-    current_editor.style.top = y - (y % 25) - 7;
-  } else {
-    current_editor.style.top = y + (25 - (y % 25)) - 7;
-  }
+  if (x % 25 < 9) current_editor.style.left = `${x - (x % 25) - 7}px`;
+  else current_editor.style.left = `${x + (25 - (x % 25)) - 7}px`;
+
+  if (y % 25 < 9) current_editor.style.top = `${y - (y % 25) - 7}px`;
+  else current_editor.style.top = `${y + (25 - (y % 25)) - 7}px`;
 
   current_editor.classList.remove("dragging");
   current_editor = null;
@@ -38,8 +33,8 @@ function finish() {
 }
 function init(editor) {
   let rect = editor.getBoundingClientRect();
-  editor.style.left = rect.left;
-  editor.style.top = rect.top;
+  editor.style.left = `${rect.left}px`;
+  editor.style.top = `${rect.top}px`;
   editor.addEventListener("mousedown", (e) => {
     if (
       !(

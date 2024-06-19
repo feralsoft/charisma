@@ -446,6 +446,12 @@ button {
     align-items: center;
 }
 
+:root,
+html,
+body {
+    height: 100%;
+}
+
 .toggle-comment {
     position: absolute;
     border: 0.1em solid rgb(60, 60, 60);

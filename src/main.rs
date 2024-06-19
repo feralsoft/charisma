@@ -191,12 +191,16 @@ fn index(selector_str: &str) -> (ContentType, String) {
     (
         ContentType::HTML,
         format!(
-            "<style>{}</style>
+            "
+            <!DOCTYPE html>
+            <html>
+            <style>{}</style>
             {}
             <div class=\"search\" contenteditable spellcheck=\"false\"></div>
             <div class=\"canvas\">
                 <div class=\"--editor\" spellcheck=\"false\" data-url=\"http://localhost:8000/src/{}\">{}<div>
-            </div>",
+            </div>
+            </html>",
             css(),
             editor_js(),
             url::form_urlencoded::byte_serialize(selector_str.as_bytes()).collect::<String>(),
