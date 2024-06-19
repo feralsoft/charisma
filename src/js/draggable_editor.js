@@ -83,8 +83,4 @@ document.addEventListener("DOMContentLoaded", (_) => {
   window.addEventListener("blur", (_) => finish());
   window.addEventListener("mouseleave", (_) => finish());
   window.addEventListener("keydown", (_) => finish());
-  window.addEventListener("wheel", (e) => {
-    let factor = Number(document.body.style.getPropertyValue("--zoom") ?? "0");
-    document.body.style.setProperty("--zoom", Math.max(factor + e.deltaY, -50));
-  });
 });

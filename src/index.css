@@ -61,7 +61,6 @@ body.draggable-editor-prototype {
         height: 100%;
         background-position-x: var(--dx, 0px);
         background-position-y: var(--dy, 0px);
-        zoom: calc(100% + var(--zoom) * 1%);
         background-size: 25px 25px;
         background-image: radial-gradient(
             circle,
