@@ -184,7 +184,9 @@ fn index(selector: String) -> (ContentType, String) {
             "<style>{}</style>
             {}
             <div class=\"search\" contenteditable spellcheck=\"false\"></div>
-            <div class=\"--editor\" spellcheck=\"false\">{}<div>",
+            <div class=\"canvas\">
+                <div class=\"--editor\" spellcheck=\"false\">{}<div>
+            </div>",
             css(),
             editor_js(),
             rule_html
