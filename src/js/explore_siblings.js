@@ -16,16 +16,16 @@ function option(path, html) {
   return elem;
 }
 
-function remove_all_dropdowns() {
-  for (let dropdown of document.querySelectorAll(".siblings-root"))
+function remove_all_dropdowns(editor) {
+  for (let dropdown of editor.querySelectorAll(".siblings-root"))
     dropdown.remove();
-  for (let self_link of document.querySelectorAll(".self-link"))
+  for (let self_link of editor.querySelectorAll(".self-link"))
     self_link.replaceWith(self_link.querySelector(":scope > [data-kind]"));
 }
 
-function find_idx_for(search_part) {
+function find_idx_for(editor, search_part) {
   let idx = 1;
-  for (let iter_part of document.querySelectorAll(ALL_SELECTOR_PARTS_QUERY)) {
+  for (let iter_part of editor.querySelectorAll(ALL_SELECTOR_PARTS_QUERY)) {
     if (iter_part === search_part) return idx;
     idx++;
   }
@@ -35,13 +35,13 @@ function find_idx_for(search_part) {
 function create_self_link_for(leaf_node, idx) {
   let self_link = document.createElement("a");
   self_link.classList.add("self-link");
-  self_link.href = `${location.pathname}/${idx}`;
+  self_link.href = `${location.pathname}/at/${idx}`;
   leaf_node.insertAdjacentElement("afterend", self_link);
   self_link.append(leaf_node);
 }
 
-document.addEventListener("DOMContentLoaded", (_) => {
-  for (let part of document.querySelectorAll(ALL_SELECTOR_PARTS_QUERY)) {
+function init(editor) {
+  for (let part of editor.querySelectorAll(ALL_SELECTOR_PARTS_QUERY)) {
     part.addEventListener("mousedown", async (_) => {
       // if we are in an existing dropdown don't rebuild
       let existing_dropdown_for_self = part
@@ -49,13 +49,13 @@ document.addEventListener("DOMContentLoaded", (_) => {
         .querySelector(":scope > .siblings-root");
       if (existing_dropdown_for_self) return;
       // remove old dropdowns
-      remove_all_dropdowns();
+      remove_all_dropdowns(editor);
       // find the selector idx of current part
-      let idx = find_idx_for(part);
+      let idx = find_idx_for(editor, part);
       let leaf_node = part.closest("[data-kind]");
-      let siblings = await fetch(`${location.pathname}/${idx}/siblings`).then(
-        (r) => r.json(),
-      );
+      let siblings = await fetch(
+        `${location.pathname}/at/${idx}/siblings`,
+      ).then((r) => r.json());
       // turn myself into a link
       create_self_link_for(leaf_node, idx);
       // create dropdown with sibling links
@@ -77,4 +77,11 @@ document.addEventListener("DOMContentLoaded", (_) => {
     if (e.target.matches(ALL_SELECTOR_PARTS_QUERY)) return;
     remove_all_dropdowns();
   });
+}
+
+document.addEventListener("DOMContentLoaded", (_) => {
+  for (let editor of document.querySelectorAll(".--editor")) {
+    init(editor);
+    editor.addEventListener("loaded", (_) => init(editor));
+  }
 });

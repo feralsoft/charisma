@@ -17,7 +17,7 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 8] = [
+const JS_FILE_NAMES: [&str; 9] = [
     "insert_property",
     "toggle_property",
     "explore_siblings",
@@ -26,6 +26,7 @@ const JS_FILE_NAMES: [&str; 8] = [
     "preview_var",
     "search",
     "draggable_editor",
+    "multi_editor",
 ];
 
 fn editor_js() -> String {
@@ -92,7 +93,7 @@ fn delete(selector: &str, name: String) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[get("/src/<selector>/<idx>/siblings")]
+#[get("/src/<selector>/at/<idx>/siblings")]
 fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
@@ -123,7 +124,7 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
     (ContentType::JSON, Json::from(siblings))
 }
 
-#[get("/src/<selector>/<idx>")]
+#[get("/src/<selector>/at/<idx>")]
 fn index_at(selector: &str, idx: usize) -> Redirect {
     let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
@@ -132,11 +133,8 @@ fn index_at(selector: &str, idx: usize) -> Redirect {
     Redirect::to(format!("/src/{}", sibling_path.join("")))
 }
 
-#[get("/src/<selector>")]
-fn index(selector: String) -> (ContentType, String) {
-    let mut db = CSSDB::new();
-    db.load("test.css");
-    let selector = parse_selector(&selector);
+fn render_rule(selector: &str, db: CSSDB) -> String {
+    let selector = parse_selector(selector);
     let path = selector.to_css_db_path();
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
@@ -154,8 +152,7 @@ fn index(selector: String) -> (ContentType, String) {
             property.render_html(&RenderOptions::default())
         )
     }
-
-    let rule_html = format!(
+    format!(
         "
     <div data-kind=\"rule\">
         <div data-attr=\"selector\">{}</div>
@@ -176,8 +173,20 @@ fn index(selector: String) -> (ContentType, String) {
                 .iter()
                 .map(|(_, (selector, p))| link_for(selector, p))
                 .collect::<String>()
-    );
+    )
+}
 
+#[get("/src/<selector_str>/rule")]
+fn rule(selector_str: &str) -> (ContentType, String) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    (ContentType::HTML, render_rule(selector_str, db))
+}
+
+#[get("/src/<selector_str>")]
+fn index(selector_str: &str) -> (ContentType, String) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
     (
         ContentType::HTML,
         format!(
@@ -185,11 +194,12 @@ fn index(selector: String) -> (ContentType, String) {
             {}
             <div class=\"search\" contenteditable spellcheck=\"false\"></div>
             <div class=\"canvas\">
-                <div class=\"--editor\" spellcheck=\"false\">{}<div>
+                <div class=\"--editor\" spellcheck=\"false\" data-url=\"{}\">{}<div>
             </div>",
             css(),
             editor_js(),
-            rule_html
+            url::form_urlencoded::byte_serialize(selector_str.as_bytes()).collect::<String>(),
+            render_rule(selector_str, db)
         ),
     )
 }
@@ -198,6 +208,6 @@ fn index(selector: String) -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, insert, set_value, delete, enable, disable, siblings, index_at],
+        routes![index, rule, insert, set_value, delete, enable, disable, siblings, index_at],
     )
 }

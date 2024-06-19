@@ -2,6 +2,7 @@ use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKin
 
 pub fn parse_selector(str: &str) -> AnyCssSelector {
     // eh heck, `url::form_urlencoded::byte_serialize` encodes ' ' as '+'
+    // this is gonna get real fucked when we get sibling selectors..
     let str = str.replace("+", " ");
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),

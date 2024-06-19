@@ -6,18 +6,18 @@ function plain_text_node(name, text) {
   setTimeout(() => window.getSelection().selectAllChildren(node));
   node.addEventListener("keydown", async (e) => {
     if (e.key === "Escape") {
-      location.search = "";
+      node.dispatchEvent(new Event("reload", { bubbles: true }));
     } else if (e.key === "Enter") {
       e.preventDefault();
       await fetch(`${location.pathname}/${name}/value`, {
         method: "POST",
         body: node.innerText,
       });
-      location.search = "";
+      node.dispatchEvent(new Event("reload", { bubbles: true }));
     }
   });
   node.addEventListener("blur", (_) => {
-    location.search = "";
+    node.dispatchEvent(new Event("reload", { bubbles: true }));
   });
   return node;
 }
@@ -25,13 +25,20 @@ function plain_text_node(name, text) {
 const VALUE_SELECTOR =
   '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]';
 
-document.addEventListener("DOMContentLoaded", (_) => {
-  for (let value of document.querySelectorAll(VALUE_SELECTOR)) {
+function init(editor) {
+  for (let value of editor.querySelectorAll(VALUE_SELECTOR)) {
     let name = value
       .closest('[data-kind="property"]')
       .querySelector('[data-attr="name"]').innerText;
     value.addEventListener("dblclick", (_) => {
       value.replaceWith(plain_text_node(name, value.dataset.stringValue));
     });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", (_) => {
+  for (let editor of document.querySelectorAll(".--editor")) {
+    init(editor);
+    editor.addEventListener("loaded", (_) => init(editor));
   }
 });

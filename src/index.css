@@ -264,7 +264,6 @@ body.draggable-editor-prototype {
 @keyframes expand {
     0% {
         height: 0.5em;
-        width: 0;
         border-bottom: 0 solid rgb(0, 0, 0, 0);
     }
 
