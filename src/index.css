@@ -53,9 +53,10 @@ body {
 }
 
 body.draggable-editor-prototype {
+    overscroll-behavior: none;
     background-position-x: var(--dx, 0px);
     background-position-y: var(--dy, 0px);
-
+    zoom: calc(100% + var(--zoom) * 1%);
     background-size: 25px 25px;
     background-image: radial-gradient(
         circle,
@@ -71,6 +72,9 @@ body.draggable-editor-prototype {
 
     .dragging [data-kind="rule"] {
         outline: rgba(255, 255, 0, 0.2) solid 0.1em;
+    }
+    &.panning {
+        cursor: grabbing;
     }
 }
 

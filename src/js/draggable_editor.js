@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   }
   function finish() {
     dragging_board = false;
+    document.body.classList.remove("panning");
     if (!current_editor) return;
     let x = current_editor_x();
     let y = current_editor_y();
@@ -53,6 +54,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   window.addEventListener("mousedown", (e) => {
     if (e.target == document.body) {
       dragging_board = true;
+      document.body.classList.add("panning");
       board_old_x = document.body.style.getPropertyValue("--dx");
       if (board_old_x) board_old_x = Number(board_old_x.split("px")[0]);
       else board_old_x = 0;
@@ -81,4 +83,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
   window.addEventListener("blur", (_) => finish());
   window.addEventListener("mouseleave", (_) => finish());
   window.addEventListener("keydown", (_) => finish());
+  window.addEventListener("wheel", (e) => {
+    let factor = Number(document.body.style.getPropertyValue("--zoom") ?? "0");
+    document.body.style.setProperty("--zoom", Math.max(factor + e.deltaY, -50));
+  });
 });
