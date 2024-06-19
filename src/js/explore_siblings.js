@@ -86,4 +86,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
     init(editor);
     editor.addEventListener("loaded", (_) => init(editor));
   }
+  let canvas = document.querySelector(".canvas");
+  canvas.addEventListener("new-editor", (_) => {
+    let editor = document.querySelector(".--editor:last-child");
+    init(editor);
+  });
 });
