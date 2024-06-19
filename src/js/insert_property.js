@@ -16,6 +16,9 @@ function input(editor) {
     }
   });
   input_elem.addEventListener("blur", (_) => (input_elem.innerText = ""));
+  input_elem.addEventListener("click", (_) =>
+    window.getSelection().selectAllChildren(input_elem),
+  );
 
   return input_elem;
 }
