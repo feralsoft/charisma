@@ -1,10 +1,11 @@
-[data-attr="properties"] [data-value]:hover {
-    outline: var(--outline-color) solid 0.1em;
+:root {
+    --outline-color: black;
 }
 [data-attr="properties"] [data-value]:focus {
     outline: var(--outline-color) solid 0.1em;
-    /* --outline-color: #ccc; */
+    --outline-color: #ccc;
 }
-:root {
-    --outline-color: black;
+[data-attr="properties"] [data-value]:hover {
+    outline: var(--outline-color) solid 0.1em;
+    color: red;
 }
