@@ -35,7 +35,8 @@ function find_idx_for(editor, search_part) {
 function create_self_link_for(leaf_node, idx) {
   let self_link = document.createElement("a");
   self_link.classList.add("self-link");
-  self_link.href = `${location.pathname}/at/${idx}`;
+  let url = leaf_node.closest(".--editor").dataset.url;
+  self_link.href = `${url}/at/${idx}`;
   leaf_node.insertAdjacentElement("afterend", self_link);
   self_link.append(leaf_node);
 }
@@ -53,9 +54,10 @@ function init(editor) {
       // find the selector idx of current part
       let idx = find_idx_for(editor, part);
       let leaf_node = part.closest("[data-kind]");
-      let siblings = await fetch(
-        `${location.pathname}/at/${idx}/siblings`,
-      ).then((r) => r.json());
+      let url = leaf_node.closest(".--editor").dataset.url;
+      let siblings = await fetch(`${url}/at/${idx}/siblings`).then((r) =>
+        r.json(),
+      );
       // turn myself into a link
       create_self_link_for(leaf_node, idx);
       // create dropdown with sibling links
@@ -75,7 +77,7 @@ function init(editor) {
   }
   window.addEventListener("mousedown", (e) => {
     if (e.target.matches(ALL_SELECTOR_PARTS_QUERY)) return;
-    remove_all_dropdowns();
+    remove_all_dropdowns(editor);
   });
 }
 

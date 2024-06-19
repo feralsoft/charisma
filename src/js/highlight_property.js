@@ -1,7 +1,7 @@
 function init(editor) {
-  let name = new URL(
-    `${location.host}/src/${decodeURIComponent(editor.dataset.url).replaceAll("+", " ")}`,
-  ).searchParams.get("highlight_property_name");
+  let name = new URL(editor.dataset.url).searchParams.get(
+    "highlight_property_name",
+  );
   if (!name) return;
   let elem = editor.querySelector(
     `[data-kind="property"]:has(> [data-attr="name"] > [data-value="${name}"])`,

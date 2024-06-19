@@ -1,4 +1,4 @@
-function plain_text_node(name, text) {
+function plain_text_node(editor, name, text) {
   let node = document.createElement("div");
   node.classList.add("plain-text-node");
   node.innerText = text;
@@ -9,7 +9,7 @@ function plain_text_node(name, text) {
       node.dispatchEvent(new Event("reload", { bubbles: true }));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      await fetch(`${location.pathname}/${name}/value`, {
+      await fetch(url_for(editor, `/${name}/value`), {
         method: "POST",
         body: node.innerText,
       });
@@ -31,7 +31,9 @@ function init(editor) {
       .closest('[data-kind="property"]')
       .querySelector('[data-attr="name"]').innerText;
     value.addEventListener("dblclick", (_) => {
-      value.replaceWith(plain_text_node(name, value.dataset.stringValue));
+      value.replaceWith(
+        plain_text_node(editor, name, value.dataset.stringValue),
+      );
     });
   }
 }

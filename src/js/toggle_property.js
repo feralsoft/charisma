@@ -7,7 +7,8 @@ function insert_comment_button(src) {
     let is_commented =
       src.closest('[data-kind="property"]').dataset.commented === "true";
     let action = is_commented ? "enable" : "disable";
-    await fetch(`${location.pathname}/${name}/${action}`, { method: "POST" });
+    let editor = src.closest(".--editor");
+    await fetch(url_for(editor, `/${name}/${action}`), { method: "POST" });
     src.dispatchEvent(new Event("reload", { bubbles: true }));
   });
   src.prepend(button);

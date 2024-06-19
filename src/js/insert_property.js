@@ -1,11 +1,12 @@
-function input() {
+function input(editor) {
   let input_elem = document.createElement("div");
   input_elem.classList.add("input");
   input_elem.contentEditable = true;
   input_elem.placeholder = "insert property...";
   input_elem.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
-      await fetch(`${location.pathname}`, {
+      e.preventDefault();
+      await fetch(editor.dataset.url, {
         method: "POST",
         body: e.target.innerText,
       });
@@ -14,7 +15,6 @@ function input() {
       input_elem.blur();
     }
   });
-  input_elem.addEventListener("click", (e) => console.log(e));
   input_elem.addEventListener("blur", (_) => (input_elem.innerText = ""));
 
   return input_elem;
@@ -25,7 +25,7 @@ function init(editor) {
     "[data-kind=rule] > [data-attr=properties]",
   );
 
-  properties.append(input());
+  properties.append(input(editor));
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {

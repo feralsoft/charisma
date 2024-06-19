@@ -194,7 +194,7 @@ fn index(selector_str: &str) -> (ContentType, String) {
             {}
             <div class=\"search\" contenteditable spellcheck=\"false\"></div>
             <div class=\"canvas\">
-                <div class=\"--editor\" spellcheck=\"false\" data-url=\"{}\">{}<div>
+                <div class=\"--editor\" spellcheck=\"false\" data-url=\"http://localhost:8000/src/{}\">{}<div>
             </div>",
             css(),
             editor_js(),
