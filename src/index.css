@@ -554,10 +554,10 @@ a {
 
     /* unicode icons */
     .close::before {
-        content: "⤫";
+        content: "×";
     }
     .minimize::before {
-        content: "-";
+        content: "−";
     }
     .minimize.active::before {
         content: "+";
