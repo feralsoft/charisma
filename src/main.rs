@@ -54,10 +54,12 @@ fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
 
+    let parts: Vec<_> = q.split(" ").collect();
+
     let mut results = db
         .all_selectors()
         .iter()
-        .filter(|selector| selector.contains(q))
+        .filter(|selector| parts.iter().all(|q| selector.contains(q)))
         .map(|s| {
             parse_selector(s)
                 .unwrap()
