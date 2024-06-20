@@ -1,9 +1,3 @@
-.main {
-    color: red;
-}
-.main .btn {
-    font-size: 20px;
-}
 [data-attr="properties"] [data-value]:focus {
     outline: var(--outline-color) solid 0.1em;
     --outline-color: white;
@@ -18,4 +12,10 @@
 }
 :root {
     --outline-color: #ccc;
+}
+.main {
+    color: red;
+}
+.main .btn {
+    font-size: 20px;
 }
