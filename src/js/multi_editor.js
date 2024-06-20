@@ -1,18 +1,18 @@
 let reloading = new Map();
 
 async function reload(editor, base_url) {
-  // if (reloading.get(editor)) return;
-  // reloading.set(editor, true);
-  // for (let editor_ of document.querySelectorAll(".--editor"))
-  //   editor_.dispatchEvent(new Event("reload"));
+  if (reloading.get(editor)) return;
+  reloading.set(editor, true);
+  for (let editor_ of document.querySelectorAll(".--editor"))
+    editor_.dispatchEvent(new Event("reload"));
   let url = new URL(base_url);
   url.pathname += "/rule";
   let new_rule = await fetch(url).then((r) => r.text());
   editor.innerHTML = new_rule;
-  editor.dataset.url = url;
+  editor.dataset.url = base_url;
   catch_links(editor);
   editor.dispatchEvent(new Event("loaded"));
-  // reloading.set(editor, false);
+  reloading.delete(editor);
 }
 
 function catch_links(editor) {
@@ -48,7 +48,6 @@ function init(editor) {
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
-  for (let editor of document.querySelectorAll(".--editor")) init(editor);
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");

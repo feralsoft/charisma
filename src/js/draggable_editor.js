@@ -93,12 +93,11 @@ window.addEventListener("keydown", (_) => finish());
 
 document.addEventListener("DOMContentLoaded", (_) => {
   document.body.classList.add("draggable-editor-prototype");
-  for (let editor of document.querySelectorAll(".--editor")) {
-    init(editor);
-  }
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");
     init(editor);
+    // working w/o this..
+    // editor.addEventListener("loaded", (_) => init(editor));
   });
 });

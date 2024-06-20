@@ -14,22 +14,19 @@ function insert_comment_button(src) {
   src.prepend(button);
 }
 
+const PROPERTY_SELECTOR = "[data-attr=properties] > [data-kind=property]";
+
 function init(editor) {
-  for (let property of editor.querySelectorAll(
-    "[data-attr=properties] > [data-kind=property]",
-  )) {
+  editor.addEventListener("loaded", (_) => init(editor));
+  for (let property of editor.querySelectorAll(PROPERTY_SELECTOR))
     insert_comment_button(property);
-  }
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
-  for (let editor of document.querySelectorAll(".--editor")) {
-    init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
-  }
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");
     init(editor);
+    editor.addEventListener("loaded", (_) => init(editor));
   });
 });

@@ -75,20 +75,19 @@ function init(editor) {
       );
     });
   }
-  window.addEventListener("mousedown", (e) => {
-    if (e.target.matches(ALL_SELECTOR_PARTS_QUERY)) return;
-    remove_all_dropdowns(editor);
-  });
 }
 
+window.addEventListener("mousedown", (e) => {
+  if (e.target.matches(ALL_SELECTOR_PARTS_QUERY)) return;
+  let editor = e.target.closest(".--editor");
+  if (editor) remove_all_dropdowns(editor);
+});
+
 document.addEventListener("DOMContentLoaded", (_) => {
-  for (let editor of document.querySelectorAll(".--editor")) {
-    init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
-  }
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");
     init(editor);
+    editor.addEventListener("loaded", (_) => init(editor));
   });
 });
