@@ -54,7 +54,7 @@ fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
 
-    let parts: Vec<_> = q.split(" ").collect();
+    let parts: Vec<_> = q.trim().split(" ").collect();
 
     let mut results = db
         .all_selectors()
