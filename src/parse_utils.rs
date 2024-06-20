@@ -1,6 +1,6 @@
 use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKind};
 
-pub fn parse_selector(str: &str) -> AnyCssSelector {
+pub fn parse_selector(str: &str) -> Option<AnyCssSelector> {
     // eh heck, `url::form_urlencoded::byte_serialize` encodes ' ' as '+'
     // this is gonna get real fucked when we get sibling selectors..
     let str = str.replace("+", " ");
@@ -11,32 +11,31 @@ pub fn parse_selector(str: &str) -> AnyCssSelector {
     .tree()
     .rules()
     .into_iter()
-    .next()
-    .unwrap();
+    .next()?;
 
-    let prelude = rule.as_css_qualified_rule().unwrap().prelude();
+    let prelude = rule.as_css_qualified_rule()?.prelude();
 
     assert!((&prelude).into_iter().count() == 1);
 
-    prelude.into_iter().next().unwrap().unwrap()
+    prelude.into_iter().next().and_then(|result| result.ok())
 }
 
-fn parse_one(rule: String) -> biome_css_syntax::CssQualifiedRule {
+fn parse_one(rule: String) -> Option<biome_css_syntax::CssQualifiedRule> {
     let rules = biome_css_parser::parse_css(&rule, biome_css_parser::CssParserOptions::default())
         .tree()
         .rules();
     assert!((&rules).into_iter().len() == 1);
-    let rule = rules.into_iter().next().unwrap();
+    let rule = rules.into_iter().next()?;
 
-    rule.as_css_qualified_rule().unwrap().to_owned()
+    Some(rule.as_css_qualified_rule()?.to_owned())
 }
 
 pub fn parse_property(property_str: &str) -> Option<CssDeclarationWithSemicolon> {
-    let dummy_rule = parse_one(format!(".a {{ {} }}", property_str));
-    let block = dummy_rule.block().unwrap();
+    let dummy_rule = parse_one(format!(".a {{ {} }}", property_str))?;
+    let block = dummy_rule.block().ok()?;
     let block = block.as_css_declaration_or_rule_block()?;
     assert!(block.items().into_iter().len() == 1);
-    let item = block.items().into_iter().next().unwrap();
+    let item = block.items().into_iter().next()?;
     item.as_css_declaration_with_semicolon()
         .map(|item| item.to_owned())
 }

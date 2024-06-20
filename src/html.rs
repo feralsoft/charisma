@@ -59,12 +59,12 @@ impl Render for CssComplexSelector {
 
         format!(
             "
-            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\" {}>
+            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\" data-string-value='{}'>
                 <div data-attr=\"left\">{}</div>
                 <div data-attr=\"right\">{}</div>
             </div>",
             get_combinator_type(combinator.kind()),
-            options.to_string(),
+            self.to_string(),
             left.render_html(options),
             right.render_html(options)
         )

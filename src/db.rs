@@ -276,7 +276,7 @@ impl CSSDB {
         )
     }
 
-    fn super_pathes_of_aux(
+    fn super_paths_of_aux(
         &self,
         path: &[String],
         is_root: bool,
@@ -290,15 +290,33 @@ impl CSSDB {
                 super_paths.push(path)
             }
         }
-
         for (_, t) in &self.children {
-            t.super_pathes_of_aux(path, false, super_paths);
+            t.super_paths_of_aux(path, false, super_paths);
         }
     }
-    pub fn super_pathes_of(&self, path: &[String]) -> Vec<Vec<String>> {
+    pub fn super_paths_of(&self, path: &[String]) -> Vec<Vec<String>> {
         let mut super_paths: Vec<Vec<String>> = vec![];
-        self.super_pathes_of_aux(path, true, &mut super_paths);
+        self.super_paths_of_aux(path, true, &mut super_paths);
         super_paths
+    }
+
+    fn sub_selectors_of_aux(&self, sub_paths: &mut Vec<String>) {
+        if let Some(rule) = self.rule.as_ref() {
+            sub_paths.push(rule.selector.string.to_owned())
+        }
+        for (_, tree) in &self.children {
+            tree.sub_selectors_of_aux(sub_paths);
+        }
+    }
+
+    pub fn sub_selectors_of(&self, path: &[String]) -> Vec<String> {
+        if let Some(tree) = self.get(path) {
+            let mut sub_paths: Vec<String> = vec![];
+            tree.sub_selectors_of_aux(&mut sub_paths);
+            sub_paths
+        } else {
+            vec![]
+        }
     }
 
     fn inheritable_properties(&self) -> HashMap<String, (String, Rc<Property>)> {
@@ -357,7 +375,7 @@ impl CSSDB {
             self.get_root()
                 .inspect(|tree| properties.extend(tree.inheritable_properties()));
         }
-        for super_path in self.super_pathes_of(path) {
+        for super_path in self.super_paths_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
 
@@ -421,7 +439,7 @@ impl CSSDB {
             self.get_root()
                 .inspect(|tree| vars.extend(tree.valid_vars_with_selector_str()));
         }
-        for super_path in self.super_pathes_of(path) {
+        for super_path in self.super_paths_of(path) {
             vars.extend(
                 self.get(&super_path)
                     .unwrap()
@@ -651,10 +669,7 @@ impl Storage for AnyCssSubSelector {
     fn to_css_db_path(&self) -> Vec<String> {
         match self {
             CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_path(),
-            CssBogusSubSelector(s) => {
-                println!("{:?}", s);
-                todo!()
-            }
+            CssBogusSubSelector(_) => vec![],
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();

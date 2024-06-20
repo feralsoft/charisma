@@ -43,8 +43,46 @@ fn insert(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
-    db.insert(&parse_selector(selector).to_selector(None), &property);
+    db.insert(
+        &parse_selector(selector).unwrap().to_selector(None),
+        &property,
+    );
     fs::write("test.css", db.serialize()).unwrap()
+}
+#[get("/search/<q>")]
+fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let mut results: Vec<String> = vec![];
+
+    fn render_path(db: &CSSDB, path: &[String]) -> Option<String> {
+        db.get(path)
+            .and_then(|tree| tree.rule.as_ref())
+            .and_then(|rule| parse_selector(&rule.selector.string))
+            .map(|sel| sel.render_html(&RenderOptions::default()))
+    }
+
+    if let Some(selector) = parse_selector(q) {
+        let path = selector.to_css_db_path();
+        if let Some(html) = render_path(&db, &path) {
+            results.push(html);
+        }
+        for path in db.super_paths_of(&path) {
+            if let Some(html) = render_path(&db, &path) {
+                results.push(html);
+            }
+        }
+        for selector in db.sub_selectors_of(&path) {
+            results.push(
+                parse_selector(&selector)
+                    .unwrap()
+                    .render_html(&RenderOptions::default()),
+            );
+        }
+    }
+    results.sort();
+    results.dedup();
+    (ContentType::JSON, Json::from(results))
 }
 
 #[post("/src/<selector>/<name>/disable")]
@@ -53,7 +91,7 @@ fn disable(selector: &str, name: String) {
     db.load("test.css");
 
     db.set_state(
-        &parse_selector(selector).to_selector(None).path,
+        &parse_selector(selector).unwrap().to_selector(None).path,
         &name,
         State::Commented,
     );
@@ -65,7 +103,7 @@ fn disable(selector: &str, name: String) {
 fn enable(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
+    let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     db.set_state(&path, &name, State::Valid);
     fs::write("test.css", db.serialize()).unwrap()
@@ -76,7 +114,7 @@ fn set_value(selector: &str, name: String, value: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
-    let selector = parse_selector(selector).to_selector(None);
+    let selector = parse_selector(selector).unwrap().to_selector(None);
 
     db.delete(&selector.path, &name);
     db.insert(&selector, &property);
@@ -88,7 +126,7 @@ fn set_value(selector: &str, name: String, value: String) {
 fn delete(selector: &str, name: String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
+    let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     db.delete(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
@@ -98,7 +136,7 @@ fn delete(selector: &str, name: String) {
 fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector);
+    let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     let sibling_path = &path[0..idx];
     let rest_of_path = &path[idx..];
@@ -114,7 +152,9 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
                     let selector_html = if part == " " {
                         "so sad, what to do here :(".to_owned()
                     } else {
-                        parse_selector(&part).render_html(&RenderOptions::default())
+                        parse_selector(&part)
+                            .unwrap()
+                            .render_html(&RenderOptions::default())
                     };
                     (part.to_owned(), selector_html)
                 })
@@ -127,7 +167,7 @@ fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, S
 
 #[get("/src/<selector>/at/<idx>")]
 fn index_at(selector: &str, idx: usize) -> Redirect {
-    let selector = parse_selector(selector);
+    let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     let sibling_path = &path[0..idx];
 
@@ -135,7 +175,7 @@ fn index_at(selector: &str, idx: usize) -> Redirect {
 }
 
 fn render_rule(selector: &str, db: CSSDB) -> String {
-    let selector = parse_selector(selector);
+    let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
@@ -161,7 +201,9 @@ fn render_rule(selector: &str, db: CSSDB) -> String {
         <div data-attr=\"inherited-properties\">{}</div>
     </div>
     ",
-        parse_selector(&rule.selector.string).render_html(&RenderOptions::default()),
+        parse_selector(&rule.selector.string)
+            .unwrap()
+            .render_html(&RenderOptions::default()),
         rule.properties
             .iter()
             .map(|p| p.render_html(&RenderOptions::default()))
@@ -196,7 +238,9 @@ fn index(selector_str: &str) -> (ContentType, String) {
             <html>
             <style>{}</style>
             {}
-            <div class=\"search\" contenteditable spellcheck=\"false\"></div>
+            <div class=\"search-box\">
+                <div class=\"search\" contenteditable spellcheck=\"false\"></div>
+            </div>
             <div class=\"canvas\">
                 <div class=\"--editor\" spellcheck=\"false\" data-url=\"http://localhost:8000/src/{}\">{}<div>
             </div>
@@ -213,6 +257,8 @@ fn index(selector_str: &str) -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, rule, insert, set_value, delete, enable, disable, siblings, index_at],
+        routes![
+            index, rule, insert, set_value, delete, enable, disable, siblings, index_at, search
+        ],
     )
 }
