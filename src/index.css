@@ -45,6 +45,10 @@ body {
             z-index: 100;
         }
     }
+    &.panning,
+    .canvas:has(> .dragging) {
+        pointer-events: none;
+    }
     .search.active {
         background: none;
         font-size: 1em;
