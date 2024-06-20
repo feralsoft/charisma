@@ -11,14 +11,22 @@ function catch_links(editor) {
     });
   }
 }
+let reloading = new Map();
 function init(editor) {
   catch_links(editor);
   editor.addEventListener("reload", async (_) => {
+    if (reloading.get(editor)) return;
+    reloading.set(editor, true);
+    for (let editor_ of document.querySelectorAll(".--editor")) {
+      editor_.dispatchEvent(new Event("reload"));
+    }
+
     let new_rule = await fetch(url_for(editor, "/rule")).then((r) => r.text());
     editor.innerHTML = new_rule;
     editor.dataset.url = url_for(editor);
     catch_links(editor);
     editor.dispatchEvent(new Event("loaded"));
+    reloading.set(editor, false);
   });
 }
 document.addEventListener("DOMContentLoaded", (_) => {

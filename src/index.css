@@ -28,18 +28,27 @@ body {
     flex-direction: column;
     align-items: center;
 
-    .search {
+    .search:not(.active) {
+        display: none;
+    }
+
+    .search.active {
         position: absolute;
         margin: auto;
         background: none;
-        font-size: 0.8em;
+        font-size: 1em;
         border: none;
         font-family: inherit;
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
         color: white;
-        height: 1.5em;
+        height: 1.25em;
         min-width: 15em;
         z-index: 10;
+        margin-top: 1em;
+        background: rgba(255, 255, 255, 0.1);
+        padding: var(--spacing);
+        border-radius: 5px;
+        box-shadow: 0px 2px 2px 2px #00000030;
     }
 }
 
@@ -465,6 +474,7 @@ body {
     color: var(--foreground-color);
     border-radius: 3px;
     cursor: pointer;
+
     .text {
         display: flex;
         justify-content: center;
@@ -474,6 +484,7 @@ body {
         background-position: center;
         background-size: 6px;
     }
+
     &:hover {
         background: rgb(50, 50, 50);
     }
@@ -570,15 +581,18 @@ a {
     .close::before {
         content: "×";
     }
+
     .minimize::before {
         content: "−";
     }
+
     .minimize.active::before {
         content: "+";
     }
 
     .minimize.active {
         background: rgba(0, 255, 0, 0.1);
+
         &:hover {
             background: rgba(0, 255, 0, 0.2);
         }
@@ -587,10 +601,12 @@ a {
 
 .--editor:has(> .menu .minimize.active) {
     outline: none;
+
     [data-kind="rule"] {
         display: none;
     }
 }
+
 .--editor:is(:focus-within, :active) {
     z-index: 5;
 }

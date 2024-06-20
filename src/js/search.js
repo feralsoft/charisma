@@ -1,5 +1,25 @@
 document.addEventListener("DOMContentLoaded", (_) => {
   let input = document.querySelector(".search");
+  function clear() {
+    input.classList.remove("active");
+    input.innerText = "";
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "/") {
+      input.classList.add("active");
+      e.preventDefault();
+      input.focus();
+    } else if (e.key === "p" && e.metaKey) {
+      e.preventDefault();
+      if (input.classList.contains("active")) {
+        clear();
+      } else {
+        input.classList.add("active");
+        input.focus();
+      }
+    }
+  });
   input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -17,7 +37,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
       let canvas = document.querySelector(".canvas");
       canvas.append(editor);
       canvas.dispatchEvent(new Event("new-editor"));
-      input.innerText = "";
+      clear();
+    } else if (e.key === "Escape") {
+      input.classList.remove("active");
     }
   });
 });
