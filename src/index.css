@@ -591,6 +591,6 @@ a {
         display: none;
     }
 }
-.--editor:is(:focus, :focus-within) {
+.--editor:is(:focus-within, :active) {
     z-index: 5;
 }
