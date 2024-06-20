@@ -165,6 +165,15 @@ impl Rule {
     }
 
     pub fn insert(&mut self, property: Property) {
+        if self
+            .properties
+            .iter()
+            .any(|p| p.name() == property.name() && p.value() == p.value())
+        {
+            // should we warn?
+            return;
+        }
+
         self.properties.push(Rc::new(property))
     }
 }

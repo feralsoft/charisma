@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use std::{cmp::Ordering, fs, rc::Rc};
+use std::{fs, rc::Rc};
 
 use db::*;
 use html::{Render, RenderOptions};
