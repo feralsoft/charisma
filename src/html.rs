@@ -9,10 +9,7 @@ use biome_css_syntax::{
 use crate::{parse_utils::get_combinator_type, Property, State};
 
 pub fn render_value(value: &str) -> String {
-    format!(
-        "<div data-value=\"{}\" contenteditable>{}</div>",
-        value, value
-    )
+    format!("<div data-value=\"{}\">{}</div>", value, value)
 }
 
 pub struct RenderOptions {
