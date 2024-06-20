@@ -29,7 +29,7 @@ impl ToString for RenderOptions {
     fn to_string(&self) -> String {
         self.attrs
             .iter()
-            .map(|(key, value)| format!("{}=\"{}\"", key, value))
+            .map(|(key, value)| format!("{}='{}'", key, value))
             .collect()
     }
 }
@@ -39,11 +39,14 @@ pub trait Render {
 }
 
 impl Render for AnyCssSelector {
-    fn render_html(&self, options: &RenderOptions) -> String {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        let options = RenderOptions {
+            attrs: vec![("data-string-value".to_string(), self.to_string())],
+        };
         match self {
             AnyCssSelector::CssBogusSelector(_) => todo!(),
-            AnyCssSelector::CssComplexSelector(s) => s.render_html(options),
-            AnyCssSelector::CssCompoundSelector(s) => s.render_html(options),
+            AnyCssSelector::CssComplexSelector(s) => s.render_html(&options),
+            AnyCssSelector::CssCompoundSelector(s) => s.render_html(&options),
         }
     }
 }
@@ -56,11 +59,12 @@ impl Render for CssComplexSelector {
 
         format!(
             "
-            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\">
+            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\" {}>
                 <div data-attr=\"left\">{}</div>
                 <div data-attr=\"right\">{}</div>
             </div>",
             get_combinator_type(combinator.kind()),
+            options.to_string(),
             left.render_html(options),
             right.render_html(options)
         )
@@ -79,10 +83,11 @@ impl Render for CssClassSelector {
 }
 
 impl Render for CssPseudoClassIdentifier {
-    fn render_html(&self, _options: &RenderOptions) -> String {
+    fn render_html(&self, options: &RenderOptions) -> String {
         let name = self.name().unwrap();
         format!(
-            "<div data-kind=\"pseudo-class-id\">{}</div>",
+            "<div data-kind=\"pseudo-class-id\" {}>{}</div>",
+            options.to_string(),
             render_value(name.to_string().trim())
         )
     }
@@ -106,7 +111,7 @@ impl Render for CssPseudoClassSelector {
 }
 
 impl Render for CssAttributeSelector {
-    fn render_html(&self, _options: &RenderOptions) -> String {
+    fn render_html(&self, options: &RenderOptions) -> String {
         match self.matcher() {
             Some(matcher) => {
                 let name = self.name().unwrap();
@@ -116,11 +121,12 @@ impl Render for CssAttributeSelector {
 
                 format!(
                     "
-                <div data-kind=\"attribute-selector\">
+                <div data-kind=\"attribute-selector\" {}>
                     <div data-attr=\"name\">{}</div>
                     <div data-attr=\"operator\">{}</div>
                     <div data-attr=\"value\">{}</div>
                 </div>",
+                    options.to_string(),
                     render_value(name.to_string().trim()),
                     render_value(operator.text_trimmed()),
                     render_value(value.unwrap().to_string().trim())
@@ -130,9 +136,10 @@ impl Render for CssAttributeSelector {
                 let name = self.name().unwrap();
                 format!(
                     "
-                <div data-kind=\"attribute-selector\">
+                <div data-kind=\"attribute-selector\" {}>
                     <div data-attr=\"name\">{}</div>
                 </div>",
+                    options.to_string(),
                     render_value(name.to_string().trim())
                 )
             }
@@ -141,11 +148,12 @@ impl Render for CssAttributeSelector {
 }
 
 impl Render for CssPseudoElementSelector {
-    fn render_html(&self, _options: &RenderOptions) -> String {
+    fn render_html(&self, options: &RenderOptions) -> String {
         let element = self.element().unwrap();
         let element = element.as_css_pseudo_element_identifier().unwrap();
         format!(
-            "<div data-kind=\"pseudo-element-selector\">{}</div>",
+            "<div data-kind=\"pseudo-element-selector\" {}>{}</div>",
+            options.to_string(),
             render_value(element.name().unwrap().to_string().trim())
         )
     }
@@ -183,7 +191,8 @@ impl Render for CssCompoundSelector {
             [selector] => selector.render_html(options),
             selectors => {
                 format!(
-                    "<div data-kind=\"compound-selector\">{}</div>",
+                    "<div data-kind=\"compound-selector\" {}>{}</div>",
+                    options.to_string(),
                     selectors
                         .iter()
                         .map(|selector| selector.render_html(options))
@@ -381,7 +390,7 @@ impl Render for Property {
             value.render_html(options)
         } else {
             format!(
-                "<div data-kind=\"multi-part-value\" data-string-value=\"{}\">{}</div>",
+                "<div data-kind=\"multi-part-value\" data-string-value='{}'>{}</div>",
                 property
                     .value()
                     .into_iter()

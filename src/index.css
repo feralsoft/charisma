@@ -19,6 +19,10 @@
     font-family: Berkeley Mono;
 }
 
+[data-kind="rule"] {
+    box-sizing: border-box;
+}
+
 .plain-text-node {
     width: max-content;
 }
@@ -284,7 +288,7 @@ body.draggable-editor-prototype {
 
     100% {
         height: 1.25em;
-        width: 100%;
+        width: calc(100% - 1em);
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
@@ -588,6 +592,14 @@ a {
 
     .minimize.active::before {
         content: "+";
+    }
+    .minimize.active::after {
+        position: absolute;
+        content: attr(data-selector);
+        width: max-content;
+        color: white;
+        opacity: 0.5;
+        margin-left: 1em;
     }
 
     .minimize.active {

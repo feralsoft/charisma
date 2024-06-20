@@ -5,13 +5,16 @@ function close(editor) {
   return close_btn;
 }
 
-function minimize() {
-  let close_btn = document.createElement("button");
-  close_btn.classList.add("minimize");
-  close_btn.addEventListener("mousedown", (_) =>
-    close_btn.classList.toggle("active"),
-  );
-  return close_btn;
+function minimize(editor) {
+  let minimize_btn = document.createElement("button");
+  minimize_btn.classList.add("minimize");
+  minimize_btn.addEventListener("mousedown", (_) => {
+    minimize_btn.dataset.selector = editor.querySelector(
+      '[data-attr="selector"] > [data-kind]',
+    ).dataset.stringValue;
+    minimize_btn.classList.toggle("active");
+  });
+  return minimize_btn;
 }
 
 function menu(editor) {
@@ -19,7 +22,7 @@ function menu(editor) {
   menu_elem.classList.add("menu");
 
   menu_elem.append(close(editor));
-  menu_elem.append(minimize());
+  menu_elem.append(minimize(editor));
   return menu_elem;
 }
 
