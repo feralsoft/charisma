@@ -24,14 +24,18 @@ document.addEventListener("DOMContentLoaded", (_) => {
         input.focus();
       }
       options.innerHTML = "";
-    } else if (
-      input.classList.contains("active") &&
-      input.innerText.trim().length > 0
-    ) {
-      let results = await fetch(
-        `http://localhost:8000/search/${input.innerText + e.key}`,
-      ).then((r) => r.json());
-      options.innerHTML = results.join("");
+    } else if (input.classList.contains("active")) {
+      setTimeout(async () => {
+        // setTimeout so that innerText gets populated
+        if (input.innerText.trim() === "") {
+          options.innerHTML = "";
+        } else {
+          let results = await fetch(
+            `http://localhost:8000/search/${input.innerText}`,
+          ).then((r) => r.json());
+          options.innerHTML = results.join("");
+        }
+      });
     }
   });
   options.addEventListener("mousedown", (e) => {

@@ -74,6 +74,9 @@ body {
         > [data-kind] {
             text-decoration: underline;
             cursor: pointer;
+            * {
+                pointer-events: none;
+            }
         }
     }
 }
