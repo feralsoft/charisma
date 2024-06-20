@@ -1,9 +1,3 @@
-.main {
-    color: red;
-}
-.main .btn {
-    font-size: 20px;
-}
 [data-attr="properties"] [data-value]:hover {
     display: flex;
     outline: var(--outline-color) solid 0.1em;
@@ -13,8 +7,14 @@
 }
 [data-attr="properties"] [data-value]:focus {
     outline: var(--outline-color) solid 0.1em;
-    --outline-color: #ccc;
+    --outline-color: white;
 }
 :root {
-    --outline-color: black;
+    --outline-color: #ccc;
+}
+.main {
+    color: red;
+}
+.main .btn {
+    font-size: 20px;
 }
