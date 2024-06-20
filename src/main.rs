@@ -53,35 +53,20 @@ fn insert(selector: &str, property: &str) {
 fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let mut results: Vec<String> = vec![];
 
-    fn render_path(db: &CSSDB, path: &[String]) -> Option<String> {
-        db.get(path)
-            .and_then(|tree| tree.rule.as_ref())
-            .and_then(|rule| parse_selector(&rule.selector.string))
-            .map(|sel| sel.render_html(&RenderOptions::default()))
-    }
+    let mut results = db
+        .all_selectors()
+        .iter()
+        .filter(|selector| selector.contains(q))
+        .map(|s| {
+            parse_selector(s)
+                .unwrap()
+                .render_html(&RenderOptions::default())
+        })
+        .collect::<Vec<String>>();
 
-    if let Some(selector) = parse_selector(q) {
-        let path = selector.to_css_db_path();
-        if let Some(html) = render_path(&db, &path) {
-            results.push(html);
-        }
-        for path in db.super_paths_of(&path) {
-            if let Some(html) = render_path(&db, &path) {
-                results.push(html);
-            }
-        }
-        for selector in db.sub_selectors_of(&path) {
-            results.push(
-                parse_selector(&selector)
-                    .unwrap()
-                    .render_html(&RenderOptions::default()),
-            );
-        }
-    }
     results.sort();
-    results.dedup();
+
     (ContentType::JSON, Json::from(results))
 }
 

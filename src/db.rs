@@ -300,23 +300,19 @@ impl CSSDB {
         super_paths
     }
 
-    fn sub_selectors_of_aux(&self, sub_paths: &mut Vec<String>) {
+    fn all_selectors_aux(&self, selectors: &mut Vec<String>) {
         if let Some(rule) = self.rule.as_ref() {
-            sub_paths.push(rule.selector.string.to_owned())
+            selectors.push(rule.selector.string.to_owned())
         }
         for (_, tree) in &self.children {
-            tree.sub_selectors_of_aux(sub_paths);
+            tree.all_selectors_aux(selectors);
         }
     }
 
-    pub fn sub_selectors_of(&self, path: &[String]) -> Vec<String> {
-        if let Some(tree) = self.get(path) {
-            let mut sub_paths: Vec<String> = vec![];
-            tree.sub_selectors_of_aux(&mut sub_paths);
-            sub_paths
-        } else {
-            vec![]
-        }
+    pub fn all_selectors(&self) -> Vec<String> {
+        let mut selectors: Vec<String> = vec![];
+        self.all_selectors_aux(&mut selectors);
+        selectors
     }
 
     fn inheritable_properties(&self) -> HashMap<String, (String, Rc<Property>)> {
