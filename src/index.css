@@ -45,7 +45,7 @@ body {
             z-index: 100;
         }
     }
-    &.panning,
+    &.panning .canvas,
     .canvas:has(> .dragging) {
         pointer-events: none;
     }
