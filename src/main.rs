@@ -159,7 +159,7 @@ fn index_at(selector: &str, idx: usize) -> Redirect {
     Redirect::to(format!("/src/{}", sibling_path.join("")))
 }
 
-fn render_rule(selector: &str, db: CSSDB) -> String {
+fn render_rule(selector: &str, db: &CSSDB) -> String {
     let selector = parse_selector(selector).unwrap();
     let path = selector.to_css_db_path();
     let tree = db.get(&path).unwrap();
@@ -208,32 +208,30 @@ fn render_rule(selector: &str, db: CSSDB) -> String {
 fn rule(selector_str: &str) -> (ContentType, String) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    (ContentType::HTML, render_rule(selector_str, db))
+    (ContentType::HTML, render_rule(selector_str, &db))
 }
 
-#[get("/src/<selector_str>")]
-fn index(selector_str: &str) -> (ContentType, String) {
-    let mut db = CSSDB::new();
-    db.load("test.css");
+#[get("/src")]
+fn index() -> (ContentType, String) {
     (
         ContentType::HTML,
         format!(
             "
             <!DOCTYPE html>
             <html>
-            <style>{}</style>
-            {}
-            <div class=\"search-box\">
-                <div class=\"search\" contenteditable spellcheck=\"false\"></div>
-            </div>
-            <div class=\"canvas\">
-                <div class=\"--editor\" spellcheck=\"false\" data-url=\"http://localhost:8000/src/{}\">{}<div>
-            </div>
+                <head>
+                    <style>{}</style>
+                    {}
+                </head>
+                <body>
+                    <div class=\"search-box\">
+                        <div class=\"search\" contenteditable spellcheck=\"false\"></div>
+                    </div>
+                    <div class=\"canvas\"></div>
+                </body>
             </html>",
             css(),
             editor_js(),
-            url::form_urlencoded::byte_serialize(selector_str.as_bytes()).collect::<String>(),
-            render_rule(selector_str, db)
         ),
     )
 }
