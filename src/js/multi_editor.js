@@ -25,7 +25,7 @@ function init(editor) {
     );
   editor.style.left = `${width / 2 - editor_width / 2 - x_offset}px`;
   editor.style.top = `${height / 2 - editor_height / 2 - y_offset}px`;
-
+  snap_editor(editor);
   editor.addEventListener("reload", async (_) => {
     if (reloading.get(editor)) return;
     reloading.set(editor, true);

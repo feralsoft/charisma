@@ -6,26 +6,30 @@ let set_position = (x, y) => {
   current_editor.style.left = `${x}px`;
   current_editor.style.top = `${y}px`;
 };
-function current_editor_x() {
-  return Number(current_editor.style.left.split("px")[0]);
+function editor_x(editor) {
+  return Number(editor.style.left.split("px")[0]);
 }
 
-function current_editor_y() {
-  return Number(current_editor.style.top.split("px")[0]);
+function editor_y(editor) {
+  return Number(editor.style.top.split("px")[0]);
 }
+
+window.snap_editor = function (editor) {
+  let x = editor_x(editor);
+  let y = editor_y(editor);
+
+  if (x % 25 < 9) editor.style.left = `${x - (x % 25) - 7}px`;
+  else editor.style.left = `${x + (25 - (x % 25)) - 7}px`;
+
+  if (y % 25 < 9) editor.style.top = `${y - (y % 25) - 7}px`;
+  else editor.style.top = `${y + (25 - (y % 25)) - 7}px`;
+};
+
 function finish() {
   dragging_board = false;
   document.body.classList.remove("panning");
   if (!current_editor) return;
-  let x = current_editor_x();
-  let y = current_editor_y();
-
-  if (x % 25 < 9) current_editor.style.left = `${x - (x % 25) - 7}px`;
-  else current_editor.style.left = `${x + (25 - (x % 25)) - 7}px`;
-
-  if (y % 25 < 9) current_editor.style.top = `${y - (y % 25) - 7}px`;
-  else current_editor.style.top = `${y + (25 - (y % 25)) - 7}px`;
-
+  snap_editor(current_editor);
   current_editor.classList.remove("dragging");
   current_editor = null;
   x_offset = null;
@@ -45,8 +49,8 @@ function init(editor) {
     )
       return;
     current_editor = editor;
-    let x = current_editor_x();
-    let y = current_editor_y();
+    let x = editor_x(current_editor);
+    let y = editor_y(current_editor);
     x_offset = e.clientX - x;
     y_offset = e.clientY - y;
     current_editor.classList.add("dragging");
