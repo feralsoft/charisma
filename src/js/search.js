@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   function clear() {
     input.classList.remove("active");
     input.innerText = "";
-    options.innerText = "";
+    options.innerHTML = "";
   }
 
   window.addEventListener("keydown", async (e) => {
@@ -37,6 +37,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
         }
       });
     }
+  });
+  window.addEventListener("mousedown", (e) => {
+    if (!e.target.closest(".search-options")) clear();
   });
   options.addEventListener("mousedown", (e) => {
     let selector = e.target.closest(".search-options > [data-kind]");
