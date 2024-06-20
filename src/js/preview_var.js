@@ -8,7 +8,7 @@ function init(editor) {
       `[data-kind="property"][data-property-kind="variable"][data-commented="false"]:has([data-attr="name"] [data-value="${name}"])`,
     );
     if (!property) {
-      console.warn(`can't dereference ${name}`);
+      variable.classList.add("cant-deref");
       return;
     }
     let value = property.querySelector('[data-attr="value"] [data-kind]');

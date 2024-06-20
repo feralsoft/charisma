@@ -1,9 +1,12 @@
+:root {
+    --outline-color: white;
+}
 .main {
-    color: red;
-    /* font-size: 30px; */
+    font-size: 30px;
+    /* color: var(--outline-color); */
 }
 .main .btn {
-    font-size: 20px;
+    /* font-size: 20px; */
 }
 [data-attr="properties"] [data-value]:hover {
     display: flex;
@@ -16,7 +19,4 @@
     --outline-color: white;
     outline: var(--outline-color) solid 0.1em;
     /* color: white; */
-}
-:root {
-    --outline-color: #ccc;
 }

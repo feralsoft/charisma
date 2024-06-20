@@ -418,6 +418,23 @@ body.draggable-editor-prototype {
     color: var(--variable-color);
 }
 
+[data-kind="property"]:not([data-commented="true"]) .cant-deref {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: #f5deb3ee;
+    &:hover::after {
+        position: absolute;
+        text-decoration: none;
+        color: var(--foreground-color);
+        content: "variable undefined";
+        width: max-content;
+        margin-top: -2em;
+        font-size: 0.75em;
+        padding: 0.25em;
+        background-color: black;
+    }
+}
+
 [data-kind="complex-selector"] {
     display: flex;
     gap: 0.25em;
