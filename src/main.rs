@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use std::{fs, rc::Rc};
+use std::{cmp::Ordering, fs, rc::Rc};
 
 use db::*;
 use html::{Render, RenderOptions};
@@ -65,7 +65,7 @@ fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
         })
         .collect::<Vec<String>>();
 
-    results.sort();
+    results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 
     (ContentType::JSON, Json::from(results))
 }
