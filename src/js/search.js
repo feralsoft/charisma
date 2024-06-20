@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
     }
   });
   window.addEventListener("mousedown", (e) => {
-    if (!e.target.closest(".search-options")) clear();
+    if (!e.target.closest(".search-box")) clear();
   });
   options.addEventListener("mousedown", (e) => {
     let selector = e.target.closest(".search-options > [data-kind]");
