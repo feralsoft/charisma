@@ -14,6 +14,18 @@ function catch_links(editor) {
 let reloading = new Map();
 function init(editor) {
   catch_links(editor);
+  let { width, height } = document.body.getBoundingClientRect();
+  let { width: editor_width, height: editor_height } =
+    editor.getBoundingClientRect();
+  let x_offset = Number(
+      document.body.style.getPropertyValue("--x-offset").split("px")[0],
+    ),
+    y_offset = Number(
+      document.body.style.getPropertyValue("--y-offset").split("px")[0],
+    );
+  editor.style.left = `${width / 2 - editor_width / 2 - x_offset}px`;
+  editor.style.top = `${height / 2 - editor_height / 2 - y_offset}px`;
+
   editor.addEventListener("reload", async (_) => {
     if (reloading.get(editor)) return;
     reloading.set(editor, true);
@@ -29,6 +41,7 @@ function init(editor) {
     reloading.set(editor, false);
   });
 }
+
 document.addEventListener("DOMContentLoaded", (_) => {
   for (let editor of document.querySelectorAll(".--editor")) {
     init(editor);

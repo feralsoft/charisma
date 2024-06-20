@@ -1,7 +1,7 @@
 let current_editor = null;
 let dragging_board = false;
 let board_old_x, board_old_y, start_x, start_y;
-let dx, dy;
+let x_offset, y_offset;
 let set_position = (x, y) => {
   current_editor.style.left = `${x}px`;
   current_editor.style.top = `${y}px`;
@@ -28,8 +28,8 @@ function finish() {
 
   current_editor.classList.remove("dragging");
   current_editor = null;
-  dx = null;
-  dy = null;
+  x_offset = null;
+  y_offset = null;
 }
 function init(editor) {
   let rect = editor.getBoundingClientRect();
@@ -47,8 +47,8 @@ function init(editor) {
     current_editor = editor;
     let x = current_editor_x();
     let y = current_editor_y();
-    dx = e.clientX - x;
-    dy = e.clientY - y;
+    x_offset = e.clientX - x;
+    y_offset = e.clientY - y;
     current_editor.classList.add("dragging");
     set_position(x, y);
   });
@@ -58,10 +58,10 @@ window.addEventListener("mousedown", (e) => {
   if (e.target.classList.contains("canvas")) {
     dragging_board = true;
     document.body.classList.add("panning");
-    board_old_x = document.body.style.getPropertyValue("--dx");
+    board_old_x = document.body.style.getPropertyValue("--x-offset");
     if (board_old_x) board_old_x = Number(board_old_x.split("px")[0]);
     else board_old_x = 0;
-    board_old_y = document.body.style.getPropertyValue("--dy");
+    board_old_y = document.body.style.getPropertyValue("--y-offset");
     if (board_old_y) board_old_y = Number(board_old_y.split("px")[0]);
     else board_old_y = 0;
     start_x = e.clientX;
@@ -72,15 +72,15 @@ window.addEventListener("mouseup", finish);
 window.addEventListener("mousemove", (e) => {
   if (dragging_board) {
     document.body.style.setProperty(
-      "--dx",
+      "--x-offset",
       `${e.clientX - start_x + board_old_x}px`,
     );
     document.body.style.setProperty(
-      "--dy",
+      "--y-offset",
       `${e.clientY - start_y + board_old_y}px`,
     );
   }
-  if (current_editor) set_position(e.clientX - dx, e.clientY - dy);
+  if (current_editor) set_position(e.clientX - x_offset, e.clientY - y_offset);
 });
 
 window.addEventListener("blur", (_) => finish());
