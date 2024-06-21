@@ -1,5 +1,12 @@
+:root {
+    --outline-color: #ccc;
+}
 .main {
     display: flex;
     flex-direction: row;
     gap: 0.25em;
+    /* color: var(--outline-color); */
+}
+.main .btn {
+    color: red;
 }

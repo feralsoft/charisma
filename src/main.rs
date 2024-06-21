@@ -18,10 +18,9 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 11] = [
+const JS_FILE_NAMES: [&str; 10] = [
     "insert_property",
     "toggle_property",
-    "explore_siblings",
     "highlight_property",
     "update_value",
     "preview_var",
@@ -114,39 +113,6 @@ fn set_value(selector: &str, name: String, value: String) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[get("/src/<selector>/at/<idx>/siblings")]
-fn siblings(selector: &str, idx: usize) -> (ContentType, Json<Vec<Vec<(String, String)>>>) {
-    let mut db = CSSDB::new();
-    db.load("test.css");
-    let selector = parse_selector(selector).unwrap();
-    let path = selector.to_css_db_path();
-    let sibling_path = &path[0..idx];
-    let rest_of_path = &path[idx..];
-    let siblings = db
-        .siblings_with_subpath(sibling_path, rest_of_path)
-        .iter()
-        .map(|tree| tree.rule.as_ref().unwrap())
-        .map(|rule| {
-            rule.selector
-                .path
-                .iter()
-                .map(|part| {
-                    let selector_html = if part == " " {
-                        "so sad, what to do here :(".to_owned()
-                    } else {
-                        parse_selector(&part)
-                            .unwrap()
-                            .render_html(&RenderOptions::default())
-                    };
-                    (part.to_owned(), selector_html)
-                })
-                .collect::<Vec<(String, String)>>()
-        })
-        .collect::<Vec<Vec<(String, String)>>>();
-
-    (ContentType::JSON, Json::from(siblings))
-}
-
 #[get("/src/<selector>/at/<idx>")]
 fn index_at(selector: &str, idx: usize) -> Redirect {
     let selector = parse_selector(selector).unwrap();
@@ -237,6 +203,6 @@ fn index() -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, rule, insert, set_value, enable, disable, siblings, index_at, search],
+        routes![index, rule, insert, set_value, enable, disable, index_at, search],
     )
 }

@@ -406,6 +406,42 @@ impl CSSDB {
         }
     }
 
+    fn valid_var_lookup_ids(&self) -> Vec<String> {
+        if let Some(rule) = &self.rule {
+            // here lies the most beautiful code anyone has every seen /s
+            rule.properties.iter().filter_map(|p| {
+                if p.state == State::Commented {
+                    return None;
+                }
+                let decl = p.node.declaration().unwrap();
+                let property = decl.property().unwrap();
+                let property = property.as_css_generic_property().unwrap();
+                let value = property.value().into_iter().next().unwrap();
+                match value.as_any_css_value().unwrap() {
+                    biome_css_syntax::AnyCssValue::AnyCssFunction(f) => {
+                        let items = f.as_css_function().unwrap().items();
+                        let item = items.into_iter().next().unwrap().unwrap();
+                        match item.any_css_expression().unwrap() {
+                            biome_css_syntax::AnyCssExpression::CssListOfComponentValuesExpression(items) =>  {
+                                let item = items.css_component_value_list().into_iter().next().unwrap();
+                                match item {
+                                    biome_css_syntax::AnyCssValue::CssDashedIdentifier(name) => Some(name.to_string().trim().to_string()),
+                                    _ => None
+                                }
+                            }
+                            _ => None
+                        }
+
+                    }
+                    _ => None,
+                }
+
+            }).collect()
+        } else {
+            vec![]
+        }
+    }
+
     fn valid_properties_names(&self) -> Vec<String> {
         if let Some(rule) = &self.rule {
             rule.properties
@@ -457,22 +493,9 @@ impl CSSDB {
         for name in tree.valid_vars_with_selector_str().keys() {
             vars.remove(name);
         }
+        let var_references_in_rule = tree.valid_var_lookup_ids();
+        vars.retain(|key, _| var_references_in_rule.contains(key));
         vars
-    }
-
-    pub fn siblings_with_subpath(&self, path: &[String], subpath: &[String]) -> Vec<&CSSDB> {
-        assert!(path.len() > 0);
-        let (last_part, parent_path) = path.split_last().unwrap();
-        let root = self.get(parent_path);
-        assert!(root.is_some());
-        let root = root.unwrap();
-        root.children
-            .iter()
-            .filter(|(part, _)| *part != last_part)
-            .map(|(_, tree)| tree)
-            .filter_map(|tree| tree.get(&subpath))
-            .filter(|tree| tree.rule.is_some())
-            .collect()
     }
 
     pub fn set_state(
