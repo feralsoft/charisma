@@ -12,6 +12,7 @@ use url;
 mod db;
 mod html;
 mod parse_utils;
+mod properties;
 
 fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
@@ -31,11 +32,20 @@ const JS_FILE_NAMES: [&str; 10] = [
 ];
 
 fn editor_js() -> String {
+    let all_properties = format!(
+        "<script type=\"application/json\" id=\"css-properties\">[{}]</script>",
+        properties::ALL_PROPERTIES
+            .iter()
+            .map(|p| format!("\"{}\",", p))
+            .collect::<String>()
+    );
+
     JS_FILE_NAMES
         .iter()
         .map(|name| fs::read_to_string(format!("src/js/{}.js", name)).unwrap())
         .map(|js| format!("<script type=\"module\">{}</script>", js))
-        .collect()
+        .collect::<String>()
+        + &all_properties
 }
 
 #[post("/src/<selector>", data = "<property>")]

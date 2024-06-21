@@ -1,12 +1,7 @@
-:root {
+[data-attr="properties"] [data-value]:focus {
     --outline-color: white;
-}
-.main {
-    font-size: 30px;
-    /* color: var(--outline-color); */
-}
-.main .btn {
-    /* font-size: 20px; */
+    outline: var(--outline-color) solid 0.1em;
+    /* color: white; */
 }
 [data-attr="properties"] [data-value]:hover {
     display: flex;
@@ -15,8 +10,15 @@
     color: red;
     --outline-color: white;
 }
-[data-attr="properties"] [data-value]:focus {
+:root {
     --outline-color: white;
-    outline: var(--outline-color) solid 0.1em;
-    /* color: white; */
+}
+.main {
+    font-size: 30px;
+    /* color: var(--outline-color); */
+    display: flex;
+}
+.main .btn {
+    /* color: 20px; */
+    /* font-size: 20px; */
 }

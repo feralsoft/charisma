@@ -1,4 +1,4 @@
-use crate::parse_utils::parse_property;
+use crate::{parse_utils::parse_property, properties};
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
@@ -8,38 +8,6 @@ use biome_css_syntax::{
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
     CssRelativeSelector,
 };
-
-const INHERITABLE_PROPERTIES: [&str; 29] = [
-    "azimuth",
-    "border-collapse",
-    "border-spacing",
-    "caption-side",
-    "color",
-    "cursor",
-    "direction",
-    "empty-cells",
-    "font-family",
-    "font-size",
-    "font-style",
-    "font-variant",
-    "font-weight",
-    "font",
-    "letter-spacing",
-    "line-height",
-    "list-style-image",
-    "list-style-position",
-    "list-style-type",
-    "list-style",
-    "orphans",
-    "quotes",
-    "text-align",
-    "text-indent",
-    "text-transform",
-    "visibility",
-    "white-space",
-    "widows",
-    "word-spacing",
-];
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum State {
@@ -329,7 +297,7 @@ impl CSSDB {
             rule.properties
                 .iter()
                 .filter(|p| p.state == State::Valid)
-                .filter(|p| INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
+                .filter(|p| properties::INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
                 .map(|p| (p.name(), (rule.selector.string.clone(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {

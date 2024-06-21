@@ -41,14 +41,17 @@ body {
         margin: auto;
         display: flex;
         justify-content: center;
+
         &:has(.search.active) {
             z-index: 100;
         }
     }
+
     &.panning .canvas,
     .canvas:has(> .dragging) {
         pointer-events: none;
     }
+
     .search.active {
         background: none;
         font-size: 1em;
@@ -65,6 +68,7 @@ body {
         border-radius: 5px;
         box-shadow: 0px 2px 2px 2px #00000030;
     }
+
     .search-options:has(> *) {
         position: absolute;
         top: 3em;
@@ -75,9 +79,11 @@ body {
         display: flex;
         flex-direction: column;
         gap: var(--spacing);
+
         > [data-kind] {
             text-decoration: underline;
             cursor: pointer;
+
             * {
                 pointer-events: none;
             }
@@ -273,6 +279,17 @@ body.draggable-editor-prototype {
     }
 }
 
+[data-kind="rule"] [data-attr="properties"] .search-options {
+    position: absolute;
+    top: unset;
+    margin-top: 0.5em;
+    z-index: 10;
+    margin-left: 1em;
+    .search-item.candidate {
+        text-decoration: underline;
+    }
+}
+
 [data-kind="rule"] [data-attr="properties"] .input {
     font-size: 1em;
     color: var(--foreground-color);
@@ -422,6 +439,7 @@ body.draggable-editor-prototype {
     text-decoration: underline;
     text-decoration-style: wavy;
     text-decoration-color: #f5deb3ee;
+
     &:hover::after {
         position: absolute;
         text-decoration: none;
@@ -637,6 +655,7 @@ a {
     .minimize.active::before {
         content: "+";
     }
+
     .minimize.active::after {
         position: absolute;
         content: attr(data-selector);
