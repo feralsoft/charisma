@@ -83,27 +83,21 @@ fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
     (ContentType::JSON, Json::from(results))
 }
 
-#[post("/src/<selector>/<name>/disable")]
-fn disable(selector: &str, name: String) {
+#[post("/src/<selector>/<name>/<value>/disable")]
+fn disable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-
-    db.set_state(
-        &parse_selector(selector).unwrap().to_selector(None).path,
-        &name,
-        State::Commented,
-    );
-
+    let selector = parse_selector(selector).unwrap().to_selector(None);
+    db.set_state(&selector.path, name, value, State::Commented);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[post("/src/<selector>/<name>/enable")]
-fn enable(selector: &str, name: String) {
+#[post("/src/<selector>/<name>/<value>/enable")]
+fn enable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).unwrap();
-    let path = selector.to_css_db_path();
-    db.set_state(&path, &name, State::Valid);
+    let selector = parse_selector(selector).unwrap().to_selector(None);
+    db.set_state(&selector.path, name, value, State::Valid);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -117,16 +111,6 @@ fn set_value(selector: &str, name: String, value: String) {
     db.delete(&selector.path, &name);
     db.insert(&selector, &property);
 
-    fs::write("test.css", db.serialize()).unwrap()
-}
-
-#[delete("/src/<selector>/<name>")]
-fn delete(selector: &str, name: String) {
-    let mut db = CSSDB::new();
-    db.load("test.css");
-    let selector = parse_selector(selector).unwrap();
-    let path = selector.to_css_db_path();
-    db.delete(&path, &name);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -253,8 +237,6 @@ fn index() -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![
-            index, rule, insert, set_value, delete, enable, disable, siblings, index_at, search
-        ],
+        routes![index, rule, insert, set_value, enable, disable, siblings, index_at, search],
     )
 }

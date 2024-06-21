@@ -1,28 +1,6 @@
 .main {
-    font-size: 30px;
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
-    color: var(--outline-color);
-}
-.main .btn {
-    font-size: 20px;
-    display: flex;
-    color: blue;
-}
-[data-attr="properties"] [data-value]:hover {
-    display: flex;
-    outline: var(--outline-color) solid 0.1em;
-    font-size: 30px;
-    color: red;
-    --outline-color: white;
-}
-[data-attr="properties"] [data-value]:focus {
-    --outline-color: white;
-    outline: var(--outline-color) solid 0.1em;
-    /* color: white; */
-}
-:root {
-    --outline-color: white;
-    color: red;
+    /* gap: 1em; */
+    gap: 2em;
 }

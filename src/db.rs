@@ -21,6 +21,15 @@ pub struct Property {
     pub node: CssDeclarationWithSemicolon,
 }
 
+impl Property {
+    fn to_commented(&self) -> Self {
+        Property {
+            state: State::Commented,
+            node: self.node.clone(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Selector {
     pub string: String,
@@ -132,17 +141,43 @@ impl Rule {
         }
     }
 
-    pub fn insert(&mut self, property: Property) {
-        if self
+    pub fn comment_all_with_name(&mut self, name: &str) {
+        self.properties = self
             .properties
             .iter()
-            .any(|p| p.name() == property.name() && p.value() == p.value())
-        {
-            // should we warn?
-            return;
+            .map(|p| {
+                if &p.name() == name {
+                    Rc::new(p.to_commented())
+                } else {
+                    p.clone()
+                }
+            })
+            .collect();
+    }
+
+    pub fn insert(&mut self, new_property: Property) {
+        if new_property.state == State::Valid {
+            self.properties = self
+                .properties
+                .iter()
+                // if we are literally re-entering the same property, just ignore it
+                // ^ this is important if we are loading in a huge css file
+                .filter(|existing_property| {
+                    !(existing_property.name() == new_property.name()
+                        && existing_property.value() == new_property.value())
+                })
+                // if its the same name, but different value, comment out the other ones
+                .map(|p| {
+                    if p.name() == new_property.name() {
+                        Rc::new(p.to_commented())
+                    } else {
+                        p.clone()
+                    }
+                })
+                .collect();
         }
 
-        self.properties.push(Rc::new(property))
+        self.properties.push(Rc::new(new_property))
     }
 }
 
@@ -440,27 +475,26 @@ impl CSSDB {
             .collect()
     }
 
-    pub fn set_state(&mut self, path: &[String], property_name: &String, state: State) {
+    pub fn set_state(
+        &mut self,
+        path: &[String],
+        property_name: &str,
+        property_value: &str,
+        state: State,
+    ) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),
             "can't delete property from rule that doesn't exist"
         );
         let rule = tree.rule.as_mut().unwrap();
-        rule.properties = rule
-            .properties
-            .iter()
-            .map(|p| {
-                if &p.name() == property_name {
-                    Rc::new(Property {
-                        node: p.node.clone(),
-                        state: state.clone(),
-                    })
-                } else {
-                    p.clone()
-                }
-            })
-            .collect::<Vec<_>>();
+        rule.comment_all_with_name(property_name);
+        if state == State::Valid {
+            rule.insert(Property {
+                node: parse_property(&format!("{}: {};", property_name, property_value)).unwrap(),
+                state,
+            });
+        }
     }
 
     pub fn delete(&mut self, path: &[String], property_name: &String) {

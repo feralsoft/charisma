@@ -1,10 +1,14 @@
 async function toggle() {
   let property = this.closest('[data-kind="property"]');
-  let name = property.querySelector("[data-attr=name]").textContent;
+  let name = property.querySelector('[data-attr="name"]').textContent;
+  let value = property.querySelector('[data-attr="value"] > [data-kind]')
+    .dataset.stringValue;
   let is_commented = property.dataset.commented === "true";
   let action = is_commented ? "enable" : "disable";
   let editor = property.closest(".--editor");
-  await fetch(url_for(editor, `/${name}/${action}`), { method: "POST" });
+  await fetch(url_for(editor, `/${name}/${value}/${action}`), {
+    method: "POST",
+  });
   property.dispatchEvent(new Event("reload", { bubbles: true }));
 }
 

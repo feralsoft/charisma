@@ -90,9 +90,9 @@ function input(editor) {
     }
   });
   input_elem.addEventListener("blur", (_) => (input_elem.innerText = ""));
-  input_elem.addEventListener("click", (_) =>
-    window.getSelection().selectAllChildren(input_elem),
-  );
+  input_elem.addEventListener("click", (_) => {
+    window.getSelection().selectAllChildren(input_elem);
+  });
 
   container.append(input_elem);
   return container;
