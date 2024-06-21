@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   }
 
   window.addEventListener("keydown", async (e) => {
-    if (e.key === "/" || (e.key === "p" && e.metaKey)) {
+    if (e.key === "p" && e.metaKey) {
       e.preventDefault();
       if (input.classList.contains("active")) {
         clear();
@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
 
     let canvas = document.querySelector(".canvas");
     canvas.append(editor);
+    document.querySelector(".--editor.focused")?.classList?.remove("focused");
+    editor.classList.add("focused");
     canvas.dispatchEvent(new Event("new-editor"));
     clear();
   }

@@ -8,6 +8,8 @@ function search_item(name) {
 }
 
 function search_options(names) {
+  // hack
+  if (names.length === 0) return document.createElement("div");
   let options = document.createElement("div");
   options.classList.add("search-options");
   options.append(...names.map(search_item));
@@ -15,8 +17,24 @@ function search_options(names) {
   return options;
 }
 
+function accept_candidate(container, input_elem) {
+  let options = container.querySelector(".search-options");
+  input_elem.innerText = options.querySelector(".candidate").innerText;
+  options.remove();
+
+  // start garbage internet code
+  let range = document.createRange();
+  let selection = window.getSelection();
+  range.setStart(input_elem, input_elem.childNodes.length);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  // end of garbage internet code
+}
+
 function input(editor) {
   let container = document.createElement("div");
+  container.classList.add("insert-property-container");
   let input_elem = document.createElement("div");
   input_elem.classList.add("input");
   input_elem.contentEditable = true;
@@ -24,11 +42,15 @@ function input(editor) {
   input_elem.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      await fetch(editor.dataset.url, {
-        method: "POST",
-        body: e.target.innerText,
-      });
-      input_elem.dispatchEvent(new Event("reload", { bubbles: true }));
+      if (container.querySelector(".search-options .candidate")) {
+        return accept_candidate(container, input_elem);
+      } else {
+        await fetch(editor.dataset.url, {
+          method: "POST",
+          body: e.target.innerText,
+        });
+        input_elem.dispatchEvent(new Event("reload", { bubbles: true }));
+      }
     } else if (e.key === "Escape") {
       input_elem.blur();
     } else if (e.key === "ArrowUp") {
@@ -50,21 +72,9 @@ function input(editor) {
         elem.nextElementSibling.classList.add("candidate");
       }
     } else if (e.key === "Tab") {
-      // pick option
-      let options = container.querySelector(".search-options");
-      input_elem.innerText = options.querySelector(".candidate").innerText;
-      options.remove();
-      // start garbage internet code
-      const range = document.createRange();
-      const selection = window.getSelection();
-      range.setStart(input_elem, input_elem.childNodes.length);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      // end of garbage internet code
-
+      accept_candidate(container, input_elem);
       e.preventDefault();
-    } else {
+    } else if (!e.shiftKey) {
       // populate auto complete list
       setTimeout(() => {
         container.querySelector(".search-options")?.remove();
@@ -95,6 +105,20 @@ function init(editor) {
 
   properties.append(input(editor));
 }
+window.addEventListener("keydown", (e) => {
+  if (
+    document.activeElement?.closest(
+      ":is(.insert-property-container, [data-value])",
+    )
+  )
+    return;
+  if (e.key === "/") {
+    e.preventDefault();
+    document
+      .querySelector(".--editor.focused .insert-property-container .input")
+      .click();
+  }
+});
 
 document.addEventListener("DOMContentLoaded", (_) => {
   all_properties = eval(document.querySelector("#css-properties").innerHTML);
