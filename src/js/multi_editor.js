@@ -36,13 +36,63 @@ function y_offset() {
   );
 }
 
+function editor_at({ x, y }) {
+  for (let elem of document.elementsFromPoint(x, y)) {
+    let editor = elem.closest(".--editor");
+    if (editor) return editor;
+  }
+}
+
 function init(editor) {
   catch_links(editor);
   let { width, height } = document.body.getBoundingClientRect();
   let { width: editor_width, height: editor_height } =
     editor.getBoundingClientRect();
-  editor.style.left = `${width / 2 - editor_width / 2 - x_offset()}px`;
-  editor.style.top = `${height / 2 - editor_height / 2 - y_offset()}px`;
+
+  let position = {
+    x: width / 2 - editor_width / 2,
+    y: height / 2 - editor_height / 2,
+  };
+
+  // ugghh .. this is broken & ugly. :)
+  let elem;
+  if ((elem = editor_at(position))) {
+    // try moving down
+    let { bottom, right, left, top } = elem.getBoundingClientRect();
+    position.y = bottom + 50;
+    // move bottom right
+    if (editor_at(position)) {
+      position.x = right + 50;
+      if (editor_at(position)) {
+        // go left
+        position.x = left - editor_width;
+        position.y = top;
+        if (editor_at(position)) {
+          // go right
+          position.x = right + 50;
+          position.y = top;
+          if (editor_at(position)) {
+            // go up
+            position.y = top - editor_height - 50;
+            position.x = left;
+            if (editor_at(position)) {
+              // up right
+              position.x = right + 50;
+              if (editor_at(position)) {
+                // up left
+                position.x = left - editor_width;
+                if (editor_at(position)) {
+                  position.y = bottom + 50;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  editor.style.left = `${position.x - x_offset()}px`;
+  editor.style.top = `${position.y - y_offset()}px`;
   snap_editor(editor);
   editor.addEventListener("reload", (_) => reload(editor, url_for(editor)));
 }
@@ -62,4 +112,10 @@ window.url_for = function (editor, sub_path = "", search = "") {
   url.pathname += sub_path;
   url.search = search;
   return url;
+};
+
+window.assert = function (cond, msg) {
+  if (!cond) {
+    debugger;
+  }
 };
