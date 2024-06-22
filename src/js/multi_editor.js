@@ -1,8 +1,8 @@
-let reloading = new Map();
+let reload_lock = new Map();
 
 async function reload(editor, base_url) {
-  if (reloading.get(editor)) return;
-  reloading.set(editor, true);
+  if (reload_lock.get(editor)) return;
+  reload_lock.set(editor, true);
   for (let editor_ of document.querySelectorAll(".--editor"))
     editor_.dispatchEvent(new Event("reload"));
   let url = new URL(base_url);
@@ -12,7 +12,7 @@ async function reload(editor, base_url) {
   editor.dataset.url = base_url;
   catch_links(editor);
   editor.dispatchEvent(new Event("loaded"));
-  reloading.delete(editor);
+  reload_lock.delete(editor);
 }
 
 function catch_links(editor) {

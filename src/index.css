@@ -135,6 +135,24 @@ body.draggable-editor-prototype {
     &.panning {
         cursor: grabbing;
     }
+    .canvas > .connection {
+        z-index: -1;
+        position: absolute;
+        left: var(--x);
+        top: var(--y);
+        width: var(--dist);
+        background: rgba(255, 255, 255, 0.5);
+        height: 0.1em;
+
+        transform: translateX(var(--x-offset)) translateY(var(--y-offset))
+            rotate(var(--angle, 0));
+        &[data-mounted="left"] {
+            transform-origin: left;
+        }
+        &[data-mounted="top"] {
+            transform-origin: left;
+        }
+    }
 }
 
 [data-kind="property"] {

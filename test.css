@@ -1,12 +1,14 @@
 :root {
-    --outline-color: #ccc;
+    font-family: mono;
+    /* --color: red; */
+    /* --var: 20px; */
+    /* color: orange; */
 }
 .main {
-    display: flex;
-    flex-direction: row;
-    gap: 0.25em;
-    /* color: var(--outline-color); */
+    font-size: 20px;
+    color: var(--color);
+    /* columns: 10em; */
 }
 .main .btn {
-    color: red;
+    color: blue;
 }

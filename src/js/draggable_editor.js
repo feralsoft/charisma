@@ -5,6 +5,7 @@ let x_offset, y_offset;
 let set_position = (x, y) => {
   current_editor.style.left = `${x}px`;
   current_editor.style.top = `${y}px`;
+  current_editor.dispatchEvent(new Event("moved"));
 };
 function editor_x(editor) {
   return Number(editor.style.left.split("px")[0]);
@@ -31,6 +32,7 @@ function finish() {
   if (!current_editor) return;
   snap_editor(current_editor);
   current_editor.classList.remove("dragging");
+  current_editor.dispatchEvent(new Event("moved"));
   current_editor = null;
   x_offset = null;
   y_offset = null;
