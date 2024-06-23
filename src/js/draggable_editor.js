@@ -61,7 +61,7 @@ function init(editor) {
 }
 
 window.addEventListener("mousedown", (e) => {
-  if (e.target.classList.contains("canvas")) {
+  if (e.target.classList.contains("canvas") || e.target.closest("svg")) {
     dragging_board = true;
     document.body.classList.add("panning");
     board_old_x = document.body.style.getPropertyValue("--x-offset");
