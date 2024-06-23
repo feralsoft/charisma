@@ -16,12 +16,10 @@ function calc_connnection(connection_elem, me_elem, you_elem) {
     x: num(you_elem.style.left) + you_rect.width / 2,
     y: num(you_elem.style.top) + you_rect.height / 2,
   };
-  connection_elem.style.setProperty("--me-x", me.x);
-  connection_elem.style.setProperty("--me-y", me.y);
-  connection_elem.style.setProperty("--you-x", you.x);
-  connection_elem.style.setProperty("--you-y", you.y);
-  connection_elem.dataset.left = me.x > you.x ? "you" : "me";
-  connection_elem.dataset.below = me.y > you.y ? "me" : "you";
+  connection_elem.setAttribute("x1", me.x);
+  connection_elem.setAttribute("x2", you.x);
+  connection_elem.setAttribute("y1", me.y);
+  connection_elem.setAttribute("y2", you.y);
 }
 
 function update_connections_for(editor) {
@@ -39,7 +37,7 @@ function update_connections_for(editor) {
 function init(editor) {
   for (let connection of document.querySelectorAll(".connection"))
     connection.remove();
-  let canvas = document.querySelector(".canvas");
+  let svg = document.querySelector(".canvas svg");
   let my_selector = editor.querySelector('[data-attr="selector"] > [data-kind]')
     .dataset.stringValue;
 
@@ -49,16 +47,24 @@ function init(editor) {
       '[data-attr="selector"] > [data-kind]',
     ).dataset.stringValue;
     if (my_selector.includes(other_selector)) {
-      let connection = document.createElement("div");
+      let connection = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
       connection.classList.add("connection");
       calc_connnection(connection, editor, other_editor);
-      canvas.append(connection);
+      svg.append(connection);
     }
   }
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
+  let svg_canvas = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg",
+  );
+  canvas.append(svg_canvas);
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");
     init(editor);

@@ -138,72 +138,14 @@ body.draggable-editor-prototype {
         cursor: grabbing;
     }
 
-    .canvas > .connection {
-        z-index: -1;
-        position: absolute;
-        background: rgba(255, 255, 255, 0.5);
-        height: 0.1em;
-        transform-origin: left;
-        left: calc(var(--you-x) * 1px);
-        top: calc(var(--you-y) * 1px);
-        --hypo: hypot(var(--opposite), var(--adjacent));
-        width: calc(var(--hypo) * 1px);
-        --angle: calc(
-            asin(var(--opposite) / var(--hypo)) * var(--angle-factor, 1) +
-                var(--starting-angle, 0)
-        );
-        transform: translateX(var(--x-offset, 0)) translateY(var(--y-offset, 0))
-            rotate(var(--angle, 0));
-
-        &[data-left="me"][data-below="me"] {
-            /*
-              (dx)
-               [you] (a)
-               / | (dy)
-              [me]
-            */
-            --opposite: calc(var(--you-x) - var(--me-x));
-            --adjacent: calc(var(--me-y) - var(--you-y));
-            --starting-angle: 90deg;
-        }
-
-        &[data-left="me"][data-below="you"] {
-            /*
-              (dx)
-             [me]
-              \ | (dy)
-               [you] (a)
-            */
-            --opposite: calc(var(--you-x) - var(--me-x));
-            --adjacent: calc(var(--you-y) - var(--me-y));
-            --angle-factor: -1;
-            --starting-angle: -90deg;
-        }
-
-        &[data-left="you"][data-below="me"] {
-            /*
-             (dx)
-            [you] (a)
-             \ | (dy)
-              [me]
-            */
-            --opposite: calc(var(--me-x) - var(--you-x));
-            --adjacent: calc(var(--me-y) - var(--you-y));
-            --starting-angle: 90deg;
-            --angle-factor: -1;
-        }
-
-        &[data-left="you"][data-below="you"] {
-            /*
-             [me]
-              / | (dy)
-            [you] (a)
-            (dx)
-            */
-            --opposite: calc(var(--you-x) - var(--me-x));
-            --adjacent: calc(var(--you-y) - var(--me-y));
-            --angle-factor: -1;
-            --starting-angle: -90deg;
+    svg {
+        width: 100%;
+        height: 100%;
+        line {
+            stroke-width: 0.1em;
+            stroke: white;
+            transform: translateX(var(--x-offset, 0))
+                translateY(var(--y-offset, 0));
         }
     }
 }
