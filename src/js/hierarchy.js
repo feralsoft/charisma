@@ -1,5 +1,3 @@
-// prototype.. yucky
-
 function num(px_str) {
   return Number(px_str.split("px")[0]);
 }
@@ -58,8 +56,6 @@ function init(editor) {
     }
   }
 }
-
-// a little too yucky to enable by default
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
