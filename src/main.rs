@@ -18,10 +18,9 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 11] = [
+const JS_FILE_NAMES: [&str; 9] = [
     "insert_property",
     "toggle_property",
-    "highlight_property",
     "update_value",
     "preview_var",
     "search",
@@ -29,7 +28,6 @@ const JS_FILE_NAMES: [&str; 11] = [
     "multi_editor",
     "menu",
     "focus",
-    "connection",
 ];
 
 fn editor_js() -> String {
@@ -135,9 +133,8 @@ fn render_rule(selector: &str, db: &CSSDB) -> String {
         assert!(!selector_str.contains('\''));
         let selector = selector_str.trim();
         format!(
-            "<a href=\"{}?highlight_property_name={}\" title='{}'>{}</a>",
+            "<a href='{}' title='{}'>{}</a>",
             url::form_urlencoded::byte_serialize(selector.as_bytes()).collect::<String>(),
-            property.name(),
             selector,
             property.render_html(&RenderOptions::default())
         )
