@@ -102,7 +102,7 @@ body {
     outline: 0.1em solid black;
 
     &.focused {
-        outline-color: rgba(0, 200, 0, 0.2);
+        outline-color: rgba(0, 100, 0, 1);
     }
 
     background-color: rgb(40, 40, 40);

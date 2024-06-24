@@ -15,15 +15,16 @@ function editor_y(editor) {
   return Number(editor.style.top.split("px")[0]);
 }
 
+const SNAP_OFFSET = 4;
 window.snap_editor = function (editor) {
   let x = editor_x(editor);
   let y = editor_y(editor);
 
-  if (x % 25 < 9) editor.style.left = `${x - (x % 25) - 7}px`;
-  else editor.style.left = `${x + (25 - (x % 25)) - 7}px`;
+  if (x % 25 < 9) editor.style.left = `${x - (x % 25) - SNAP_OFFSET}px`;
+  else editor.style.left = `${x + (25 - (x % 25)) - SNAP_OFFSET}px`;
 
-  if (y % 25 < 9) editor.style.top = `${y - (y % 25) - 7}px`;
-  else editor.style.top = `${y + (25 - (y % 25)) - 7}px`;
+  if (y % 25 < 9) editor.style.top = `${y - (y % 25) - SNAP_OFFSET}px`;
+  else editor.style.top = `${y + (25 - (y % 25)) - SNAP_OFFSET}px`;
 };
 
 function finish() {
