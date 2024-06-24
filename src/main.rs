@@ -29,7 +29,7 @@ const JS_FILE_NAMES: [&str; 11] = [
     "multi_editor",
     "menu",
     "focus",
-    "hierarchy",
+    "connection",
 ];
 
 fn editor_js() -> String {

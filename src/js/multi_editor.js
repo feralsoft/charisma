@@ -43,8 +43,7 @@ function editor_at({ x, y }) {
   }
 }
 
-function init(editor) {
-  catch_links(editor);
+function find_position_for(editor) {
   let { width, height } = document.body.getBoundingClientRect();
   let { width: editor_width, height: editor_height } =
     editor.getBoundingClientRect();
@@ -57,19 +56,20 @@ function init(editor) {
   // ugghh .. this is broken & ugly. :)
   let elem;
   if ((elem = editor_at(position))) {
-    // try moving down
     let { bottom, right, left, top } = elem.getBoundingClientRect();
-    position.y = bottom + 50;
-    // move bottom right
+    // go right
+    position.x = right + 50;
+    position.y = top;
     if (editor_at(position)) {
-      position.x = right + 50;
+      // try moving down
+      position.y = bottom + 50;
+      position.x = left;
+      // move bottom right
       if (editor_at(position)) {
-        // go left
-        position.x = left - editor_width;
-        position.y = top;
+        position.x = right + 50;
         if (editor_at(position)) {
-          // go right
-          position.x = right + 50;
+          // go left
+          position.x = left - editor_width;
           position.y = top;
           if (editor_at(position)) {
             // go up
@@ -91,6 +91,12 @@ function init(editor) {
       }
     }
   }
+  return position;
+}
+
+function init(editor) {
+  catch_links(editor);
+  let position = find_position_for(editor);
   editor.style.left = `${position.x - x_offset()}px`;
   editor.style.top = `${position.y - y_offset()}px`;
   snap_editor(editor);

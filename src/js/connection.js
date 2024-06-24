@@ -58,17 +58,17 @@ function init(editor) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", (_) => {
-  let canvas = document.querySelector(".canvas");
-  let svg_canvas = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "svg",
-  );
-  canvas.append(svg_canvas);
-  canvas.addEventListener("new-editor", (_) => {
-    let editor = document.querySelector(".--editor:last-child");
-    init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
-    editor.addEventListener("moved", (_) => update_connections_for(editor));
-  });
-});
+// document.addEventListener("DOMContentLoaded", (_) => {
+//   let canvas = document.querySelector(".canvas");
+//   let svg_canvas = document.createElementNS(
+//     "http://www.w3.org/2000/svg",
+//     "svg",
+//   );
+//   canvas.append(svg_canvas);
+//   canvas.addEventListener("new-editor", (_) => {
+//     let editor = document.querySelector(".--editor:last-child");
+//     init(editor);
+//     editor.addEventListener("loaded", (_) => init(editor));
+//     editor.addEventListener("moved", (_) => update_connections_for(editor));
+//   });
+// });
