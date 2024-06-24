@@ -137,17 +137,6 @@ body.draggable-editor-prototype {
     &.panning {
         cursor: grabbing;
     }
-
-    svg {
-        width: 100%;
-        height: 100%;
-        line {
-            stroke-width: 0.1em;
-            stroke: white;
-            transform: translateX(var(--x-offset, 0))
-                translateY(var(--y-offset, 0));
-        }
-    }
 }
 
 [data-kind="property"] {
@@ -273,24 +262,6 @@ body.draggable-editor-prototype {
     &:has([data-kind])::before {
         content: "inherited";
         font-size: 0.75em;
-    }
-}
-
-[data-kind="rule"] [data-kind="property"].highlighted {
-    animation: highlight 1.5s linear forwards;
-}
-
-@keyframes highlight {
-    0% {
-        background-color: rgba(222, 244, 64, 0.1);
-    }
-
-    90% {
-        background-color: rgba(222, 244, 64, 0.1);
-    }
-
-    100% {
-        background-color: none;
     }
 }
 
