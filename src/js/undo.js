@@ -20,9 +20,10 @@ let undo_stack = {
   },
 };
 
+const UNDO_SRC_TO_IGNORE = ["undo", "reload-siblings"];
 function init(editor) {
   editor.addEventListener("reload", (e) => {
-    if (e.detail?.src === "undo") return;
+    if (UNDO_SRC_TO_IGNORE.includes(e.detail?.src)) return;
     undo_stack.push(editor);
   });
 }
@@ -51,6 +52,7 @@ window.addEventListener("keydown", async (e) => {
     let { selector, html } = undo_stack.pop();
     let editor = document.querySelector(`.--editor[data-url*='${selector}']`);
     let properties = get_properties(html);
+    console.log(properties);
     await fetch(
       `http://localhost:8000/src/${selector}/replace_all_properties`,
       {

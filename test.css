@@ -1,7 +1,7 @@
 :root {
     font-family: mono;
     --color: red;
-    color: orange;
+    /* color: orange; */
     /* --var: 20px; */
 }
 .main {
@@ -10,5 +10,5 @@
     /* columns: 10em; */
 }
 .main .btn {
-    /* color: blue; */
+    color: blue;
 }

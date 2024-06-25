@@ -5,7 +5,9 @@ async function reload(editor, base_url) {
   reload_lock.set(editor, true);
   for (let editor_ of document.querySelectorAll(".--editor")) {
     if (editor_ === editor) continue;
-    editor_.dispatchEvent(new Event("reload"));
+    editor_.dispatchEvent(
+      new CustomEvent("reload", { detail: { src: "reload-siblings" } }),
+    );
   }
   let url = new URL(base_url);
   url.pathname += "/rule";
