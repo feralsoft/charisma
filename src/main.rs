@@ -6,7 +6,8 @@ use std::{fs, rc::Rc};
 use db::*;
 use html::{Render, RenderOptions};
 use parse_utils::{parse_property, parse_selector};
-use rocket::{http::ContentType, response::Redirect, serde::json::Json};
+use rocket::serde::json::Json;
+use rocket::{http::ContentType, serde::Deserialize};
 use url;
 
 mod db;
@@ -18,7 +19,7 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 9] = [
+const JS_FILE_NAMES: [&str; 10] = [
     "insert_property",
     "toggle_property",
     "update_value",
@@ -28,6 +29,7 @@ const JS_FILE_NAMES: [&str; 9] = [
     "multi_editor",
     "menu",
     "focus",
+    "undo",
 ];
 
 fn editor_js() -> String {
@@ -112,13 +114,36 @@ fn set_value(selector: &str, name: String, value: String) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[get("/src/<selector>/at/<idx>")]
-fn index_at(selector: &str, idx: usize) -> Redirect {
-    let selector = parse_selector(selector).unwrap();
-    let path = selector.to_css_db_path();
-    let sibling_path = &path[0..idx];
+#[derive(Deserialize)]
+#[serde(crate = "rocket::serde")]
+struct JsonProperty {
+    is_commented: bool,
+    name: String,
+    value: String,
+}
 
-    Redirect::to(format!("/src/{}", sibling_path.join("")))
+#[post("/src/<selector>/replace_all_properties", data = "<properties>")]
+fn replace_all_properties(selector: &str, properties: Json<Vec<JsonProperty>>) {
+    let selector = parse_selector(selector).unwrap().to_selector(None);
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    db.get_mut(&selector.path).unwrap().drain();
+
+    for property in properties.iter() {
+        if property.is_commented {
+            db.insert_commented(
+                &selector,
+                parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
+            );
+        } else {
+            db.insert(
+                &selector,
+                &parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
+            );
+        }
+    }
+
+    fs::write("test.css", db.serialize()).unwrap()
 }
 
 fn render_rule(selector: &str, db: &CSSDB) -> String {
@@ -201,6 +226,15 @@ fn index() -> (ContentType, String) {
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
-        routes![index, rule, insert, set_value, enable, disable, index_at, search],
+        routes![
+            index,
+            rule,
+            insert,
+            set_value,
+            enable,
+            disable,
+            replace_all_properties,
+            search
+        ],
     )
 }

@@ -1,14 +1,14 @@
-.main {
-    font-size: 20px;
-    /* color: var(--color); */
-    columns: 10em;
-}
-.main .btn {
-    color: blue;
-}
 :root {
     font-family: mono;
     --color: red;
     color: orange;
     /* --var: 20px; */
+}
+.main {
+    font-size: 20px;
+    color: var(--color);
+    /* columns: 10em; */
+}
+.main .btn {
+    /* color: blue; */
 }

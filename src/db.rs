@@ -327,6 +327,12 @@ impl CSSDB {
         selectors
     }
 
+    pub fn drain(&mut self) {
+        if let Some(rule) = self.rule.as_mut() {
+            rule.properties.drain(0..);
+        }
+    }
+
     fn inheritable_properties(&self) -> HashMap<String, (String, Rc<Property>)> {
         if let Some(rule) = &self.rule {
             rule.properties
@@ -553,7 +559,7 @@ impl CSSDB {
         }
     }
 
-    fn insert_commented(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
+    pub fn insert_commented(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
         self.insert_raw(
             selector.clone(),
             &selector.path,

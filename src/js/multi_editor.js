@@ -3,8 +3,10 @@ let reload_lock = new Map();
 async function reload(editor, base_url) {
   if (reload_lock.get(editor)) return;
   reload_lock.set(editor, true);
-  for (let editor_ of document.querySelectorAll(".--editor"))
+  for (let editor_ of document.querySelectorAll(".--editor")) {
+    if (editor_ === editor) continue;
     editor_.dispatchEvent(new Event("reload"));
+  }
   let url = new URL(base_url);
   url.pathname += "/rule";
   let new_rule = await fetch(url).then((r) => r.text());
