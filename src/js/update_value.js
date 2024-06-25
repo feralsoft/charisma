@@ -2,6 +2,8 @@ function plain_text_node(editor, name, text) {
   let node = document.createElement("div");
   node.classList.add("plain-text-node");
   node.innerText = text;
+  node.dataset.kind = "plain-text";
+  node.dataset.stringValue = text;
   node.contentEditable = true;
   setTimeout(() => window.getSelection().selectAllChildren(node));
   node.addEventListener("keydown", async (e) => {

@@ -437,7 +437,12 @@ body.draggable-editor-prototype {
         font-size: 0.75em;
         padding: 0.25em;
         background-color: black;
+        right: 0;
     }
+}
+
+[data-kind="property"][data-commented="true"] {
+    opacity: 0.7;
 }
 
 [data-kind="complex-selector"] {

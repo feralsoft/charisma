@@ -50,9 +50,10 @@ window.addEventListener("keydown", async (e) => {
   if (e.key === "z" && e.metaKey) {
     if (undo_stack.is_empty()) return;
     let { selector, html } = undo_stack.pop();
-    let editor = document.querySelector(`.--editor[data-url*='${selector}']`);
+    let editor = document.querySelector(
+      `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
+    );
     let properties = get_properties(html);
-    console.log(properties);
     await fetch(
       `http://localhost:8000/src/${selector}/replace_all_properties`,
       {
