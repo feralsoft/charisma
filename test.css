@@ -1,11 +1,9 @@
 :root {
-    font-family: mono;
     color: orange;
-    --var: 30px;
-    --color: red;
+    font-family: mono;
 }
 .main {
-    color: green;
+    color: red;
 }
 .main .btn {
     color: blue;
