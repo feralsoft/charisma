@@ -1,5 +1,11 @@
+// editor focus
 window.addEventListener("mousedown", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
+
+  // unfocus property
+  document
+    .querySelector('[data-kind="property"].focused')
+    ?.classList?.remove("focused");
 
   let found_editor;
 
@@ -25,24 +31,25 @@ window.addEventListener("mousedown", (e) => {
     .elementFromPoint(e.clientX, e.clientY)
     .closest(".--editor");
 
-  if (!found_editor) return;
+  // there should never be 2 focused editors
+  document.querySelector(".--editor.focused")?.classList?.remove("focused");
 
-  for (let focused_editor of document.querySelectorAll(".--editor.focused"))
-    focused_editor.classList.remove("focused");
+  if (!found_editor) return;
 
   found_editor.classList.add("focused");
 });
 
+// property focus
 window.addEventListener("dblclick", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
-  for (let focused of document.querySelectorAll(".focused"))
-    focused.classList.remove("focused");
-  let elements = document.elementsFromPoint(e.clientX, e.clientY);
 
-  for (let elem of elements) {
-    let result = elem.closest('[data-kind="property"]');
-    if (!result) continue;
-    result.classList.add("focused");
-    break;
-  }
+  // should only be 1 focused property at any given time.
+  document
+    .querySelector('[data-kind="property"].focused')
+    ?.classList?.remove("focused");
+
+  document
+    .elementFromPoint(e.clientX, e.clientY)
+    .closest('[data-kind="property"]')
+    ?.classList?.add("focused");
 });
