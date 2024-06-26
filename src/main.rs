@@ -6,6 +6,7 @@ use std::{fs, rc::Rc};
 use db::*;
 use html::{Render, RenderOptions};
 use parse_utils::{parse_property, parse_selector};
+use rocket::fs::NamedFile;
 use rocket::serde::json::Json;
 use rocket::{http::ContentType, serde::Deserialize};
 use url;
@@ -222,19 +223,25 @@ fn index() -> (ContentType, String) {
     )
 }
 
+#[get("/favicon.ico")]
+async fn favicon() -> Option<NamedFile> {
+    NamedFile::open("src/public/favicon.ico").await.ok()
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount(
         "/",
         routes![
             index,
+            favicon,
             rule,
             insert,
             set_value,
             enable,
             disable,
             replace_all_properties,
-            search
+            search,
         ],
     )
 }
