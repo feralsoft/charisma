@@ -6,8 +6,8 @@
 }
 .main {
     color: var(--color);
-    font-size: 20px;
-    columns: 10em;
+    font-size: 40px;
+    /* columns: 10em; */
 }
 .main .btn {
     color: blue;

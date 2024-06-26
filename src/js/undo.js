@@ -5,6 +5,7 @@ let undo_stack = {
     return this._stack.length === 0;
   },
   push(editor) {
+    console.log("here");
     if (editor.length === this.MAX_SIZE) this._stack.shift();
     this._stack.push({
       selector: editor

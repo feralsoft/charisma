@@ -15,10 +15,11 @@ function plain_text_node(editor, name, text) {
         method: "POST",
         body: node.innerText,
       });
-      node.dispatchEvent(new Event("reload", { bubbles: true }));
+      node.blur();
     }
   });
   node.addEventListener("blur", (_) => {
+    console.log(2);
     node.dispatchEvent(new Event("reload", { bubbles: true }));
   });
   return node;
