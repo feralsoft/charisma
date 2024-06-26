@@ -12,7 +12,7 @@ let undo_stack = {
           '[data-attr="selector"] > [data-kind][data-string-value]',
         )
         .dataset.stringValue.trim(),
-      html: editor.innerHTML,
+      properties: get_properties(editor),
     });
   },
   pop() {
@@ -28,11 +28,9 @@ function init(editor) {
   });
 }
 
-function get_properties(html) {
-  let elem = document.createElement("div");
-  elem.innerHTML = html;
+function get_properties(editor) {
   let properties = [];
-  for (let property of elem.querySelectorAll(
+  for (let property of editor.querySelectorAll(
     '[data-attr="properties"] > [data-kind="property"]',
   )) {
     let is_commented = property.dataset.commented === "true";
@@ -49,11 +47,10 @@ function get_properties(html) {
 window.addEventListener("keydown", async (e) => {
   if (e.key === "z" && e.metaKey) {
     if (undo_stack.is_empty()) return;
-    let { selector, html } = undo_stack.pop();
+    let { selector, properties } = undo_stack.pop();
     let editor = document.querySelector(
       `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
     );
-    let properties = get_properties(html);
     await fetch(
       `http://localhost:8000/src/${selector}/replace_all_properties`,
       {

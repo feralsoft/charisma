@@ -445,6 +445,10 @@ body.draggable-editor-prototype {
     opacity: 0.7;
 }
 
+[data-value] {
+    user-select: none;
+}
+
 [data-kind="complex-selector"] {
     display: flex;
     gap: 0.25em;

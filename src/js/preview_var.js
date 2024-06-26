@@ -14,8 +14,6 @@ function init(editor) {
     let value = property.querySelector('[data-attr="value"] [data-kind]');
     let cloned_value = value.cloneNode(true);
     cloned_value.classList.add("preview");
-    for (let node of cloned_value.querySelectorAll("[contenteditable]"))
-      node.removeAttribute("contenteditable");
     variable.append(cloned_value);
   }
 }

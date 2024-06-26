@@ -43,14 +43,7 @@ function init(editor) {
   editor.style.left = `${rect.left}px`;
   editor.style.top = `${rect.top}px`;
   editor.addEventListener("mousedown", (e) => {
-    if (
-      !(
-        e.target.dataset.kind === "rule" ||
-        e.target.dataset.attr === "properties" ||
-        e.target.dataset.attr === "inherited-properties"
-      )
-    )
-      return;
+    if (e.target.dataset.kind !== "rule") return;
     current_editor = editor;
     let x = editor_x(current_editor);
     let y = editor_y(current_editor);
