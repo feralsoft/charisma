@@ -17,12 +17,19 @@ function minimize(editor) {
   return minimize_btn;
 }
 
+function grab() {
+  let minimize_btn = document.createElement("button");
+  minimize_btn.classList.add("grab");
+  return minimize_btn;
+}
+
 function menu(editor) {
   let menu_elem = document.createElement("div");
   menu_elem.classList.add("menu");
 
   menu_elem.append(close(editor));
   menu_elem.append(minimize(editor));
+  menu_elem.append(grab());
   return menu_elem;
 }
 

@@ -43,7 +43,7 @@ function init(editor) {
   editor.style.left = `${rect.left}px`;
   editor.style.top = `${rect.top}px`;
   editor.addEventListener("mousedown", (e) => {
-    if (e.target.dataset.kind !== "rule") return;
+    if (!e.target.classList.contains("grab")) return;
     current_editor = editor;
     let x = editor_x(current_editor);
     let y = editor_y(current_editor);
