@@ -19,7 +19,7 @@ function search_options(names) {
 
 function accept_candidate(container, input_elem) {
   let options = container.querySelector(".search-options");
-  input_elem.innerText = options.querySelector(".candidate").innerText;
+  input_elem.innerText = options.querySelector(".candidate").innerText + ":";
   options.remove();
 
   // start garbage internet code
@@ -78,12 +78,20 @@ function input(editor) {
       // populate auto complete list
       setTimeout(() => {
         container.querySelector(".search-options")?.remove();
-        if (input_elem.innerText.trim() === "") return;
-        let options = all_properties.filter((name) =>
-          name.includes(input_elem.innerText),
-        );
-
-        options.sort((a, b) => a.length - b.length);
+        let text = input_elem.innerText.trim();
+        if (text === "") return;
+        let options = all_properties.filter((name) => name.includes(text));
+        options.sort((a, b) => {
+          if (a.startsWith(text)) {
+            if (b.startsWith(text)) {
+              return a.length - b.length;
+            } else {
+              return -1;
+            }
+          } else {
+            return 1;
+          }
+        });
         options = options.slice(0, 10);
         container.append(search_options(options));
       });

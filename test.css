@@ -1,7 +1,9 @@
 .main {
     columns: 20px;
-    color: red;
+    /* color: red; */
+    /* color: blue; */
     /* font-size: 40px; */
+    color: yellow;
 }
 .main .btn {
     color: blue;
