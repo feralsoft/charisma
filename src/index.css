@@ -657,7 +657,7 @@ a {
     }
 
     .minimize.active {
-        background-size: 8px;
+        background-size: 9px;
         background-image: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M12 4V20" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     }
 
