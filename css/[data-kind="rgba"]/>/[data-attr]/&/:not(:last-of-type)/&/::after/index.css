@@ -1,4 +1,0 @@
-[data-kind="rgba"] > [data-attr]:not(:last-of-type)::after {
-  content: ",";
-  color: var(--foreground-color);
-}

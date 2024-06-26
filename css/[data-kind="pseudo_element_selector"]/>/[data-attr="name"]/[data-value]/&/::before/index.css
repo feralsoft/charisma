@@ -1,3 +1,0 @@
-[data-kind="pseudo_element_selector"] > [data-attr="name"] [data-value]::before {
-  content: "::";
-}

@@ -1,0 +1,51 @@
+function plain_text_node(editor, name, text) {
+  let node = document.createElement("div");
+  node.classList.add("plain-text-node");
+  node.innerText = text;
+  node.dataset.kind = "plain-text";
+  node.dataset.stringValue = text;
+  node.contentEditable = true;
+  setTimeout(() => window.getSelection().selectAllChildren(node));
+  node.addEventListener("keydown", async (e) => {
+    if (e.key === "Escape") {
+      node.dispatchEvent(new Event("reload", { bubbles: true }));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      await fetch(url_for(editor, `/${name}/value`), {
+        method: "POST",
+        body: node.innerText,
+      });
+      node.blur();
+    }
+  });
+  node.addEventListener("blur", (_) => {
+    console.log(2);
+    node.dispatchEvent(new Event("reload", { bubbles: true }));
+  });
+  return node;
+}
+
+const VALUE_SELECTOR =
+  '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]';
+
+function init(editor) {
+  for (let value of editor.querySelectorAll(VALUE_SELECTOR)) {
+    let name = value
+      .closest('[data-kind="property"]')
+      .querySelector('[data-attr="name"]').innerText;
+    value.addEventListener("dblclick", (_) => {
+      value.replaceWith(
+        plain_text_node(editor, name, value.dataset.stringValue),
+      );
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", (_) => {
+  let canvas = document.querySelector(".canvas");
+  canvas.addEventListener("new-editor", (_) => {
+    let editor = document.querySelector(".--editor:last-child");
+    init(editor);
+    editor.addEventListener("loaded", (_) => init(editor));
+  });
+});

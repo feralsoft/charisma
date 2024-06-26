@@ -1,4 +1,0 @@
-[data-kind="pseudo_selector_without_args"] > [data-attr="name"]::before {
-  content: ":";
-  color: var(--class-color);
-}

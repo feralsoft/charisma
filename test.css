@@ -1,0 +1,13 @@
+.main {
+    columns: 20px;
+    color: green;
+}
+.main .btn {
+    color: blue;
+}
+:root {
+    font-family: mono;
+    --color: red;
+    --var: 20px;
+    /* color: orange; */
+}

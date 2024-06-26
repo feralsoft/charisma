@@ -1,3 +1,0 @@
-[data-kind="class_selector"] [data-value]::before {
-  content: ".";
-}
