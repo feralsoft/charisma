@@ -23,7 +23,7 @@ function catch_links(editor) {
   for (let a of editor.querySelectorAll("a")) {
     a.addEventListener("click", async (e) => {
       e.preventDefault();
-      reload(editor, a.href);
+      add_editor(a.getAttribute("href"));
     });
   }
 }

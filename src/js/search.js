@@ -1,3 +1,21 @@
+window.add_editor = async function add_editor(selector) {
+  let html = await fetch(`http://localhost:8000/src/${selector}/rule`).then(
+    (r) => r.text(),
+  );
+
+  let editor = document.createElement("div");
+  editor.classList.add("--editor");
+  editor.dataset.url = `http://localhost:8000/src/${selector}`;
+  editor.setAttribute("spellcheck", false);
+  editor.innerHTML = html;
+
+  let canvas = document.querySelector(".canvas");
+  canvas.append(editor);
+  document.querySelector(".--editor.focused")?.classList?.remove("focused");
+  editor.classList.add("focused");
+  canvas.dispatchEvent(new Event("new-editor"));
+};
+
 document.addEventListener("DOMContentLoaded", (_) => {
   let input = document.querySelector(".search");
   let container = input.closest(".search-box");
@@ -26,35 +44,18 @@ document.addEventListener("DOMContentLoaded", (_) => {
     if (!e.target.closest(".search-box")) clear();
   });
 
-  options.addEventListener("mousedown", (e) => {
+  options.addEventListener("mousedown", async (e) => {
     let selector = e.target.closest(".search-options > [data-kind]");
     if (!selector) return;
-    add_editor(selector.dataset.stringValue);
-  });
-
-  async function add_editor(selector) {
-    let html = await fetch(`http://localhost:8000/src/${selector}/rule`).then(
-      (r) => r.text(),
-    );
-
-    let editor = document.createElement("div");
-    editor.classList.add("--editor");
-    editor.dataset.url = `http://localhost:8000/src/${selector}`;
-    editor.setAttribute("spellcheck", false);
-    editor.innerHTML = html;
-
-    let canvas = document.querySelector(".canvas");
-    canvas.append(editor);
-    document.querySelector(".--editor.focused")?.classList?.remove("focused");
-    editor.classList.add("focused");
-    canvas.dispatchEvent(new Event("new-editor"));
+    await add_editor(selector.dataset.stringValue);
     clear();
-  }
+  });
 
   input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      add_editor(options.firstElementChild.dataset.stringValue);
+      await add_editor(options.firstElementChild.dataset.stringValue);
+      clear();
     } else if (e.key === "Escape") {
       clear();
     } else {

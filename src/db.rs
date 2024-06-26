@@ -384,11 +384,11 @@ impl CSSDB {
     ) -> HashMap<String, (String, Rc<Property>)> {
         let tree = self.get(path).unwrap();
         let mut properties: HashMap<String, (String, Rc<Property>)> = HashMap::new();
-        self.inherited_properties_for_aux(path, &mut properties);
         if !tree.is_root() {
             self.get_root()
                 .inspect(|tree| properties.extend(tree.inheritable_properties()));
         }
+        self.inherited_properties_for_aux(path, &mut properties);
         for super_path in self.super_paths_of(path) {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
@@ -486,11 +486,11 @@ impl CSSDB {
     pub fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, (String, Rc<Property>)> {
         let tree = self.get(path).unwrap();
         let mut vars: HashMap<String, (String, Rc<Property>)> = HashMap::new();
-        self.inherited_vars_for_aux(path, &mut vars);
         if !tree.is_root() {
             self.get_root()
                 .inspect(|tree| vars.extend(tree.valid_vars_with_selector_str()));
         }
+        self.inherited_vars_for_aux(path, &mut vars);
         for super_path in self.super_paths_of(path) {
             vars.extend(
                 self.get(&super_path)
