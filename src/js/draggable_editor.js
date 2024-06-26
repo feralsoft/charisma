@@ -53,6 +53,7 @@ function init(editor) {
     clicked = null;
   });
   editor.addEventListener("mousemove", (e) => {
+    if (current_editor) return;
     if (clicked !== editor) return;
     current_editor = editor;
     let x = editor_x(current_editor);
