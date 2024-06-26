@@ -62,6 +62,7 @@ fn insert(selector: &str, property: &str) {
     );
     fs::write("test.css", db.serialize()).unwrap()
 }
+
 #[get("/search/<q>")]
 fn search(q: &str) -> (ContentType, Json<Vec<String>>) {
     let mut db = CSSDB::new();

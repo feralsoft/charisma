@@ -393,8 +393,10 @@ impl CSSDB {
             properties.extend(self.get(&super_path).unwrap().inheritable_properties());
         }
 
-        for property_name in tree.valid_properties_names() {
-            properties.remove(&property_name);
+        for property in tree.valid_properties() {
+            if property.value() != "inherit" {
+                properties.remove(&property.name());
+            }
         }
 
         properties
@@ -448,12 +450,12 @@ impl CSSDB {
         }
     }
 
-    fn valid_properties_names(&self) -> Vec<String> {
+    fn valid_properties(&self) -> Vec<Property> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 .filter(|p| !p.is_var() && p.state == State::Valid)
-                .map(|p| p.name())
+                .map(|p| p.as_ref().clone())
                 .collect()
         } else {
             vec![]
