@@ -1,9 +1,5 @@
 .main {
     columns: 20px;
-    /* color: yellow; */
-    /* color: red; */
-    /* color: blue; */
-    /* font-size: 40px; */
     color: green;
 }
 .main .btn {
