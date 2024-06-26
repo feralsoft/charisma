@@ -207,6 +207,7 @@ fn index() -> (ContentType, String) {
             <!DOCTYPE html>
             <html>
                 <head>
+                    <title>Charisma</title>
                     <style>{}</style>
                     {}
                 </head>
