@@ -620,20 +620,25 @@ a {
     position: absolute;
     display: flex;
     top: -1em;
+    background-color: rgb(20, 20, 20);
+    outline: 0.1em solid #ffffff1f;
 
     /* basic menu item styling */
     button {
         font-size: 0.75em;
-        background-color: rgb(0, 0, 0, 0.25);
         cursor: pointer;
         border: none;
-
+        background-color: inherit;
+        background-repeat: no-repeat;
+        background-position: center;
+        height: 1.1em;
+        width: 1.1em;
         &:hover {
-            background-color: rgb(0, 0, 0, 0.1);
+            background-color: rgb(10, 10, 10);
         }
 
         &:active {
-            background-color: rgb(0, 0, 0, 0.5);
+            background-color: rgb(40, 40, 40);
         }
 
         &::before {
@@ -641,17 +646,19 @@ a {
         }
     }
 
-    /* unicode icons */
-    .close::before {
-        content: "×";
+    .close {
+        background-size: 7px;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z"/></svg>');
     }
 
-    .minimize::before {
-        content: "−";
+    .minimize {
+        background-size: 8px;
+        background-image: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12L21 12" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     }
 
-    .minimize.active::before {
-        content: "+";
+    .minimize.active {
+        background-size: 8px;
+        background-image: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M12 4V20" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     }
 
     .minimize.active::after {
@@ -661,13 +668,14 @@ a {
         color: white;
         opacity: 0.5;
         margin-left: 1em;
+        top: 0;
     }
 
     .minimize.active {
-        background: rgba(0, 255, 0, 0.1);
+        background-color: rgba(0, 255, 0, 0.1);
 
         &:hover {
-            background: rgba(0, 255, 0, 0.2);
+            background-color: rgba(0, 255, 0, 0.2);
         }
     }
 }
