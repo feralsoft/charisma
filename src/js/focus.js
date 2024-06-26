@@ -1,4 +1,4 @@
-window.addEventListener("click", (e) => {
+window.addEventListener("mousedown", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
   document.querySelector(".--editor.focused")?.classList?.remove("focused");
   let elem = document.elementFromPoint(e.clientX, e.clientY);

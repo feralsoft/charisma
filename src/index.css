@@ -708,6 +708,6 @@ a {
     }
 }
 
-.--editor:is(:focus-within, :active, .focused) {
+.--editor.focused {
     z-index: 5;
 }
