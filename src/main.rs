@@ -166,8 +166,14 @@ fn render_rule(selector: &str, db: &CSSDB) -> String {
     let path = selector.to_css_db_path();
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
-    let inherited_properties = db.inherited_properties_for(&path);
-    let inherited_vars = db.inherited_vars_for(&path);
+    let mut rule_properties = rule.properties.clone();
+    let i_p = db.inherited_properties_for(&path);
+    let mut inherited_properties = i_p.values().collect::<Vec<_>>();
+    let i_v = db.inherited_vars_for(&path);
+    let mut inherited_vars = i_v.values().collect::<Vec<_>>();
+    rule_properties.sort_by_key(|p| p.name());
+    inherited_properties.sort_by_key(|(_, p)| p.name());
+    inherited_vars.sort_by_key(|(_, p)| p.name());
 
     fn link_for(selector_str: &String, property: &Rc<Property>) -> String {
         assert!(!selector_str.contains('\''));
@@ -190,17 +196,17 @@ fn render_rule(selector: &str, db: &CSSDB) -> String {
         parse_selector(&rule.selector.string)
             .unwrap()
             .render_html(&RenderOptions::default()),
-        rule.properties
+        rule_properties
             .iter()
             .map(|p| p.render_html(&RenderOptions::default()))
             .collect::<String>(),
         inherited_properties
             .iter()
-            .map(|(_, (selector, p))| link_for(selector, p))
+            .map(|(selector, p)| link_for(selector, p))
             .collect::<String>()
             + &inherited_vars
                 .iter()
-                .map(|(_, (selector, p))| link_for(selector, p))
+                .map(|(selector, p)| link_for(selector, p))
                 .collect::<String>()
     )
 }
