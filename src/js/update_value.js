@@ -8,7 +8,7 @@ function plain_text_node(editor, name, original_value) {
   setTimeout(() => window.getSelection().selectAllChildren(node));
   node.addEventListener("keydown", async (e) => {
     if (e.key === "Escape") {
-      node.dispatchEvent(new Event("reload", { bubbles: true }));
+      node.blur();
     } else if (e.key === "Enter") {
       e.preventDefault();
       await fetch(url_for(editor, `/${name}/${original_value}`), {

@@ -37,13 +37,23 @@ function finish() {
   current_editor = null;
   x_offset = null;
   y_offset = null;
+  clicked = null;
 }
+
+let clicked;
+
 function init(editor) {
   let rect = editor.getBoundingClientRect();
   editor.style.left = `${rect.left}px`;
   editor.style.top = `${rect.top}px`;
-  editor.addEventListener("mousedown", (e) => {
-    if (!e.target.classList.contains("grab")) return;
+  editor.addEventListener("mousedown", (_) => {
+    clicked = editor;
+  });
+  editor.addEventListener("mouseup", (_) => {
+    clicked = null;
+  });
+  editor.addEventListener("mousemove", (e) => {
+    if (clicked !== editor) return;
     current_editor = editor;
     let x = editor_x(current_editor);
     let y = editor_y(current_editor);
@@ -104,7 +114,5 @@ document.addEventListener("DOMContentLoaded", (_) => {
   canvas.addEventListener("new-editor", (_) => {
     let editor = document.querySelector(".--editor:last-child");
     init(editor);
-    // working w/o this..
-    // editor.addEventListener("loaded", (_) => init(editor));
   });
 });

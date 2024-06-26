@@ -1,12 +1,12 @@
-.main {
-    color: red;
-}
-.main .btn {
-    color: blue;
-}
 :root {
     --color: red;
     --var: 20px;
     color: orange;
     font-family: mono;
+}
+.main {
+    /* color: green; */
+}
+.main .btn {
+    color: blue;
 }
