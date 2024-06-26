@@ -16,7 +16,9 @@
     --at-rule-color: #c586c0;
     color: var(--foreground-color);
     font-size: 18px;
-    font-family: Berkeley Mono;
+    font-family:
+        Berkeley Mono,
+        menlo;
 }
 
 [data-kind="rule"] {

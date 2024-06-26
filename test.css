@@ -7,7 +7,7 @@
 .main {
     color: var(--color);
     font-size: 20px;
-    /* columns: 10em; */
+    columns: 10em;
 }
 .main .btn {
     color: blue;
