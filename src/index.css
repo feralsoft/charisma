@@ -101,6 +101,10 @@ body {
     color: var(--foreground-color);
 }
 
+[data-attr="properties"] > [data-kind="property"].focused {
+    background-color: rgba(0, 100, 0, 0.3);
+}
+
 .--editor {
     display: flex;
     flex-direction: column;
@@ -108,7 +112,7 @@ body {
     outline: 0.1em solid black;
 
     &.focused {
-        outline-color: rgba(0, 100, 0, 1);
+        outline-color: rgb(0, 100, 0);
     }
 
     background-color: rgb(40, 40, 40);
@@ -647,6 +651,7 @@ a {
         background-position: center;
         height: 1.0825em;
         width: 1.0825em;
+
         &:hover {
             background-color: rgb(10, 10, 10);
         }

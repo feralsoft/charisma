@@ -20,9 +20,10 @@ fn css() -> String {
     fs::read_to_string("src/index.css").unwrap()
 }
 
-const JS_FILE_NAMES: [&str; 10] = [
+const JS_FILE_NAMES: [&str; 11] = [
     "insert_property",
     "toggle_property",
+    "delete_property",
     "update_value",
     "preview_var",
     "search",
@@ -93,6 +94,19 @@ fn disable(selector: &str, name: &str, value: &str) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
+#[delete("/src/<selector>/<name>/<value>")]
+fn delete(selector: &str, name: &str, value: &str) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+
+    db.delete(
+        &parse_selector(selector).unwrap().to_css_db_path(),
+        name,
+        value,
+    );
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
 #[post("/src/<selector>/<name>/<value>/enable")]
 fn enable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
@@ -102,14 +116,14 @@ fn enable(selector: &str, name: &str, value: &str) {
     fs::write("test.css", db.serialize()).unwrap()
 }
 
-#[post("/src/<selector>/<name>/value", data = "<value>")]
-fn set_value(selector: &str, name: String, value: String) {
+#[post("/src/<selector>/<name>/<old_value>", data = "<value>")]
+fn set_value(selector: &str, name: &str, old_value: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
     let selector = parse_selector(selector).unwrap().to_selector(None);
 
-    db.delete(&selector.path, &name);
+    db.delete(&selector.path, name, old_value);
     db.insert(&selector, &property);
 
     fs::write("test.css", db.serialize()).unwrap()
@@ -241,6 +255,7 @@ fn rocket() -> _ {
             set_value,
             enable,
             disable,
+            delete,
             replace_all_properties,
             search,
         ],

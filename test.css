@@ -1,13 +1,13 @@
-.main {
-    columns: 20px;
-    color: green;
-}
-.main .btn {
-    color: blue;
-}
 :root {
     font-family: mono;
     --color: red;
     --var: 20px;
     /* color: orange; */
+}
+.main {
+    color: red;
+    display: flex;
+}
+.main .btn {
+    color: blue;
 }

@@ -1,9 +1,9 @@
-function plain_text_node(editor, name, text) {
+function plain_text_node(editor, name, original_value) {
   let node = document.createElement("div");
   node.classList.add("plain-text-node");
-  node.innerText = text;
+  node.innerText = original_value;
   node.dataset.kind = "plain-text";
-  node.dataset.stringValue = text;
+  node.dataset.stringValue = original_value;
   node.contentEditable = true;
   setTimeout(() => window.getSelection().selectAllChildren(node));
   node.addEventListener("keydown", async (e) => {
@@ -11,7 +11,7 @@ function plain_text_node(editor, name, text) {
       node.dispatchEvent(new Event("reload", { bubbles: true }));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      await fetch(url_for(editor, `/${name}/value`), {
+      await fetch(url_for(editor, `/${name}/${original_value}`), {
         method: "POST",
         body: node.innerText,
       });
@@ -19,7 +19,6 @@ function plain_text_node(editor, name, text) {
     }
   });
   node.addEventListener("blur", (_) => {
-    console.log(2);
     node.dispatchEvent(new Event("reload", { bubbles: true }));
   });
   return node;

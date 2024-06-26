@@ -526,14 +526,15 @@ impl CSSDB {
         }
     }
 
-    pub fn delete(&mut self, path: &[String], property_name: &String) {
+    pub fn delete(&mut self, path: &[String], property_name: &str, property_value: &str) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),
             "can't delete property from rule that doesn't exist"
         );
         let rule = tree.rule.as_mut().unwrap();
-        rule.properties.retain(|p| &p.name() != property_name);
+        rule.properties
+            .retain(|p| !(&p.name() == property_name && &p.value() == property_value));
     }
 
     fn insert_raw(&mut self, selector: Selector, path: &[String], property: Property) {
