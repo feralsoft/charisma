@@ -16,8 +16,8 @@
     --at-rule-color: #c586c0;
     color: var(--foreground-color);
     font-size: 18px;
-    --font: Berkeley Mono;
-    font-family: var(--font), menlo;
+    --font-family: Berkeley Mono;
+    font-family: var(--font-family), menlo;
 }
 
 [data-kind="rule"] {
@@ -30,7 +30,7 @@
 
 ::before,
 ::after {
-    font-family: var(--font);
+    font-family: var(--font-family);
 }
 
 body {
