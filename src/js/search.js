@@ -1,11 +1,11 @@
+const { invoke } = window.__TAURI__.tauri;
+
 window.add_editor = async function add_editor(selector) {
-  let html = await fetch(`http://localhost:8000/src/${selector}/rule`).then(
-    (r) => r.text(),
-  );
+  let html = await invoke("render_rule", { selector });
 
   let editor = document.createElement("div");
   editor.classList.add("--editor");
-  editor.dataset.url = `http://localhost:8000/src/${selector}`;
+  editor.dataset.selector = selector;
   editor.setAttribute("spellcheck", false);
   editor.innerHTML = html;
 
@@ -64,9 +64,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (input.innerText.trim() === "") {
           options.innerHTML = "";
         } else {
-          let results = await fetch(
-            `http://localhost:8000/search/${input.innerText}`,
-          ).then((r) => r.json());
+          let results = await invoke("search", { q: input.innerText });
+
           options.innerHTML = results.join("");
         }
       });

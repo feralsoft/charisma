@@ -24,6 +24,11 @@
     box-sizing: border-box;
 }
 
+[data-value] {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .plain-text-node {
     width: max-content;
 }
@@ -118,7 +123,7 @@ body {
     background-color: rgb(40, 40, 40);
 }
 
-body.draggable-editor-prototype {
+body {
     overscroll-behavior: none;
     overflow: hidden;
 
@@ -198,16 +203,9 @@ body.draggable-editor-prototype {
         outline: var(--outline-color) solid 0.1em;
     }
 
-    /* TODO: start */
-    [data-kind]:hover:not(:has([data-kind]:hover)) {
-        outline: var(--outline-color) solid 0.1em;
-    }
-
     [data-kind]:hover:not(:has([data-kind]:hover, [data-value]:hover)) {
         outline: var(--outline-color) solid 0.1em;
     }
-
-    /* TODO: end */
 }
 
 [data-attr="inherited-properties"] > [data-kind="property"]:hover {
@@ -288,6 +286,9 @@ body.draggable-editor-prototype {
 }
 
 [data-kind="rule"] [data-attr="properties"] .input {
+    display: flex;
+    width: 100%;
+
     font-size: 1em;
     color: var(--foreground-color);
     font-family: Berkeley Mono;
@@ -295,7 +296,6 @@ body.draggable-editor-prototype {
     background: none;
     padding-bottom: 0.1em;
     height: 0.5em;
-    width: min-content;
 
     &:is(:focus, :focus-within) {
         animation: expand 50ms linear forwards;
@@ -504,7 +504,7 @@ button {
 .--editor > [data-kind="rule"] {
     max-width: 100%;
     width: 100%;
-    overflow-y: scroll;
+    overflow: hidden;
 }
 
 [data-kind] {
@@ -605,9 +605,8 @@ a {
     text-decoration-color: white;
 }
 
-[data-kind="function"]:has(> [data-attr="name"] [data-value="var"])
-    > [data-attr="args"]
-    [data-kind="dashed-id"] {
+/* had to remove `:has(> [data-attr="name"] [data-value="var"])` due to safari bug */
+[data-kind="function"] > [data-attr="args"] [data-kind="dashed-id"] {
     &:not(:hover) .preview {
         display: none;
     }

@@ -1,3 +1,5 @@
+const { invoke } = window.__TAURI__.tauri;
+
 window.addEventListener("keydown", async (e) => {
   if (e.key !== "Backspace") return;
   let property = document.querySelector('[data-kind="property"].focused');
@@ -10,6 +12,6 @@ window.addEventListener("keydown", async (e) => {
     '[data-attr="value"] > [data-kind][data-string-value]',
   ).dataset.stringValue;
   let editor = property.closest(".--editor");
-  await fetch(url_for(editor, `/${name}/${value}`), { method: "DELETE" });
+  await invoke("delete", { selector: editor.dataset.selector, name, value });
   editor.dispatchEvent(new Event("reload"));
 });

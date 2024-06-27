@@ -1,0 +1,11 @@
+import "./js/delete_property.js";
+import "./js/draggable_editor.js";
+import "./js/focus.js";
+import "./js/insert_property.js";
+import "./js/menu.js";
+import "./js/multi_editor.js";
+import "./js/preview_var.js";
+import "./js/search.js";
+import "./js/toggle_property.js";
+import "./js/undo.js";
+import "./js/update_value.js";

@@ -1,3 +1,5 @@
+const { invoke } = window.__TAURI__.tauri;
+
 async function toggle() {
   let property = this.closest('[data-kind="property"]');
   let name = property.querySelector('[data-attr="name"]').textContent;
@@ -6,9 +8,7 @@ async function toggle() {
   let is_commented = property.dataset.commented === "true";
   let action = is_commented ? "enable" : "disable";
   let editor = property.closest(".--editor");
-  await fetch(url_for(editor, `/${name}/${value}/${action}`), {
-    method: "POST",
-  });
+  await invoke(action, { selector: editor.dataset.selector, name, value });
   property.dispatchEvent(new Event("reload", { bubbles: true }));
 }
 

@@ -1,3 +1,5 @@
+const { invoke } = window.__TAURI__.tauri;
+
 let all_properties;
 
 function search_item(name) {
@@ -45,9 +47,9 @@ function input(editor) {
       if (container.querySelector(".search-options .candidate")) {
         return accept_candidate(container, input_elem);
       } else {
-        await fetch(editor.dataset.url, {
-          method: "POST",
-          body: e.target.innerText,
+        await invoke("insert_property", {
+          selector: editor.dataset.selector,
+          property: e.target.innerText,
         });
         input_elem.dispatchEvent(new Event("reload", { bubbles: true }));
       }
@@ -128,8 +130,8 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", (_) => {
-  all_properties = eval(document.querySelector("#css-properties").innerHTML);
+document.addEventListener("DOMContentLoaded", async (_) => {
+  all_properties = await invoke("get_all_properties");
 
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {

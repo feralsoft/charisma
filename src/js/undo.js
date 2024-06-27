@@ -1,3 +1,5 @@
+const { invoke } = window.__TAURI__.tauri;
+
 class HistoryStack {
   static MAX_SIZE = 1000;
   _stack = [];
@@ -60,13 +62,7 @@ window.addEventListener("keydown", async (e) => {
       `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
     );
     undo_stack.push(editor);
-    await fetch(
-      `http://localhost:8000/src/${selector}/replace_all_properties`,
-      {
-        method: "POST",
-        body: JSON.stringify(properties),
-      },
-    );
+    await invoke("replace_all_properties", { selector, properties });
     editor.dispatchEvent(
       new CustomEvent("reload", { detail: { src: "undo" } }),
     );
@@ -77,13 +73,7 @@ window.addEventListener("keydown", async (e) => {
       `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
     );
     redo_stack.push(editor);
-    await fetch(
-      `http://localhost:8000/src/${selector}/replace_all_properties`,
-      {
-        method: "POST",
-        body: JSON.stringify(properties),
-      },
-    );
+    await invoke("replace_all_properties", { selector, properties });
     editor.dispatchEvent(
       new CustomEvent("reload", { detail: { src: "undo" } }),
     );

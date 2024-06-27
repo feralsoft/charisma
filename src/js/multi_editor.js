@@ -1,6 +1,8 @@
+const { invoke } = window.__TAURI__.tauri;
+
 let reload_lock = new Map();
 
-async function reload(editor, base_url) {
+async function reload(editor) {
   if (reload_lock.get(editor)) return;
   reload_lock.set(editor, true);
   for (let editor_ of document.querySelectorAll(".--editor")) {
@@ -9,11 +11,11 @@ async function reload(editor, base_url) {
       new CustomEvent("reload", { detail: { src: "reload-siblings" } }),
     );
   }
-  let url = new URL(base_url);
-  url.pathname += "/rule";
-  let new_rule = await fetch(url).then((r) => r.text());
+
+  let new_rule = await invoke("render_rule", {
+    selector: editor.dataset.selector,
+  });
   editor.innerHTML = new_rule;
-  editor.dataset.url = base_url;
   catch_links(editor);
   editor.dispatchEvent(new Event("loaded"));
   reload_lock.delete(editor);
@@ -102,7 +104,7 @@ function init(editor) {
   editor.style.left = `${position.x - x_offset()}px`;
   editor.style.top = `${position.y - y_offset()}px`;
   snap_editor(editor);
-  editor.addEventListener("reload", (_) => reload(editor, url_for(editor)));
+  editor.addEventListener("reload", (_) => reload(editor));
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
@@ -112,15 +114,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
     init(editor);
   });
 });
-
-window.url_for = function (editor, sub_path = "", search = "") {
-  let url = new URL(
-    decodeURIComponent(editor.dataset.url).replaceAll("+", " "),
-  );
-  url.pathname += sub_path;
-  url.search = search;
-  return url;
-};
 
 window.assert = function (cond, msg) {
   if (!cond) {

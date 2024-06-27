@@ -1,3 +1,5 @@
+const { invoke } = window.__TAURI__.tauri;
+
 function plain_text_node(editor, name, original_value) {
   let node = document.createElement("div");
   node.classList.add("plain-text-node");
@@ -11,9 +13,11 @@ function plain_text_node(editor, name, original_value) {
       node.blur();
     } else if (e.key === "Enter") {
       e.preventDefault();
-      await fetch(url_for(editor, `/${name}/${original_value}`), {
-        method: "POST",
-        body: node.innerText,
+      await invoke("update_value", {
+        selector: editor.dataset.selector,
+        name,
+        original_value,
+        value: node.innerText,
       });
       node.blur();
     }
