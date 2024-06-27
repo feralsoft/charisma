@@ -1,10 +1,10 @@
 :root {
-    color: orange;
     font-family: mono;
+    color: red;
 }
 .main {
     color: red;
 }
 .main .btn {
-    /* color: 20px; */
+    /* color: red; */
 }

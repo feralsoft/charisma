@@ -21,10 +21,8 @@ async function reload(editor, base_url) {
 
 function catch_links(editor) {
   for (let a of editor.querySelectorAll("a")) {
-    a.addEventListener("click", async (e) => {
-      e.preventDefault();
-      add_editor(a.getAttribute("href"));
-    });
+    a.addEventListener("click", (e) => e.preventDefault());
+    a.addEventListener("mousedown", (_) => add_editor(a.getAttribute("href")));
   }
 }
 
