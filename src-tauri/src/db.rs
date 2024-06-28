@@ -257,7 +257,9 @@ impl CSSDB {
             let selector = selector.into_iter().next().unwrap().unwrap();
             let block = rule.block().unwrap();
             let block = block.as_css_declaration_or_rule_block().unwrap();
-            self.load_rule(selector.to_selector(None), block);
+            let selector = selector.to_selector(None);
+            self.insert_empty(&selector);
+            self.load_rule(selector, block);
         }
     }
 
@@ -571,6 +573,29 @@ impl CSSDB {
                 state: State::Commented,
             },
         )
+    }
+
+    fn insert_empty_aux(&mut self, selector: Selector, path: &[String]) {
+        match path {
+            [] => {
+                match &mut self.rule {
+                    Some(_) => {} // already exists
+                    None => self.rule = Some(Rule::new(selector)),
+                };
+            }
+            [part, parts @ ..] => match self.children.get_mut(part) {
+                Some(tree) => tree.insert_empty_aux(selector, parts),
+                None => {
+                    let mut new_tree = CSSDB::new();
+                    new_tree.insert_empty_aux(selector, parts);
+                    self.children.insert(part.to_owned(), new_tree);
+                }
+            },
+        }
+    }
+
+    fn insert_empty(&mut self, selector: &Selector) {
+        self.insert_empty_aux(selector.clone(), &selector.path);
     }
 
     pub fn insert(&mut self, selector: &Selector, property: &CssDeclarationWithSemicolon) {

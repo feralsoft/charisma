@@ -53,3 +53,11 @@ window.addEventListener("click", (e) => {
     .closest('[data-kind="property"]')
     ?.classList?.add("focused");
 });
+
+window.addEventListener("tab-into", (e) => {
+  document.querySelector(".--editor.focused")?.classList?.remove("focused");
+
+  let editor = e.target.closest(".--editor");
+  document.querySelector(":focus")?.blur();
+  editor.classList.add("focused");
+});

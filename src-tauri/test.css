@@ -2,8 +2,9 @@
     color: red;
 }
 .main {
-    color: red;
+    
 }
 .main .btn {
-    color: green;
+    color: white;
+    opacity: 0.5;
 }

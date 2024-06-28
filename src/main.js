@@ -9,6 +9,7 @@ import "./js/search.js";
 import "./js/toggle_property.js";
 import "./js/undo.js";
 import "./js/update_value.js";
+import "./js/tab-cycle.js";
 
 import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
 
