@@ -48,11 +48,12 @@
     align-items: center;
     width: 20px;
     height: 20px;
+    cursor: pointer;
 }
 .titlebar-button:hover {
     background: #eee;
 }
-/* junk code */
+/* end junk code */
 
 [data-kind="rule"] {
     box-sizing: border-box;

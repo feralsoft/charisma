@@ -1,9 +1,9 @@
+:root {
+    color: red;
+}
 .main {
     color: red;
 }
 .main .btn {
     color: green;
-}
-:root {
-    color: red;
 }
