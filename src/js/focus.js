@@ -40,7 +40,7 @@ window.addEventListener("mousedown", (e) => {
 });
 
 // property focus
-window.addEventListener("dblclick", (e) => {
+window.addEventListener("click", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
 
   // should only be 1 focused property at any given time.
