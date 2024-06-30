@@ -55,6 +55,12 @@
 }
 /* end junk code */
 
+body[data-is-fullscreen="true"] {
+    .titlebar {
+        display: none;
+    }
+}
+
 [data-kind="rule"] {
     box-sizing: border-box;
 }

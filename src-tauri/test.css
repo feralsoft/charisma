@@ -1,10 +1,11 @@
-:root {
-    color: red;
-}
 .main {
-    
+    color: white;
+    background-color: var(--blue);
 }
 .main .btn {
-    color: white;
-    opacity: 0.5;
+    color: green;
+}
+:root {
+    color: red;
+    --blue: yellow;
 }
