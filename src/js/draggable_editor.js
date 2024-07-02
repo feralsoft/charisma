@@ -98,17 +98,6 @@ window.addEventListener("blur", (_) => finish());
 window.addEventListener("mouseleave", (_) => finish());
 window.addEventListener("keydown", (_) => finish());
 
-window.addEventListener("wheel", (e) => {
-  let board_old_x = document.body.style.getPropertyValue("--x-offset");
-  if (board_old_x) board_old_x = Number(board_old_x.split("px")[0]);
-  else board_old_x = 0;
-  let board_old_y = document.body.style.getPropertyValue("--y-offset");
-  if (board_old_y) board_old_y = Number(board_old_y.split("px")[0]);
-  else board_old_y = 0;
-  document.body.style.setProperty("--x-offset", `${board_old_x - e.deltaX}px`);
-  document.body.style.setProperty("--y-offset", `${board_old_y - e.deltaY}px`);
-});
-
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", (_) => {
