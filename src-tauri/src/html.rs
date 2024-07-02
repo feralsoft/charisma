@@ -1,10 +1,10 @@
 use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssGenericComponentValue,
-    AnyCssPseudoClass, AnyCssSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
-    CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList, CssCompoundSelector,
-    CssDashedIdentifier, CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage,
-    CssPseudoClassIdentifier, CssPseudoClassSelector, CssPseudoElementSelector,
-    CssRegularDimension, CssString,
+    AnyCssPseudoClass, AnyCssSelector, AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue,
+    CssAttributeSelector, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
+    CssCompoundSelector, CssDashedIdentifier, CssFunction, CssIdentifier, CssNumber, CssParameter,
+    CssPercentage, CssPseudoClassIdentifier, CssPseudoClassSelector, CssPseudoElementSelector,
+    CssRegularDimension, CssString, CssTypeSelector,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -175,28 +175,53 @@ impl Render for AnyCssSubSelector {
         }
     }
 }
+
+impl Render for CssTypeSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        assert!(self.namespace().is_none());
+        let name = self.ident().unwrap();
+        name.render_html(options)
+    }
+}
+
+impl Render for AnyCssSimpleSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self {
+            AnyCssSimpleSelector::CssTypeSelector(node) => node.render_html(options),
+            AnyCssSimpleSelector::CssUniversalSelector(_) => todo!(),
+        }
+    }
+}
+
 impl Render for CssCompoundSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
-        assert!(self.simple_selector().is_none());
         assert!(self.nesting_selector_token().is_none());
 
-        match self
-            .sub_selectors()
-            .into_iter()
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            [selector] => selector.render_html(options),
-            selectors => {
-                format!(
-                    "<div data-kind=\"compound-selector\" {}>{}</div>",
-                    options.to_string(),
-                    selectors
-                        .iter()
-                        .map(|selector| selector.render_html(options))
-                        .collect::<String>()
-                )
-            }
+        // simple selector is either an element/type selector eg. `body`, or `*` the universal selector
+        // I don't understand at the moment why it is separate from compound selector thing, but we're
+        // just going to prepend it onto the list of sub_selectors
+        let simple_selector_html = self
+            .simple_selector()
+            .map(|s| s.render_html(options))
+            .unwrap_or(String::from(""));
+
+        let sub_selectors = self.sub_selectors().into_iter().collect::<Vec<_>>();
+
+        if sub_selectors.len() == 1 && self.simple_selector().is_none() {
+            sub_selectors[0].render_html(options)
+        } else if sub_selectors.is_empty() && self.simple_selector().is_some() {
+            simple_selector_html
+        } else {
+            assert!(sub_selectors.len() == 1);
+            format!(
+                "<div data-kind=\"compound-selector\" {}>{}{}</div>",
+                options.to_string(),
+                simple_selector_html,
+                sub_selectors
+                    .iter()
+                    .map(|selector| selector.render_html(options))
+                    .collect::<String>()
+            )
         }
     }
 }

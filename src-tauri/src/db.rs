@@ -661,12 +661,35 @@ impl Storage for biome_css_syntax::AnyCssSelector {
     }
 }
 
+impl Storage for biome_css_syntax::AnyCssSimpleSelector {
+    fn to_css_db_path(&self) -> Vec<String> {
+        match self {
+            biome_css_syntax::AnyCssSimpleSelector::CssTypeSelector(t) => {
+                vec![t
+                    .ident()
+                    .unwrap()
+                    .value_token()
+                    .unwrap()
+                    .text_trimmed()
+                    .to_string()]
+            }
+            biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(_) => todo!(),
+        }
+    }
+}
+
 impl Storage for biome_css_syntax::CssCompoundSelector {
     fn to_css_db_path(&self) -> Vec<String> {
-        self.sub_selectors()
-            .into_iter()
-            .flat_map(|selector| selector.to_css_db_path())
-            .collect()
+        [
+            self.simple_selector()
+                .map(|s| s.to_css_db_path())
+                .unwrap_or(vec![]),
+            self.sub_selectors()
+                .into_iter()
+                .flat_map(|selector| selector.to_css_db_path())
+                .collect(),
+        ]
+        .concat()
     }
 }
 
