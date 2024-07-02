@@ -125,6 +125,37 @@ impl Property {
         let name = name.value_token().unwrap();
         name.text_trimmed().starts_with("--")
     }
+
+    pub fn var_ref(&self) -> Option<String> {
+        if self.state == State::Commented {
+            return None;
+        }
+        let decl = self.node.declaration().unwrap();
+        let property = decl.property().unwrap();
+        let property = property.as_css_generic_property().unwrap();
+        let value = property.value().into_iter().next().unwrap();
+        match value.as_any_css_value().unwrap() {
+            biome_css_syntax::AnyCssValue::AnyCssFunction(f) => {
+                let items = f.as_css_function().unwrap().items();
+                let item = items.into_iter().next().unwrap().unwrap();
+                match item.any_css_expression().unwrap() {
+                    biome_css_syntax::AnyCssExpression::CssListOfComponentValuesExpression(
+                        items,
+                    ) => {
+                        let item = items.css_component_value_list().into_iter().next().unwrap();
+                        match item {
+                            biome_css_syntax::AnyCssValue::CssDashedIdentifier(name) => {
+                                Some(name.to_string().trim().to_string())
+                            }
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -252,14 +283,13 @@ impl CSSDB {
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
             let rule = rule.as_css_qualified_rule().unwrap();
-            let selector = rule.prelude();
-            assert!((&selector).into_iter().collect::<Vec<_>>().len() == 1);
-            let selector = selector.into_iter().next().unwrap().unwrap();
-            let block = rule.block().unwrap();
-            let block = block.as_css_declaration_or_rule_block().unwrap();
-            let selector = selector.to_selector(None);
-            self.insert_empty(&selector);
-            self.load_rule(selector, block);
+            for selector in rule.prelude().into_iter() {
+                let selector = selector.unwrap().to_selector(None);
+                let block = rule.block().unwrap();
+                let block = block.as_css_declaration_or_rule_block().unwrap();
+                self.insert_empty(&selector);
+                self.load_rule(selector, block);
+            }
         }
     }
 
@@ -419,34 +449,7 @@ impl CSSDB {
     fn valid_var_lookup_ids(&self) -> Vec<String> {
         if let Some(rule) = &self.rule {
             // here lies the most beautiful code anyone has every seen /s
-            rule.properties.iter().filter_map(|p| {
-                if p.state == State::Commented {
-                    return None;
-                }
-                let decl = p.node.declaration().unwrap();
-                let property = decl.property().unwrap();
-                let property = property.as_css_generic_property().unwrap();
-                let value = property.value().into_iter().next().unwrap();
-                match value.as_any_css_value().unwrap() {
-                    biome_css_syntax::AnyCssValue::AnyCssFunction(f) => {
-                        let items = f.as_css_function().unwrap().items();
-                        let item = items.into_iter().next().unwrap().unwrap();
-                        match item.any_css_expression().unwrap() {
-                            biome_css_syntax::AnyCssExpression::CssListOfComponentValuesExpression(items) =>  {
-                                let item = items.css_component_value_list().into_iter().next().unwrap();
-                                match item {
-                                    biome_css_syntax::AnyCssValue::CssDashedIdentifier(name) => Some(name.to_string().trim().to_string()),
-                                    _ => None
-                                }
-                            }
-                            _ => None
-                        }
-
-                    }
-                    _ => None,
-                }
-
-            }).collect()
+            rule.properties.iter().filter_map(|p| p.var_ref()).collect()
         } else {
             vec![]
         }
@@ -485,7 +488,11 @@ impl CSSDB {
         }
     }
 
-    pub fn inherited_vars_for(&self, path: &[String]) -> HashMap<String, (String, Rc<Property>)> {
+    pub fn inherited_vars_for(
+        &self,
+        path: &[String],
+        inherited_properties: &HashMap<String, (String, Rc<Property>)>,
+    ) -> HashMap<String, (String, Rc<Property>)> {
         let tree = self.get(path).unwrap();
         let mut vars: HashMap<String, (String, Rc<Property>)> = HashMap::new();
         if !tree.is_root() {
@@ -504,7 +511,15 @@ impl CSSDB {
             vars.remove(name);
         }
         let var_references_in_rule = tree.valid_var_lookup_ids();
-        vars.retain(|key, _| var_references_in_rule.contains(key));
+        let var_references_in_inherited_properties: Vec<String> = inherited_properties
+            .iter()
+            .filter_map(|(_, (_, p))| p.var_ref())
+            .collect();
+
+        vars.retain(|key, _| {
+            var_references_in_rule.contains(key)
+                || var_references_in_inherited_properties.contains(key)
+        });
         vars
     }
 

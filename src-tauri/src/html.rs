@@ -1,9 +1,10 @@
 use biome_css_syntax::{
-    AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssPseudoClass, AnyCssSelector,
-    AnyCssSubSelector, AnyCssValue, CssAttributeSelector, CssClassSelector, CssColor,
-    CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
-    CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage, CssPseudoClassIdentifier,
-    CssPseudoClassSelector, CssPseudoElementSelector, CssRegularDimension, CssString,
+    AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssGenericComponentValue,
+    AnyCssPseudoClass, AnyCssSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
+    CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList, CssCompoundSelector,
+    CssDashedIdentifier, CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage,
+    CssPseudoClassIdentifier, CssPseudoClassSelector, CssPseudoElementSelector,
+    CssRegularDimension, CssString,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -375,6 +376,16 @@ impl Render for AnyCssValue {
     }
 }
 
+impl Render for AnyCssGenericComponentValue {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self {
+            AnyCssGenericComponentValue::AnyCssValue(node) => node.render_html(options),
+            // these are just commas I believe
+            AnyCssGenericComponentValue::CssGenericDelimiter(_) => String::from(""),
+        }
+    }
+}
+
 impl Render for Property {
     fn render_html(&self, options: &RenderOptions) -> String {
         let property = self.node.declaration().unwrap().property().unwrap();
@@ -396,7 +407,7 @@ impl Render for Property {
                 property
                     .value()
                     .into_iter()
-                    .map(|value| value.as_any_css_value().unwrap().render_html(options))
+                    .map(|value| value.render_html(options))
                     .collect::<String>()
             )
         };

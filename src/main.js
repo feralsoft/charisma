@@ -11,19 +11,19 @@ import "./js/undo.js";
 import "./js/update_value.js";
 import "./js/tab-cycle.js";
 
-import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
+// import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
 
-appWindow.onResized(async (_) => {
-  document.body.dataset.isFullscreen = await appWindow.isFullscreen();
-});
+// appWindow.onResized(async (_) => {
+//   document.body.dataset.isFullscreen = await appWindow.isFullscreen();
+// });
 
-document
-  .getElementById("titlebar-minimize")
-  .addEventListener("click", () => appWindow.minimize());
-document.getElementById("titlebar-maximize").addEventListener("click", () => {
-  document.body.dataset.isFullscreen = true;
-  appWindow.setFullscreen(true);
-});
-document
-  .getElementById("titlebar-close")
-  .addEventListener("click", () => appWindow.close());
+// document
+//   .getElementById("titlebar-minimize")
+//   .addEventListener("click", () => appWindow.minimize());
+// document.getElementById("titlebar-maximize").addEventListener("click", () => {
+//   document.body.dataset.isFullscreen = true;
+//   appWindow.setFullscreen(true);
+// });
+// document
+//   .getElementById("titlebar-close")
+//   .addEventListener("click", () => appWindow.close());

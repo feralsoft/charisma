@@ -47,7 +47,7 @@ fn render_rule(selector: &str) -> String {
     let mut rule_properties = rule.properties.clone();
     let i_p = db.inherited_properties_for(&path);
     let mut inherited_properties = i_p.values().collect::<Vec<_>>();
-    let i_v = db.inherited_vars_for(&path);
+    let i_v = db.inherited_vars_for(&path, &i_p);
     let mut inherited_vars = i_v.values().collect::<Vec<_>>();
     rule_properties.sort_by_key(|p| p.name());
     inherited_properties.sort_by_key(|(_, p)| p.name());
