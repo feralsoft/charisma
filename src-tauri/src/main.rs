@@ -57,8 +57,7 @@ fn render_rule(selector: &str) -> String {
         assert!(!selector_str.contains('\''));
         let selector = selector_str.trim();
         format!(
-            "<a href='{}' title='{}'>{}</a>",
-            selector,
+            "<a href='{}'>{}</a>",
             selector,
             property.render_html(&RenderOptions::default())
         )
