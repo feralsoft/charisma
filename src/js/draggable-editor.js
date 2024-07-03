@@ -1,24 +1,25 @@
 let current_editor = null;
-let dragging_board = false;
-let board_old_x, board_old_y, start_x, start_y;
+let start_x, start_y;
 let x_offset, y_offset;
-let set_position = (x, y) => {
-  current_editor.style.left = `${x}px`;
-  current_editor.style.top = `${y}px`;
-  current_editor.dispatchEvent(new Event("moved"));
+
+let set_editor_position = (x, y) => {
+  state.current_editor.style.left = `${x}px`;
+  state.current_editor.style.top = `${y}px`;
+  state.current_editor.dispatchEvent(new Event("moved"));
 };
-function editor_x(editor) {
-  return Number(editor.style.left.split("px")[0]);
+
+function left(elem) {
+  return Number(elem.style.left.split("px")[0]);
 }
 
-function editor_y(editor) {
+function top(editor) {
   return Number(editor.style.top.split("px")[0]);
 }
 
 const SNAP_OFFSET = 4;
 window.snap_editor = function (editor) {
-  let x = editor_x(editor);
-  let y = editor_y(editor);
+  let x = left(editor);
+  let y = top(editor);
 
   if (x % 25 < 9) editor.style.left = `${x - (x % 25) - SNAP_OFFSET}px`;
   else editor.style.left = `${x + (25 - (x % 25)) - SNAP_OFFSET}px`;
@@ -27,19 +28,7 @@ window.snap_editor = function (editor) {
   else editor.style.top = `${y + (25 - (y % 25)) - SNAP_OFFSET}px`;
 };
 
-window.snap_position = function ({ x, y }) {
-  if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
-  else x = x + (25 - (x % 25)) - SNAP_OFFSET;
-
-  if (y % 25 < 9) y = y - (y % 25) - SNAP_OFFSET;
-  else y = y + (25 - (y % 25)) - SNAP_OFFSET;
-
-  return { x, y };
-};
-
 function finish() {
-  dragging_board = false;
-  document.body.classList.remove("panning");
   if (!current_editor) return;
   snap_editor(current_editor);
   current_editor.classList.remove("dragging");
@@ -66,42 +55,19 @@ function init(editor) {
     if (current_editor) return;
     if (clicked !== editor) return;
     current_editor = editor;
-    let x = editor_x(current_editor);
-    let y = editor_y(current_editor);
+    let x = left(current_editor);
+    let y = top(current_editor);
     x_offset = e.clientX - x;
     y_offset = e.clientY - y;
     current_editor.classList.add("dragging");
-    set_position(x, y);
+    set_editor_position(x, y);
   });
 }
 
-window.addEventListener("mousedown", (e) => {
-  if (e.target.classList.contains("canvas")) {
-    dragging_board = true;
-    document.body.classList.add("panning");
-    board_old_x = document.body.style.getPropertyValue("--x-offset");
-    if (board_old_x) board_old_x = Number(board_old_x.split("px")[0]);
-    else board_old_x = 0;
-    board_old_y = document.body.style.getPropertyValue("--y-offset");
-    if (board_old_y) board_old_y = Number(board_old_y.split("px")[0]);
-    else board_old_y = 0;
-    start_x = e.clientX;
-    start_y = e.clientY;
-  }
-});
 window.addEventListener("mouseup", finish);
 window.addEventListener("mousemove", (e) => {
-  if (dragging_board) {
-    document.body.style.setProperty(
-      "--x-offset",
-      `${e.clientX - start_x + board_old_x}px`,
-    );
-    document.body.style.setProperty(
-      "--y-offset",
-      `${e.clientY - start_y + board_old_y}px`,
-    );
-  }
-  if (current_editor) set_position(e.clientX - x_offset, e.clientY - y_offset);
+  if (current_editor)
+    set_editor_position(e.clientX - x_offset, e.clientY - y_offset);
 });
 
 window.addEventListener("blur", (_) => finish());

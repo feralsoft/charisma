@@ -1,5 +1,5 @@
 import "./js/delete-property.js";
-import "./js/draggable-editor.js";
+// import "./js/draggable-editor.js";
 import "./js/focus.js";
 import "./js/insert-property.js";
 import "./js/menu.js";
@@ -11,6 +11,7 @@ import "./js/toggle-property.js";
 import "./js/undo.js";
 import "./js/update-value.js";
 import "./js/group-menu.js";
+import "./js/drag-board.js";
 
 import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
 

@@ -80,6 +80,7 @@ function put_in_group(editor) {
 }
 
 const SNAP_OFFSET = 4;
+
 function snap_size(editor) {
   let { width, height } = editor.getBoundingClientRect();
   width = width + (25 - (width % 25)) - SNAP_OFFSET;
@@ -89,10 +90,24 @@ function snap_size(editor) {
   editor.style.height = `${height}px`;
 }
 
-function init(editor) {
-  catch_links(editor);
+function snap_position({ x, y }) {
+  if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
+  else x = x + (25 - (x % 25)) - SNAP_OFFSET;
+
+  if (y % 25 < 9) y = y - (y % 25) - SNAP_OFFSET;
+  else y = y + (25 - (y % 25)) - SNAP_OFFSET;
+
+  return { x, y };
+}
+
+function snap_and_group(editor) {
   put_in_group(editor);
   snap_size(editor);
+}
+
+function init(editor) {
+  catch_links(editor);
+  snap_and_group(editor);
   editor.addEventListener("reload", (_) => reload(editor));
 }
 
@@ -100,6 +115,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
+    editor.addEventListener("move-to-new-group", (_) => snap_and_group(editor));
   });
 });
 
