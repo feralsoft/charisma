@@ -20,16 +20,14 @@ fn search(q: &str) -> Vec<String> {
 
     let parts: Vec<_> = q.trim().split(" ").collect();
 
-    let mut results = db
+    let mut results: Vec<String> = db
         .all_selectors()
         .iter()
         .filter(|selector| parts.iter().all(|q| selector.contains(q)))
-        .map(|s| {
-            parse_selector(s)
-                .unwrap()
-                .render_html(&RenderOptions::default())
-        })
-        .collect::<Vec<String>>();
+        // .unwrap() since, it should never crash
+        .map(|s| parse_selector(s).unwrap())
+        .map(|s| s.render_html(&RenderOptions::default()))
+        .collect();
 
     results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 

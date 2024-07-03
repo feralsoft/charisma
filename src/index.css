@@ -482,7 +482,7 @@ body {
         position: absolute;
         text-decoration: none;
         color: var(--foreground-color);
-        content: "variable undefined";
+        content: "`" attr(data-string-value) "` undefined";
         width: max-content;
         margin-top: -2em;
         font-size: 0.75em;
@@ -492,12 +492,16 @@ body {
     }
 }
 
-[data-kind="property"][data-commented="true"] {
-    opacity: 0.7;
+.--editor * {
+    user-select: none;
 }
 
-[data-value] {
-    user-select: none;
+.plain-text-node {
+    user-select: all;
+}
+
+[data-kind="property"][data-commented="true"] {
+    opacity: 0.7;
 }
 
 [data-kind="complex-selector"] {

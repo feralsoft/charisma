@@ -9,7 +9,7 @@ function init(editor) {
     );
     if (!property) {
       variable.classList.add("cant-deref");
-      return;
+      continue;
     }
     let value = property.querySelector('[data-attr="value"] [data-kind]');
     let cloned_value = value.cloneNode(true);

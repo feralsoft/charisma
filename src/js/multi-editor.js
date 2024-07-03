@@ -22,10 +22,11 @@ async function reload(editor) {
 }
 
 function catch_links(editor) {
-  for (let a of editor.querySelectorAll("a")) {
-    a.addEventListener("click", (e) => e.preventDefault());
-    a.addEventListener("mousedown", (_) => add_editor(a.getAttribute("href")));
-  }
+  for (let a of editor.querySelectorAll("a"))
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      add_editor(a.getAttribute("href"));
+    });
 }
 
 function x_offset() {
