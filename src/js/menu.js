@@ -21,8 +21,8 @@ function menu(editor) {
   let menu_elem = document.createElement("div");
   menu_elem.classList.add("menu");
 
-  menu_elem.append(minimize(editor));
   menu_elem.append(close(editor));
+  menu_elem.append(minimize(editor));
   return menu_elem;
 }
 

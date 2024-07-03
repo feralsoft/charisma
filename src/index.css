@@ -25,7 +25,7 @@
     left: calc(var(--x) * 1px);
     top: calc(var(--y) * 1px);
     transform: translateX(var(--x-offset)) translateY(var(--y-offset));
-    padding: 1em;
+    padding: 25px;
     border: 0.1em dashed gray;
     display: flex;
     flex-direction: column-reverse;
@@ -688,10 +688,11 @@ a {
 .--editor-group > .menu {
     top: -1em;
     left: -0.1em;
+    outline: 0.1em solid rgb(40, 40, 40);
 }
 
 .--editor > .menu:not(:has(> .minimize.active)) {
-    right: 1em;
+    right: 25px;
 }
 
 .menu {
@@ -699,7 +700,6 @@ a {
     position: absolute;
     display: flex;
     background-color: rgb(20, 20, 20);
-    outline: 0.1em solid rgb(40, 40, 40);
 
     /* basic menu item styling */
     button {

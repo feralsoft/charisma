@@ -41,11 +41,22 @@ function y_offset() {
   );
 }
 
-function new_group({ x, y }) {
+function new_group(editor) {
   let group = document.createElement("div");
   group.classList.add("--editor-group");
-  group.style.setProperty("--x", x);
-  group.style.setProperty("--y", y);
+
+  let { width, height } = document.body.getBoundingClientRect();
+
+  let { width: editor_width, height: editor_height } =
+    editor.getBoundingClientRect();
+
+  let pos = snap_position({
+    x: width / 2 - editor_width / 3,
+    y: height / 2 - editor_height / 3,
+  });
+
+  group.style.setProperty("--x", pos.x);
+  group.style.setProperty("--y", pos.y);
   document.querySelector(".canvas").append(group);
   return group;
 }
@@ -59,22 +70,29 @@ window.find_map = function (iterable, fn) {
 
 function put_in_group(editor) {
   let { width, height } = document.body.getBoundingClientRect();
-  let position = snap_position({
-    x: width / 2,
-    y: height / 2,
-  });
 
   let group =
-    find_map(document.elementsFromPoint(position.x, position.y), (elem) =>
+    find_map(document.elementsFromPoint(width / 2, height / 2), (elem) =>
       elem.closest(".--editor-group"),
-    ) ?? new_group(position);
+    ) ?? new_group(editor);
 
   group.append(editor);
+}
+
+const SNAP_OFFSET = 4;
+function snap_size(editor) {
+  let { width, height } = editor.getBoundingClientRect();
+  width = width + (25 - (width % 25)) - SNAP_OFFSET;
+  height = height + (25 - (height % 25)) - SNAP_OFFSET;
+
+  editor.style.width = `${width}px`;
+  editor.style.height = `${height}px`;
 }
 
 function init(editor) {
   catch_links(editor);
   put_in_group(editor);
+  snap_size(editor);
   editor.addEventListener("reload", (_) => reload(editor));
 }
 
