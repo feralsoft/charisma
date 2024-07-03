@@ -41,12 +41,23 @@ function y_offset() {
   );
 }
 
-function editor_at({ x, y }) {
+function editor_at({ x, y }, self) {
   for (let elem of document.elementsFromPoint(x, y)) {
     let editor = elem.closest(".--editor");
-    if (editor) return editor;
+    if (editor && editor !== self) return editor;
   }
 }
+
+const POSITIONS = [
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+  [0, -1],
+  [1, -1],
+];
 
 function find_position_for(editor) {
   let { width, height } = document.body.getBoundingClientRect();
@@ -58,43 +69,15 @@ function find_position_for(editor) {
     y: height / 2 - editor_height / 2,
   };
 
-  // ugghh .. this is broken & ugly. :)
-  let elem;
-  if ((elem = editor_at(position))) {
-    let { bottom, right, left, top } = elem.getBoundingClientRect();
-    // go right
-    position.x = right + 50;
-    position.y = top;
-    if (editor_at(position)) {
-      // try moving down
-      position.y = bottom + 50;
-      position.x = left;
-      // move bottom right
-      if (editor_at(position)) {
-        position.x = right + 50;
-        if (editor_at(position)) {
-          // go left
-          position.x = left - editor_width;
-          position.y = top;
-          if (editor_at(position)) {
-            // go up
-            position.y = top - editor_height - 50;
-            position.x = left;
-            if (editor_at(position)) {
-              // up right
-              position.x = right + 50;
-              if (editor_at(position)) {
-                // up left
-                position.x = left - editor_width;
-                if (editor_at(position)) {
-                  position.y = bottom + 50;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+  if (!editor_at(position, editor)) return position;
+
+  for (let [dir_x, dir_y] of POSITIONS) {
+    let new_position = {
+      x: position.x + dir_x * editor_width,
+      y: position.y + dir_y * editor_height,
+    };
+
+    if (!editor_at(new_position, editor)) return new_position;
   }
   return position;
 }
