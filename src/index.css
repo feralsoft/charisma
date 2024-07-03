@@ -494,6 +494,7 @@ body {
 
 .--editor * {
     user-select: none;
+    -webkit-user-select: none;
 }
 
 .plain-text-node {
