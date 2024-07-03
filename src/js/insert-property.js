@@ -134,8 +134,7 @@ document.addEventListener("DOMContentLoaded", async (_) => {
   all_properties = await invoke("get_all_properties");
 
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", (_) => {
-    let editor = document.querySelector(".--editor:last-child");
+  canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
     editor.addEventListener("loaded", (_) => init(editor));
   });

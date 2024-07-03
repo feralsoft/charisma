@@ -27,6 +27,16 @@ window.snap_editor = function (editor) {
   else editor.style.top = `${y + (25 - (y % 25)) - SNAP_OFFSET}px`;
 };
 
+window.snap_position = function ({ x, y }) {
+  if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
+  else x = x + (25 - (x % 25)) - SNAP_OFFSET;
+
+  if (y % 25 < 9) y = y - (y % 25) - SNAP_OFFSET;
+  else y = y + (25 - (y % 25)) - SNAP_OFFSET;
+
+  return { x, y };
+};
+
 function finish() {
   dragging_board = false;
   document.body.classList.remove("panning");
@@ -100,8 +110,7 @@ window.addEventListener("keydown", (_) => finish());
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", (_) => {
-    let editor = document.querySelector(".--editor:last-child");
+  canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
   });
 });

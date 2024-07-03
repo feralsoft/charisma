@@ -1,39 +1,35 @@
-function close(editor) {
+function close(group) {
   let close_btn = document.createElement("button");
   close_btn.classList.add("close");
-  close_btn.addEventListener("mousedown", (_) => editor.remove());
+  close_btn.addEventListener("mousedown", (_) => group.remove());
   return close_btn;
 }
 
-function minimize(editor) {
+function minimize() {
   let minimize_btn = document.createElement("button");
   minimize_btn.classList.add("minimize");
   minimize_btn.addEventListener("mousedown", (_) => {
-    minimize_btn.dataset.selector = editor.querySelector(
-      '[data-attr="selector"] > [data-kind]',
-    ).dataset.stringValue;
     minimize_btn.classList.toggle("active");
   });
   return minimize_btn;
 }
-
-function menu(editor) {
+function menu(group) {
   let menu_elem = document.createElement("div");
   menu_elem.classList.add("menu");
 
-  menu_elem.append(minimize(editor));
-  menu_elem.append(close(editor));
+  menu_elem.append(close(group));
+  menu_elem.append(minimize(group));
   return menu_elem;
 }
 
-function init(editor) {
-  editor.prepend(menu(editor));
+function init(group) {
+  if (group.querySelector(":scope > .menu")) return;
+  group.prepend(menu(group));
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
-    init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
+    init(editor.closest(".--editor-group"));
   });
 });

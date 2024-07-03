@@ -13,7 +13,7 @@ window.add_editor = async function add_editor(selector) {
   canvas.append(editor);
   document.querySelector(".--editor.focused")?.classList?.remove("focused");
   editor.classList.add("focused");
-  canvas.dispatchEvent(new Event("new-editor"));
+  canvas.dispatchEvent(new CustomEvent("new-editor", { detail: editor }));
 };
 
 document.addEventListener("DOMContentLoaded", (_) => {

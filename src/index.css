@@ -20,6 +20,18 @@
     font-family: var(--font-family), menlo;
 }
 
+.--editor-group {
+    position: absolute;
+    left: calc(var(--x) * 1px);
+    top: calc(var(--y) * 1px);
+    transform: translateX(var(--x-offset)) translateY(var(--y-offset));
+    padding: 1em;
+    border: 0.1em dashed gray;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1em;
+}
+
 /* junk code */
 .titlebar {
     z-index: 100;
@@ -37,10 +49,12 @@
     font-size: 0.75em;
     color: rgb(40, 40, 40);
 }
+
 .titlebar-info {
     margin-left: 0.5em;
     display: flex;
 }
+
 .titlebar-button {
     display: inline-flex;
     color: white;
@@ -50,9 +64,11 @@
     height: 1.25em;
     cursor: pointer;
 }
+
 .titlebar-button:hover {
     background: #eee;
 }
+
 /* end junk code */
 
 body[data-is-fullscreen="true"] {
@@ -179,11 +195,6 @@ body {
             rgba(200, 200, 200, 0.5) 1px,
             rgba(0, 0, 0, 0) 1px
         );
-    }
-
-    .--editor {
-        position: absolute;
-        transform: translateX(var(--x-offset)) translateY(var(--y-offset));
     }
 
     .dragging {
@@ -667,17 +678,26 @@ a {
     --line-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12L21 12" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --plus-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M12 4V20" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --drag-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" stroke="white" viewBox="0 0 30 30"><g><path d="M4.843 18.126l-3.64-3.644 3.64-3.612c.464-.45-.234-1.2-.71-.71L.14 14.127c-.187.186-.187.525 0 .71l3.993 4c.488.49 1.18-.238.71-.71zm19.314-7.252l3.64 3.644-3.64 3.61c-.464.453.234 1.202.71.712l3.994-3.967c.187-.186.187-.525 0-.71l-3.993-4c-.488-.49-1.18.238-.71.71zm-6.03 13.283l-3.645 3.64-3.61-3.64c-.453-.464-1.202.235-.712.71l3.967 3.994c.186.187.525.187.71 0l4-3.993c.49-.488-.238-1.18-.71-.71zM10.873 4.843l3.644-3.64 3.612 3.64c.45.464 1.2-.235.71-.71L14.873.14c-.186-.187-.525-.187-.71 0l-4 3.993c-.49.488.238 1.18.71.71zM14 3.5V14H3.5c-.65 0-.655 1 0 1H14v10.5c0 .67 1 .665 1 0V15h10.5c.667 0 .665-1 0-1H15V3.5c0-.682-1-.638-1 0z"/></g></svg>');
+    --rotate-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 1920 1920"><path fill-rule="evenodd" clip-rule="evenodd" d="M1251.45 447.883 1120 316.432h160c176.73 0 320 143.269 320 320h106.67c0-235.641-191.03-426.666-426.67-426.666h-159.97l134.34-134.341L1178.94 0 915.833 263.111l260.197 260.196 75.42-75.424Zm28.55 405.45C1280 735.513 1184.49 640 1066.67 640H213.333C95.513 640 0 735.513 0 853.333v853.337C0 1824.49 95.513 1920 213.333 1920h853.337c117.82 0 213.33-95.51 213.33-213.33V853.333Zm-213.33-106.666H213.333c-58.91 0-106.666 47.756-106.666 106.666v853.337c0 58.91 47.756 106.66 106.666 106.66h853.337c58.91 0 106.66-47.75 106.66-106.66V853.333c0-58.91-47.75-106.666-106.66-106.666Z"/></svg>');
 }
 
 .canvas:has(.dragging) {
     cursor: grabbing;
 }
 
-.--editor .menu {
+.--editor-group > .menu {
+    top: -1em;
+    left: -0.1em;
+}
+
+.--editor > .menu:not(:has(> .minimize.active)) {
+    right: 1em;
+}
+
+.menu {
     /* basic positioning */
     position: absolute;
     display: flex;
-    top: -1.25em;
     background-color: rgb(20, 20, 20);
     outline: 0.1em solid rgb(40, 40, 40);
 
@@ -688,8 +708,8 @@ a {
         background-color: inherit;
         background-repeat: no-repeat;
         background-position: center;
-        height: 1.0825em;
-        width: 1.0825em;
+        height: 0.825em;
+        width: 0.825em;
 
         &:hover {
             background-color: rgb(10, 10, 10);
@@ -709,12 +729,6 @@ a {
         background-image: var(--x-icon);
     }
 
-    .grab {
-        background-size: 0.7em;
-        background-image: var(--drag-icon);
-        cursor: grab;
-    }
-
     .minimize {
         background-size: 0.7em;
         background-image: var(--line-icon);
@@ -731,7 +745,9 @@ a {
         width: max-content;
         color: white;
         opacity: 0.9;
-        left: 3.5em;
+        line-height: 1;
+        font-size: 0.9em;
+        left: 2em;
         top: 0;
     }
 
@@ -748,6 +764,14 @@ a {
     outline: none;
 
     [data-kind="rule"] {
+        display: none;
+    }
+}
+
+.--editor-group:has(> .menu .minimize.active) {
+    border: none;
+
+    .--editor {
         display: none;
     }
 }

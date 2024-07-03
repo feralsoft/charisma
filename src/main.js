@@ -10,6 +10,7 @@ import "./js/tab-cycle.js";
 import "./js/toggle-property.js";
 import "./js/undo.js";
 import "./js/update-value.js";
+import "./js/group-menu.js";
 
 import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
 

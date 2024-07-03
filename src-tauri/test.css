@@ -2,6 +2,18 @@
     user-select: none;
     -webkit-user-select: none;
 }
+.titlebar-button {
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+::before {
+    font-family: var(--font-family);
+}
 :root {
     --at-rule-color: #c586c0;
     --attribute-color: var(--property-name-color);
@@ -26,9 +38,6 @@
 ::after {
     font-family: var(--font-family);
 }
-::before {
-    font-family: var(--font-family);
-}
 /* end junk code */
 /*
 body[data-is-fullscreen="true"] {
@@ -40,14 +49,10 @@ body[data-is-fullscreen="true"] {
 [data-kind="rule"] {
     box-sizing: border-box;
 }
-.titlebar-button {
-    display: inline-flex;
-    color: white;
-    justify-content: center;
-    align-items: center;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
+.titlebar-info {
+    color: red;
+    display: flex;
+    margin-left: 0.5em;
 }
 /* junk code */
 .titlebar {
@@ -65,9 +70,4 @@ body[data-is-fullscreen="true"] {
     color: rgb(40, 40, 40);
     font-size: 13px;
     height: 20px;
-}
-.titlebar-info {
-    color: red;
-    display: flex;
-    margin-left: 0.5em;
 }
