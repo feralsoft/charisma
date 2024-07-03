@@ -40,18 +40,55 @@ window.addEventListener("mousedown", (e) => {
 });
 
 // property focus
-window.addEventListener("click", (e) => {
-  if (!e.isTrusted) return; // don't trust simulated mouse clicks
-
+function focus_property(property) {
   // should only be 1 focused property at any given time.
   document
     .querySelector('[data-kind="property"].focused')
     ?.classList?.remove("focused");
 
-  document
-    .elementFromPoint(e.clientX, e.clientY)
-    .closest('[data-kind="property"]')
-    ?.classList?.add("focused");
+  // we may get nothing
+  property?.classList?.add("focused");
+}
+
+window.addEventListener("click", (e) => {
+  if (!e.isTrusted) return; // don't trust simulated mouse clicks
+
+  focus_property(
+    document
+      .elementFromPoint(e.clientX, e.clientY)
+      .closest('[data-kind="property"]'),
+  );
+});
+
+// go up and down properties with arrow keys when a property is focused
+window.addEventListener("keydown", (e) => {
+  let focused_property = document.querySelector(
+    '[data-kind="property"].focused',
+  );
+  if (!focused_property) return;
+
+  if (e.key === "ArrowUp") {
+    let previous_property = focused_property.previousElementSibling;
+    if (!previous_property) {
+      // hack
+      previous_property = [
+        ...focused_property
+          .closest('[data-attr="properties"]')
+          .querySelectorAll('[data-kind="property"]'),
+      ].at(-1);
+    }
+
+    focus_property(previous_property);
+  } else if (e.key === "ArrowDown") {
+    let next_property = focused_property.nextElementSibling;
+
+    if (!next_property?.matches('[data-kind="property"]'))
+      next_property = focused_property
+        .closest('[data-attr="properties"]')
+        .querySelector('[data-kind="property"]');
+
+    focus_property(next_property);
+  }
 });
 
 window.addEventListener("tab-into", (e) => {

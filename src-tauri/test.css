@@ -1,3 +1,7 @@
+[data-value] {
+    user-select: none;
+    -webkit-user-select: none;
+}
 /* end junk code */
 /*
 body[data-is-fullscreen="true"] {
@@ -9,13 +13,41 @@ body[data-is-fullscreen="true"] {
 [data-kind="rule"] {
     box-sizing: border-box;
 }
-.titlebar-info {
-    display: flex;
-    margin-left: 0.5em;
+::before {
+    font-family: var(--font-family);
 }
-[data-value] {
-    user-select: none;
-    -webkit-user-select: none;
+.titlebar-button {
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+::after {
+    font-family: var(--font-family);
+}
+:root {
+    --at-rule-color: #c586c0;
+    --attribute-color: var(--property-name-color);
+    --brace-color: #d8a90c;
+    --class-color: #d7ba7d;
+    --font-family: Berkeley Mono;
+    --foreground-color: #ccc;
+    --function-color: #dcdcaa;
+    --number-color: #b5cea8;
+    --outline-color: #ffffff17;
+    --property-name-color: #9cdcfe;
+    --spacing: 0.25em;
+    --string-color: #ce9178;
+    --variable-color: #9cdcfe;
+    background-color: rgb(31, 31, 31);
+    color: var(--foreground-color);
+    font-family: var(--font-family), menlo;
+    font-size: 18px;
+    margin: 0;
+    padding: 0;
 }
 /* junk code */
 .titlebar {
@@ -34,39 +66,7 @@ body[data-is-fullscreen="true"] {
     font-size: 13px;
     height: 20px;
 }
-.titlebar-button {
-    display: inline-flex;
-    color: white;
-    justify-content: center;
-    align-items: center;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-::after {
-    font-family: var(--font-family);
-}
-:root {
-    background-color: rgb(31, 31, 31);
-    padding: 0;
-    margin: 0;
-    --spacing: 0.25em;
-    --brace-color: #d8a90c;
-    --outline-color: #ffffff17;
-    --number-color: #b5cea8;
-    --class-color: #d7ba7d;
-    --function-color: #dcdcaa;
-    --variable-color: #9cdcfe;
-    --string-color: #ce9178;
-    --attribute-color: var(--property-name-color);
-    --at-rule-color: #c586c0;
-    color: var(--foreground-color);
-    font-size: 18px;
-    --font-family: Berkeley Mono;
-    font-family: var(--font-family), menlo;
-    --property-name-color: #9cdcfe;
-    --foreground-color: #ccc;
-}
-::before {
-    font-family: var(--font-family);
+.titlebar-info {
+    margin-left: 0.5em;
+    display: flex;
 }
