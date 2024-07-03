@@ -1,30 +1,21 @@
+/* end junk code */
+/*
+body[data-is-fullscreen="true"] {
+    .titlebar {
+        display: none;
+    }
+} */
+
+[data-kind="rule"] {
+    box-sizing: border-box;
+}
+.titlebar-info {
+    display: flex;
+    margin-left: 0.5em;
+}
 [data-value] {
     user-select: none;
     -webkit-user-select: none;
-}
-::after {
-    font-family: var(--font-family);
-}
-:root {
-    background-color: rgb(31, 31, 31);
-    padding: 0;
-    margin: 0;
-    --spacing: 0.25em;
-    --brace-color: #d8a90c;
-    --outline-color: #ffffff17;
-    --number-color: #b5cea8;
-    --class-color: #d7ba7d;
-    --function-color: #dcdcaa;
-    --property-name-color: #9cdcfe;
-    --variable-color: #9cdcfe;
-    --string-color: #ce9178;
-    --attribute-color: var(--property-name-color);
-    --foreground-color: #ccc;
-    --at-rule-color: #c586c0;
-    color: var(--foreground-color);
-    font-size: 18px;
-    --font-family: Berkeley Mono;
-    font-family: var(--font-family), menlo;
 }
 /* junk code */
 .titlebar {
@@ -43,20 +34,6 @@
     font-size: 13px;
     height: 20px;
 }
-::before {
-    font-family: var(--font-family);
-}
-/* end junk code */
-/*
-body[data-is-fullscreen="true"] {
-    .titlebar {
-        display: none;
-    }
-} */
-
-[data-kind="rule"] {
-    box-sizing: border-box;
-}
 .titlebar-button {
     display: inline-flex;
     color: white;
@@ -66,7 +43,30 @@ body[data-is-fullscreen="true"] {
     height: 20px;
     cursor: pointer;
 }
-.titlebar-info {
-    margin-left: 0.5em;
-    display: flex;
+::after {
+    font-family: var(--font-family);
+}
+:root {
+    background-color: rgb(31, 31, 31);
+    padding: 0;
+    margin: 0;
+    --spacing: 0.25em;
+    --brace-color: #d8a90c;
+    --outline-color: #ffffff17;
+    --number-color: #b5cea8;
+    --class-color: #d7ba7d;
+    --function-color: #dcdcaa;
+    --variable-color: #9cdcfe;
+    --string-color: #ce9178;
+    --attribute-color: var(--property-name-color);
+    --at-rule-color: #c586c0;
+    color: var(--foreground-color);
+    font-size: 18px;
+    --font-family: Berkeley Mono;
+    font-family: var(--font-family), menlo;
+    --property-name-color: #9cdcfe;
+    --foreground-color: #ccc;
+}
+::before {
+    font-family: var(--font-family);
 }
