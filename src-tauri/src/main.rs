@@ -20,18 +20,26 @@ fn search(q: &str) -> Vec<String> {
 
     let parts: Vec<_> = q.trim().split(" ").collect();
 
-    let mut results: Vec<String> = db
+    let mut results: Vec<_> = db
         .all_selectors()
         .iter()
         .filter(|selector| parts.iter().all(|q| selector.contains(q)))
         // .unwrap() since, it should never crash
         .map(|s| parse_selector(s).unwrap())
-        .map(|s| s.render_html(&RenderOptions::default()))
         .collect();
 
-    results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
+    results.sort_by(|a, b| {
+        // butt-ugly way to remove comments from the selector
+        let a = a.to_css_db_path().join("");
+        let b = b.to_css_db_path().join("");
+
+        a.len().cmp(&b.len()).then_with(|| a.cmp(&b))
+    });
 
     results
+        .iter()
+        .map(|s| s.render_html(&RenderOptions::default()))
+        .collect()
 }
 
 #[tauri::command]
