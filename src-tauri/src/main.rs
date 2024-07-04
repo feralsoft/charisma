@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use biome_css_syntax::AnyCssSelector;
 use db::*;
 use html::*;
 use parse_utils::{parse_property, parse_selector};
@@ -18,14 +19,18 @@ fn search(q: &str) -> Vec<String> {
     let mut db = CSSDB::new();
     db.load("test.css");
 
-    let parts: Vec<_> = q.trim().split(" ").collect();
+    let parts: Vec<&str> = q.trim().split(" ").collect();
 
-    let mut results: Vec<_> = db
+    let mut results: Vec<AnyCssSelector> = db
         .all_selectors()
         .iter()
-        .filter(|selector| parts.iter().all(|q| selector.contains(q)))
         // .unwrap() since, it should never crash
         .map(|s| parse_selector(s).unwrap())
+        .filter(|selector| {
+            // butt-ugly way to remove comments from the selector
+            let str = selector.to_css_db_path().join("");
+            parts.iter().all(|q| str.contains(q))
+        })
         .collect();
 
     results.sort_by(|a, b| {
