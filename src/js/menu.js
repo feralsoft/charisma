@@ -17,12 +17,22 @@ function minimize(editor) {
   return minimize_btn;
 }
 
+function info() {
+  let info_btn = document.createElement("button");
+  info_btn.classList.add("info");
+  info_btn.addEventListener("mousedown", (_) => {
+    info_btn.classList.toggle("active");
+  });
+  return info_btn;
+}
+
 function menu(editor) {
   let menu_elem = document.createElement("div");
   menu_elem.classList.add("menu");
 
   menu_elem.append(close(editor));
   menu_elem.append(minimize(editor));
+  menu_elem.append(info());
   return menu_elem;
 }
 

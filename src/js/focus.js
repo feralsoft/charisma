@@ -1,3 +1,15 @@
+export function focus_editor(editor) {
+  // there should never be 2 focused editors
+  let previously_focused = document.querySelector(".--editor.focused");
+
+  previously_focused?.classList?.remove("focused");
+  previously_focused?.dispatchEvent(new Event("blur"));
+  if (!editor) return;
+
+  editor.classList.add("focused");
+  editor.dispatchEvent(new Event("focus"));
+}
+
 // editor focus
 window.addEventListener("mousedown", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
@@ -26,17 +38,11 @@ window.addEventListener("mousedown", (e) => {
     }
   }
 
-  // if we are not hovering over a focused editor, look for any editor
   found_editor ??= document
     .elementFromPoint(e.clientX, e.clientY)
     .closest(".--editor");
 
-  // there should never be 2 focused editors
-  document.querySelector(".--editor.focused")?.classList?.remove("focused");
-
-  if (!found_editor) return;
-
-  found_editor.classList.add("focused");
+  focus_editor(found_editor);
 });
 
 // property focus

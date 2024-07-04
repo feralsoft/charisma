@@ -61,10 +61,8 @@ window.find_map = function (iterable, fn) {
 };
 
 function put_in_group(editor, position) {
-  let { width, height } = document.body.getBoundingClientRect();
-
   let group =
-    find_map(document.elementsFromPoint(width / 2, height / 2), (elem) =>
+    find_map(document.elementsFromPoint(position.x, position.y), (elem) =>
       elem.closest(".--editor-group"),
     ) ?? new_group(position);
 
@@ -74,12 +72,14 @@ function put_in_group(editor, position) {
 const SNAP_OFFSET = 4;
 
 function snap_size(editor) {
+  editor.style.minWidth = "initial";
+  editor.style.minHeight = "initial";
   let { width, height } = editor.getBoundingClientRect();
   width = width + (25 - (width % 25)) - SNAP_OFFSET;
   height = height + (25 - (height % 25)) - SNAP_OFFSET;
 
-  editor.style.width = `${width}px`;
-  editor.style.height = `${height}px`;
+  editor.style.minWidth = `${width}px`;
+  editor.style.minHeight = `${height}px`;
 }
 
 function snap_position({ x, y }) {
@@ -100,14 +100,15 @@ function snap_and_group(editor, position) {
 function init(editor) {
   catch_links(editor);
 
-  let { width, height } = document.body.getBoundingClientRect();
+  let { width: body_width, height: body_height } =
+    document.body.getBoundingClientRect();
 
   let { width: editor_width, height: editor_height } =
     editor.getBoundingClientRect();
 
   snap_and_group(editor, {
-    x: width / 2 - editor_width / 3,
-    y: height / 2 - editor_height / 3,
+    x: body_width / 2 - editor_width / 3,
+    y: body_height / 2 - editor_height / 3,
   });
   editor.addEventListener("reload", (_) => reload(editor));
 }
@@ -119,6 +120,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
     editor.addEventListener("drag-finished", ({ detail: { position } }) =>
       snap_and_group(editor, position),
     );
+    editor.addEventListener("blur", (_) => snap_size(editor));
+    editor.addEventListener("focus", (_) => snap_size(editor));
   });
 });
 

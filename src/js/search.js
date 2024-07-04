@@ -1,4 +1,5 @@
 const { invoke } = window.__TAURI__.tauri;
+import { focus_editor } from "./focus.js";
 
 window.add_editor = async function add_editor(selector) {
   let html = await invoke("render_rule", { selector });
@@ -11,8 +12,7 @@ window.add_editor = async function add_editor(selector) {
 
   let canvas = document.querySelector(".canvas");
   canvas.append(editor);
-  document.querySelector(".--editor.focused")?.classList?.remove("focused");
-  editor.classList.add("focused");
+  focus_editor(editor);
   canvas.dispatchEvent(new CustomEvent("new-editor", { detail: editor }));
 };
 

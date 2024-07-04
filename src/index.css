@@ -33,8 +33,8 @@
     padding: 25px;
     border: 0.1em dashed gray;
     display: flex;
-    flex-direction: column-reverse;
-    gap: 1em;
+    flex-direction: column;
+    gap: calc(25px + 0.1em);
 }
 
 /* junk code */
@@ -309,6 +309,10 @@ body {
     gap: var(--spacing);
     padding-top: var(--spacing);
     padding-bottom: var(--spacing);
+}
+
+.--editor:not(:has(> .menu .info.active)) [data-attr="inherited-properties"] {
+    display: none;
 }
 
 [data-kind="rule"] > [data-attr="inherited-properties"] {
@@ -683,7 +687,7 @@ a {
     --line-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12L21 12" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --plus-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><path d="M4 12H20M12 4V20" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --drag-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" stroke="white" viewBox="0 0 30 30"><g><path d="M4.843 18.126l-3.64-3.644 3.64-3.612c.464-.45-.234-1.2-.71-.71L.14 14.127c-.187.186-.187.525 0 .71l3.993 4c.488.49 1.18-.238.71-.71zm19.314-7.252l3.64 3.644-3.64 3.61c-.464.453.234 1.202.71.712l3.994-3.967c.187-.186.187-.525 0-.71l-3.993-4c-.488-.49-1.18.238-.71.71zm-6.03 13.283l-3.645 3.64-3.61-3.64c-.453-.464-1.202.235-.712.71l3.967 3.994c.186.187.525.187.71 0l4-3.993c.49-.488-.238-1.18-.71-.71zM10.873 4.843l3.644-3.64 3.612 3.64c.45.464 1.2-.235.71-.71L14.873.14c-.186-.187-.525-.187-.71 0l-4 3.993c-.49.488.238 1.18.71.71zM14 3.5V14H3.5c-.65 0-.655 1 0 1H14v10.5c0 .67 1 .665 1 0V15h10.5c.667 0 .665-1 0-1H15V3.5c0-.682-1-.638-1 0z"/></g></svg>');
-    --rotate-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 1920 1920"><path fill-rule="evenodd" clip-rule="evenodd" d="M1251.45 447.883 1120 316.432h160c176.73 0 320 143.269 320 320h106.67c0-235.641-191.03-426.666-426.67-426.666h-159.97l134.34-134.341L1178.94 0 915.833 263.111l260.197 260.196 75.42-75.424Zm28.55 405.45C1280 735.513 1184.49 640 1066.67 640H213.333C95.513 640 0 735.513 0 853.333v853.337C0 1824.49 95.513 1920 213.333 1920h853.337c117.82 0 213.33-95.51 213.33-213.33V853.333Zm-213.33-106.666H213.333c-58.91 0-106.666 47.756-106.666 106.666v853.337c0 58.91 47.756 106.66 106.666 106.66h853.337c58.91 0 106.66-47.75 106.66-106.66V853.333c0-58.91-47.75-106.666-106.66-106.666Z"/></svg>');
+    --info-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 7.01002L12 7.00003M12 17L12 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 }
 
 .canvas:has(.dragging) {
@@ -698,6 +702,9 @@ a {
 
 .--editor > .menu:not(:has(> .minimize.active)) {
     right: 25px;
+}
+.canvas > .--editor > .menu:not(:has(> .minimize.active)) {
+    right: 0;
 }
 
 .menu {
@@ -737,6 +744,10 @@ a {
     .minimize {
         background-size: 0.7em;
         background-image: var(--line-icon);
+    }
+    .info {
+        background-size: 1em;
+        background-image: var(--info-icon);
     }
 
     .minimize.active {
