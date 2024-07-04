@@ -20,6 +20,11 @@
     font-family: var(--font-family), menlo;
 }
 
+/* editor not in a group */
+.canvas > .--editor {
+    transform: translateX(var(--x-offset)) translateY(var(--y-offset));
+}
+
 .--editor-group {
     position: absolute;
     left: calc(var(--x) * 1px);

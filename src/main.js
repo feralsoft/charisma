@@ -1,5 +1,5 @@
 import "./js/delete-property.js";
-// import "./js/draggable-editor.js";
+import "./js/drag-editor.js";
 import "./js/focus.js";
 import "./js/insert-property.js";
 import "./js/menu.js";

@@ -41,19 +41,11 @@ function y_offset() {
   );
 }
 
-function new_group(editor) {
+function new_group(position) {
   let group = document.createElement("div");
   group.classList.add("--editor-group");
 
-  let { width, height } = document.body.getBoundingClientRect();
-
-  let { width: editor_width, height: editor_height } =
-    editor.getBoundingClientRect();
-
-  let pos = snap_position({
-    x: width / 2 - editor_width / 3,
-    y: height / 2 - editor_height / 3,
-  });
+  let pos = snap_position({ x: position.x - 25, y: position.y - 25 });
 
   group.style.setProperty("--x", pos.x);
   group.style.setProperty("--y", pos.y);
@@ -68,13 +60,13 @@ window.find_map = function (iterable, fn) {
   }
 };
 
-function put_in_group(editor) {
+function put_in_group(editor, position) {
   let { width, height } = document.body.getBoundingClientRect();
 
   let group =
     find_map(document.elementsFromPoint(width / 2, height / 2), (elem) =>
       elem.closest(".--editor-group"),
-    ) ?? new_group(editor);
+    ) ?? new_group(position);
 
   group.append(editor);
 }
@@ -100,14 +92,23 @@ function snap_position({ x, y }) {
   return { x, y };
 }
 
-function snap_and_group(editor) {
-  put_in_group(editor);
+function snap_and_group(editor, position) {
+  put_in_group(editor, position);
   snap_size(editor);
 }
 
 function init(editor) {
   catch_links(editor);
-  snap_and_group(editor);
+
+  let { width, height } = document.body.getBoundingClientRect();
+
+  let { width: editor_width, height: editor_height } =
+    editor.getBoundingClientRect();
+
+  snap_and_group(editor, {
+    x: width / 2 - editor_width / 3,
+    y: height / 2 - editor_height / 3,
+  });
   editor.addEventListener("reload", (_) => reload(editor));
 }
 
@@ -115,7 +116,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
-    editor.addEventListener("move-to-new-group", (_) => snap_and_group(editor));
+    editor.addEventListener("drag-finished", ({ detail: { position } }) =>
+      snap_and_group(editor, position),
+    );
   });
 });
 
