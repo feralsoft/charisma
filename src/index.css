@@ -347,19 +347,11 @@ body {
 
     font-size: 1em;
     color: var(--foreground-color);
-    font-family: Berkeley Mono;
+    font-family: var(--font-family);
     margin-left: 1em;
     background: none;
     padding-bottom: 0.1em;
     height: 0.5em;
-
-    &:is(:focus, :focus-within) {
-        animation: expand 50ms linear forwards;
-
-        &:before {
-            display: none;
-        }
-    }
 
     &:not(:focus-within, :focus) {
         border: none;
@@ -374,6 +366,22 @@ body {
         content: "+";
         position: absolute;
         margin-top: -0.25em;
+    }
+}
+
+.--editor:not(.focused) .input {
+    /* safari is gross */
+    caret-color: rgb(0, 0, 0, 0);
+}
+
+.--editor.focused
+    [data-kind="rule"]
+    [data-attr="properties"]
+    .input:is(:focus, :focus-within) {
+    animation: expand 50ms linear forwards;
+
+    &::before {
+        display: none;
     }
 }
 

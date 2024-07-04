@@ -146,6 +146,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
       snap_and_group(editor, position),
     );
     editor.addEventListener("blur", (_) => snap_size(editor));
+    editor.addEventListener("loaded", (_) => snap_size(editor));
     editor.addEventListener("focus", (_) => snap_size(editor));
   });
 });
