@@ -1,3 +1,5 @@
+import { find_map } from "./helpers.js";
+
 const { invoke } = window.__TAURI__.tauri;
 
 let reload_lock = new Map();
@@ -52,13 +54,6 @@ function new_group(position) {
   document.querySelector(".canvas").append(group);
   return group;
 }
-
-window.find_map = function (iterable, fn) {
-  for (let elem of iterable) {
-    let result = fn(elem);
-    if (result) return result;
-  }
-};
 
 function put_in_group(editor, position) {
   let group =

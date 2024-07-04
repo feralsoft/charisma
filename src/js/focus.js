@@ -1,3 +1,5 @@
+import { find_map } from "./helpers.js";
+
 export function focus_editor(editor) {
   // there should never be 2 focused editors
   let previously_focused = document.querySelector(".--editor.focused");
@@ -28,14 +30,14 @@ window.addEventListener("mousedown", (e) => {
   // in case there is multiple editors where I'm clicking
   // prefer the currently focused editor since that's the one which will
   // have a higher z-index
+  //
+  // TODO: Just a thought... since we are snapping..
+  //       maybe we don't need to be as aggro with this anymore?
   if (document.querySelector(".--editor.focused")) {
-    for (let elem of document.elementsFromPoint(e.clientX, e.clientY)) {
-      let candidate_editor = elem.closest(".--editor.focused");
-      if (candidate_editor) {
-        found_editor = candidate_editor;
-        break;
-      }
-    }
+    found_editor = find_map(
+      document.elementsFromPoint(e.clientX, e.clientY),
+      (elem) => elem.closest(".--editor.focused"),
+    );
   }
 
   found_editor ??= document
