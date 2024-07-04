@@ -1,7 +1,11 @@
 function close(editor) {
   let close_btn = document.createElement("button");
   close_btn.classList.add("close");
-  close_btn.addEventListener("mousedown", (_) => editor.remove());
+  close_btn.addEventListener("mousedown", (_) => {
+    let group = editor.closest(".--editor-group");
+    editor.remove();
+    if (!group.querySelector(".--editor")) group.remove();
+  });
   return close_btn;
 }
 

@@ -31,22 +31,11 @@ function catch_links(editor) {
     });
 }
 
-function x_offset() {
-  return Number(
-    document.body.style.getPropertyValue("--x-offset").split("px")[0],
-  );
-}
-
-function y_offset() {
-  return Number(
-    document.body.style.getPropertyValue("--y-offset").split("px")[0],
-  );
-}
-
 function new_group(position) {
   let group = document.createElement("div");
   group.classList.add("--editor-group");
 
+  // - 25 since the group has a padding of 25px
   let pos = snap_position({ x: position.x - 25, y: position.y - 25 });
 
   group.style.setProperty("--x", pos.x);
@@ -108,13 +97,25 @@ function init(editor) {
   editor.addEventListener("reload", (_) => reload(editor));
 }
 
+function on_intersection(entries, observer) {
+  console.log(entries, observer);
+}
+
+let observer = new IntersectionObserver(on_intersection, {
+  root: document.body,
+  rootMargin: "0px",
+  threshold: 1.0,
+});
+
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
+    observer.observe(editor);
     editor.addEventListener("drag-finished", ({ detail: { position } }) =>
       snap_and_group(editor, position),
     );
+
     editor.addEventListener("blur", (_) => snap_size(editor));
     editor.addEventListener("focus", (_) => snap_size(editor));
   });
