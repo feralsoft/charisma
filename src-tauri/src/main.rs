@@ -48,6 +48,15 @@ fn search(q: &str) -> Vec<String> {
 }
 
 #[tauri::command]
+fn insert_empty_rule(selector: &str) {
+    let mut db = CSSDB::new();
+    db.load("test.css");
+    let selector = parse_selector(selector).unwrap();
+    db.insert_empty(&selector.to_selector(None));
+    fs::write("test.css", db.serialize()).unwrap()
+}
+
+#[tauri::command]
 fn render_rule(selector: &str) -> String {
     let mut db = CSSDB::new();
     db.load("test.css");
@@ -202,7 +211,8 @@ fn main() {
             get_all_properties,
             insert_property,
             replace_all_properties,
-            update_value
+            update_value,
+            insert_empty_rule
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -609,7 +609,7 @@ impl CSSDB {
         }
     }
 
-    fn insert_empty(&mut self, selector: &Selector) {
+    pub fn insert_empty(&mut self, selector: &Selector) {
         self.insert_empty_aux(selector.clone(), &selector.path);
     }
 

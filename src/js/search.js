@@ -54,19 +54,24 @@ document.addEventListener("DOMContentLoaded", (_) => {
   input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      let candidate =
-        options.querySelector(".candidate") ?? options.firstElementChild;
+      let candidate = options.querySelector(".candidate");
 
-      // do we already have this rule?
-      let selector = candidate.dataset.stringValue;
-      let existing_rule = document.querySelector(
-        `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
-      );
-
-      if (existing_rule) {
-        focus_editor(existing_rule);
-      } else {
+      if (!candidate) {
+        let selector = input.innerText;
+        await invoke("insert_empty_rule", { selector });
         await add_editor(selector);
+      } else {
+        // do we already have this rule?
+        let selector = candidate.dataset.stringValue;
+        let existing_rule = document.querySelector(
+          `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
+        );
+
+        if (existing_rule) {
+          focus_editor(existing_rule);
+        } else {
+          await add_editor(selector);
+        }
       }
 
       clear();
@@ -86,6 +91,17 @@ document.addEventListener("DOMContentLoaded", (_) => {
       if (!current_candidate.nextElementSibling) return;
       current_candidate.classList.remove("candidate");
       current_candidate.nextElementSibling.classList.add("candidate");
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      let candidate =
+        options.querySelector(".candidate") ?? options.firstElementChild;
+      input.innerText = candidate.dataset.stringValue;
+      move_cursor_to_end_of_element(input);
+      setTimeout(async () => {
+        // setTimeout so that innerText gets populated
+        let results = await invoke("search", { q: input.innerText });
+        options.innerHTML = results.join("");
+      });
     } else {
       setTimeout(async () => {
         // setTimeout so that innerText gets populated

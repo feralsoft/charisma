@@ -19,19 +19,23 @@ function search_options(names) {
   return options;
 }
 
+window.move_cursor_to_end_of_element = function (element) {
+  // start garbage internet code to go the end of a text range
+  let range = document.createRange();
+  let selection = window.getSelection();
+  range.setStart(element, element.childNodes.length);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  // end of garbage internet code
+};
+
 function accept_candidate(container, input_elem) {
   let options = container.querySelector(".search-options");
   input_elem.innerText = options.querySelector(".candidate").innerText + ":";
   options.remove();
 
-  // start garbage internet code to go the end of a text range
-  let range = document.createRange();
-  let selection = window.getSelection();
-  range.setStart(input_elem, input_elem.childNodes.length);
-  range.collapse(true);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  // end of garbage internet code
+  move_cursor_to_end_of_element(input_elem);
 }
 
 let input = (editor) =>

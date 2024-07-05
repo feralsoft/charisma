@@ -1,3 +1,55 @@
+::before {
+    font-family: var(--font-family);
+}
+body[data-is-fullscreen="true"] {
+}
+body[data-is-fullscreen="true"] .titlebar {
+    display: none;
+}
+[data-kind="rule"] {
+    box-sizing: border-box;
+}
+
+[data-value] {
+    user-select: none;
+    -webkit-user-select: none;
+}
+.before {
+}
+.titlebar-button {
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+::after {
+    font-family: var(--font-family);
+}
+.titlebar-info {
+    color: red;
+    display: flex;
+    margin-left: 0.5em;
+}
+/* junk code */
+.titlebar {
+    z-index: 100;
+    background: #ccc;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    color: rgb(40, 40, 40);
+    font-size: 13px;
+    height: 20px;
+}
 :root {
     --at-rule-color: #c586c0;
     --attribute-color: var(--property-name-color);
@@ -18,54 +70,4 @@
     font-size: 18px;
     margin: 0;
     padding: 0;
-}
-.titlebar-info {
-    color: red;
-    display: flex;
-    margin-left: 0.5em;
-}
-::before {
-    font-family: var(--font-family);
-}
-/* junk code */
-.titlebar {
-    z-index: 100;
-    background: #ccc;
-    user-select: none;
-    -webkit-user-select: none;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    color: rgb(40, 40, 40);
-    font-size: 13px;
-    height: 20px;
-}
-[data-value] {
-    user-select: none;
-    -webkit-user-select: none;
-}
-body[data-is-fullscreen="true"] {
-    
-}
-body[data-is-fullscreen="true"] .titlebar {
-    display: none;
-}
-::after {
-    font-family: var(--font-family);
-}
-.titlebar-button {
-    display: inline-flex;
-    color: white;
-    justify-content: center;
-    align-items: center;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-[data-kind="rule"] {
-    box-sizing: border-box;
 }
