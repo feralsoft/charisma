@@ -1,3 +1,23 @@
+title {
+    
+}
+in {
+    
+}
+body[data-is-fullscreen="true"] .titlebar {
+    display: none;
+}
+[data-kind="rule"] {
+    box-sizing: border-box;
+}
+.titlebar-info {
+    color: red;
+    display: flex;
+    margin-left: 0.5em;
+}
+ou {
+    
+}
 /* junk code */
 .titlebar {
     z-index: 100;
@@ -15,8 +35,8 @@
     font-size: 13px;
     height: 20px;
 }
-in {
-    
+::before {
+    font-family: var(--font-family);
 }
 :root {
     --at-rule-color: #c586c0;
@@ -39,15 +59,6 @@ in {
     margin: 0;
     padding: 0;
 }
-body[data-is-fullscreen="true"] .titlebar {
-    display: none;
-}
-::before {
-    font-family: var(--font-family);
-}
-::after {
-    font-family: var(--font-family);
-}
 .titlebar-button {
     display: inline-flex;
     color: white;
@@ -57,18 +68,13 @@ body[data-is-fullscreen="true"] .titlebar {
     height: 20px;
     cursor: pointer;
 }
-title {
-    
+::after {
+    font-family: var(--font-family);
 }
 [data-value] {
     user-select: none;
     -webkit-user-select: none;
 }
-.titlebar-info {
-    color: red;
-    display: flex;
-    margin-left: 0.5em;
-}
-[data-kind="rule"] {
-    box-sizing: border-box;
+out {
+    
 }

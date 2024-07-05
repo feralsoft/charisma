@@ -58,8 +58,17 @@ document.addEventListener("DOMContentLoaded", (_) => {
 
       if (!candidate) {
         let selector = input.innerText;
-        await invoke("insert_empty_rule", { selector });
-        await add_editor(selector);
+        // do we already have this rule? (remember that empty rules get filtered out from search)
+        let existing_rule = document.querySelector(
+          `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
+        );
+
+        if (existing_rule) {
+          focus_editor(existing_rule);
+        } else {
+          await invoke("insert_empty_rule", { selector });
+          await add_editor(selector);
+        }
       } else {
         // do we already have this rule?
         let selector = candidate.dataset.stringValue;
