@@ -8,7 +8,6 @@ window.addEventListener("keydown", async (e) => {
   if (e.key === "c" && e.metaKey) {
     // trying to copy
     property_to_copy = document.querySelector('[data-kind="property"].focused');
-    console.log("copy", property_to_copy);
   } else if (e.key === "v" && e.metaKey) {
     if (!property_to_copy) return;
     let focused_editor = document.querySelector(".--editor.focused");
@@ -26,7 +25,6 @@ window.addEventListener("keydown", async (e) => {
       ':scope > [data-attr="value"] > [data-kind][data-string-value]',
     ).dataset.stringValue;
 
-    console.log("paste", property_name, property_value);
     await invoke("insert_property", {
       selector: focused_editor.dataset.selector,
       property: `${property_name}: ${property_value};`,

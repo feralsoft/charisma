@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         let selector = input.innerText;
         // do we already have this rule? (remember that empty rules get filtered out from search)
         let existing_rule = document.querySelector(
-          `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
+          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector}"]`,
         );
 
         if (existing_rule) {
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         // do we already have this rule?
         let selector = candidate.dataset.stringValue;
         let existing_rule = document.querySelector(
-          `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
+          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector}"]`,
         );
 
         if (existing_rule) {
