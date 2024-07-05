@@ -56,7 +56,19 @@ document.addEventListener("DOMContentLoaded", (_) => {
       e.preventDefault();
       let candidate =
         options.querySelector(".candidate") ?? options.firstElementChild;
-      await add_editor(candidate.dataset.stringValue);
+
+      // do we already have this rule?
+      let selector = candidate.dataset.stringValue;
+      let existing_rule = document.querySelector(
+        `.--editor:has([data-attr="selector"] [data-kind][data-string-value="${selector}"]`,
+      );
+
+      if (existing_rule) {
+        focus_editor(existing_rule);
+      } else {
+        await add_editor(selector);
+      }
+
       clear();
     } else if (e.key === "Escape") {
       clear();
