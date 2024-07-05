@@ -117,19 +117,16 @@ let input_container = (editor) =>
   h("div", { class: "insert-property-container" }, input(editor));
 
 function init(editor) {
-  let properties = editor.querySelector(
-    "[data-kind=rule] > [data-attr=properties]",
-  );
-
-  properties.append(input_container(editor));
+  editor
+    .querySelector("[data-kind=rule] > [data-attr=properties]")
+    .append(input_container(editor));
 }
+
 window.addEventListener("keydown", (e) => {
-  if (
-    document.activeElement?.closest(
-      ":is(.insert-property-container, [data-value])",
-    )
-  )
-    return;
+  if (document.activeElement?.closest(".insert-property-container")) return;
+  if (!document.querySelector(".--editor.focused")) return;
+  if (document.querySelector('[data-kind="property"].focused')) return;
+
   if (e.key === "/") {
     e.preventDefault();
     document
