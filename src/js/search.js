@@ -95,7 +95,12 @@ document.addEventListener("DOMContentLoaded", (_) => {
       e.preventDefault();
       let candidate =
         options.querySelector(".candidate") ?? options.firstElementChild;
-      input.innerText = candidate.dataset.stringValue;
+      let selector = candidate.dataset.stringValue
+        .replaceAll(/\/\*.*\*\//g, "")
+        .trim();
+
+      input.innerText = selector;
+
       move_cursor_to_end_of_element(input);
       setTimeout(async () => {
         // setTimeout so that innerText gets populated

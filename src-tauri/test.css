@@ -1,22 +1,22 @@
-::before {
-    font-family: var(--font-family);
-}
-.titlebar-info {
-    color: red;
+/* junk code */
+.titlebar {
+    z-index: 100;
+    background: #ccc;
+    user-select: none;
+    -webkit-user-select: none;
     display: flex;
-    margin-left: 0.5em;
-}
-.titlebar-button {
-    display: inline-flex;
-    color: white;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    width: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    color: rgb(40, 40, 40);
+    font-size: 13px;
     height: 20px;
-    cursor: pointer;
 }
-[data-kind="rule"] {
-    box-sizing: border-box;
+in {
+    
 }
 :root {
     --at-rule-color: #c586c0;
@@ -39,33 +39,36 @@
     margin: 0;
     padding: 0;
 }
-/* junk code */
-.titlebar {
-    z-index: 100;
-    background: #ccc;
-    user-select: none;
-    -webkit-user-select: none;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    color: rgb(40, 40, 40);
-    font-size: 13px;
-    height: 20px;
-}
-in {
-    
-}
 body[data-is-fullscreen="true"] .titlebar {
     display: none;
+}
+::before {
+    font-family: var(--font-family);
 }
 ::after {
     font-family: var(--font-family);
 }
+.titlebar-button {
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+title {
+    
+}
 [data-value] {
     user-select: none;
     -webkit-user-select: none;
+}
+.titlebar-info {
+    color: red;
+    display: flex;
+    margin-left: 0.5em;
+}
+[data-kind="rule"] {
+    box-sizing: border-box;
 }
