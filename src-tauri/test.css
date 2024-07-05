@@ -1,3 +1,23 @@
+::before {
+    font-family: var(--font-family);
+}
+.titlebar-info {
+    color: red;
+    display: flex;
+    margin-left: 0.5em;
+}
+.titlebar-button {
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+[data-kind="rule"] {
+    box-sizing: border-box;
+}
 :root {
     --at-rule-color: #c586c0;
     --attribute-color: var(--property-name-color);
@@ -19,39 +39,6 @@
     margin: 0;
     padding: 0;
 }
-in {
-    
-}
-body[data-is-fullscreen="true"] .titlebar {
-    display: none;
-}
-[data-kind="rule"] {
-    box-sizing: border-box;
-}
-[data-value] {
-    user-select: none;
-    -webkit-user-select: none;
-}
-.titlebar-info {
-    color: red;
-    display: flex;
-    margin-left: 0.5em;
-}
-::before {
-    font-family: var(--font-family);
-}
-.titlebar-button {
-    display: inline-flex;
-    color: white;
-    justify-content: center;
-    align-items: center;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-::after {
-    font-family: var(--font-family);
-}
 /* junk code */
 .titlebar {
     z-index: 100;
@@ -68,4 +55,17 @@ body[data-is-fullscreen="true"] .titlebar {
     color: rgb(40, 40, 40);
     font-size: 13px;
     height: 20px;
+}
+in {
+    
+}
+body[data-is-fullscreen="true"] .titlebar {
+    display: none;
+}
+::after {
+    font-family: var(--font-family);
+}
+[data-value] {
+    user-select: none;
+    -webkit-user-select: none;
 }
