@@ -54,10 +54,26 @@ document.addEventListener("DOMContentLoaded", (_) => {
   input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      await add_editor(options.firstElementChild.dataset.stringValue);
+      let candidate =
+        options.querySelector(".candidate") ?? options.firstElementChild;
+      await add_editor(candidate.dataset.stringValue);
       clear();
     } else if (e.key === "Escape") {
       clear();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      let current_candidate = options.querySelector(".candidate");
+      if (!current_candidate || !current_candidate.previousElementSibling)
+        return;
+      current_candidate.classList.remove("candidate");
+      current_candidate.previousElementSibling.classList.add("candidate");
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      let current_candidate = options.querySelector(".candidate");
+      if (!current_candidate) current_candidate = options.firstElementChild;
+      if (!current_candidate.nextElementSibling) return;
+      current_candidate.classList.remove("candidate");
+      current_candidate.nextElementSibling.classList.add("candidate");
     } else {
       setTimeout(async () => {
         // setTimeout so that innerText gets populated

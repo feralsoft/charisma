@@ -194,8 +194,13 @@ body {
         flex-direction: column;
         gap: var(--spacing);
 
-        > [data-kind] {
+        &:not(:has(.candidate)) > [data-kind]:first-child {
             text-decoration: underline;
+        }
+        > [data-kind] {
+            &.candidate {
+                text-decoration: underline;
+            }
             cursor: pointer;
 
             * {
