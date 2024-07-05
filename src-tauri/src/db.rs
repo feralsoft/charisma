@@ -298,15 +298,17 @@ impl CSSDB {
             Some(Rule {
                 properties,
                 selector,
-            }) => format!(
-                "{} {{\n    {}\n}}\n",
-                selector.string,
-                properties
-                    .iter()
-                    .map(|p| p.to_string() + "\n    ")
-                    .collect::<String>()
-                    .trim()
-            ),
+            }) => {
+                format!(
+                    "{} {{\n    {}\n}}\n",
+                    selector.string,
+                    properties
+                        .iter()
+                        .map(|p| p.to_string() + "\n    ")
+                        .collect::<String>()
+                        .trim()
+                )
+            }
             None => String::from(""),
         };
 
@@ -344,18 +346,20 @@ impl CSSDB {
         super_paths
     }
 
-    fn all_selectors_aux(&self, selectors: &mut Vec<String>) {
+    fn all_selectors_with_properties_aux(&self, selectors: &mut Vec<String>) {
         if let Some(rule) = self.rule.as_ref() {
-            selectors.push(rule.selector.string.to_owned())
+            if !rule.properties.is_empty() {
+                selectors.push(rule.selector.string.to_owned())
+            }
         }
         for (_, tree) in &self.children {
-            tree.all_selectors_aux(selectors);
+            tree.all_selectors_with_properties_aux(selectors);
         }
     }
 
-    pub fn all_selectors(&self) -> Vec<String> {
+    pub fn all_selectors_with_properties(&self) -> Vec<String> {
         let mut selectors: Vec<String> = vec![];
-        self.all_selectors_aux(&mut selectors);
+        self.all_selectors_with_properties_aux(&mut selectors);
         selectors
     }
 

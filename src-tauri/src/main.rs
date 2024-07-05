@@ -22,7 +22,7 @@ fn search(q: &str) -> Vec<String> {
     let parts: Vec<&str> = q.trim().split(" ").collect();
 
     let mut results: Vec<AnyCssSelector> = db
-        .all_selectors()
+        .all_selectors_with_properties()
         .iter()
         // .unwrap() since, it should never crash
         .map(|s| parse_selector(s).unwrap())
