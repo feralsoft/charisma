@@ -35,5 +35,22 @@
             <div class="search" contenteditable spellcheck="false"></div>
         </div>
         <div class="canvas"></div>
+        <button class="open-help" onclick="this.classList.toggle('active')">
+            help
+        </button>
+        <article class="help-modal">
+            <button
+                class="close"
+                onclick="document.querySelector('button.open-help').click()"
+            >
+                close
+            </button>
+            <h2>keyboard commands</h2>
+            <ul>
+                <li>cmd+p => search</li>
+                <li>/ => insert property for selected rule</li>
+                <li>delete => remove selected property</li>
+            </ul>
+        </article>
     </body>
 </html>

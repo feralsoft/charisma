@@ -13,7 +13,6 @@ import "./js/undo.js";
 import "./js/update-value.js";
 import "./js/group-menu.js";
 import "./js/drag-board.js";
-import "./js/help.js";
 
 import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
 
