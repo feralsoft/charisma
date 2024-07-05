@@ -1,20 +1,20 @@
+import { h } from "./html.js";
+
 const { invoke } = window.__TAURI__.tauri;
 
 let all_properties;
 
-function search_item(name) {
-  let elem = document.createElement("div");
-  elem.innerText = name;
-  elem.classList.add("search-item");
-  return elem;
-}
+let search_item = (name) => h("div", { class: "search-item" }, name);
 
 function search_options(names) {
   // hack
   if (names.length === 0) return document.createElement("div");
-  let options = document.createElement("div");
-  options.classList.add("search-options");
-  options.append(...names.map(search_item));
+
+  let options = h(
+    "div",
+    { class: "search-options" },
+    ...names.map(search_item),
+  );
   options.firstElementChild.classList.add("candidate");
   return options;
 }
@@ -24,7 +24,7 @@ function accept_candidate(container, input_elem) {
   input_elem.innerText = options.querySelector(".candidate").innerText + ":";
   options.remove();
 
-  // start garbage internet code
+  // start garbage internet code to go the end of a text range
   let range = document.createRange();
   let selection = window.getSelection();
   range.setStart(input_elem, input_elem.childNodes.length);
@@ -34,86 +34,94 @@ function accept_candidate(container, input_elem) {
   // end of garbage internet code
 }
 
-function input(editor) {
-  let container = document.createElement("div");
-  container.classList.add("insert-property-container");
-  let input_elem = document.createElement("div");
-  input_elem.classList.add("input");
-  input_elem.contentEditable = true;
-  input_elem.placeholder = "insert property...";
-  input_elem.addEventListener("keydown", async (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (container.querySelector(".search-options .candidate")) {
-        return accept_candidate(container, input_elem);
-      } else {
-        await invoke("insert_property", {
-          selector: editor.dataset.selector,
-          property: e.target.innerText,
-        });
-        input_elem.dispatchEvent(new Event("reload", { bubbles: true }));
-      }
-    } else if (e.key === "Escape") {
-      input_elem.blur();
-    } else if (e.key === "ArrowUp") {
-      // go up in search options
-      e.preventDefault();
-      let options = container.querySelector(".search-options");
-      let elem = options.querySelector(".candidate");
-      if (elem.previousElementSibling) {
-        elem.classList.remove("candidate");
-        elem.previousElementSibling.classList.add("candidate");
-      }
-    } else if (e.key === "ArrowDown") {
-      // go down in search options
-      e.preventDefault();
-      let options = container.querySelector(".search-options");
-      let elem = options.querySelector(".candidate");
-      if (elem.nextElementSibling) {
-        elem.classList.remove("candidate");
-        elem.nextElementSibling.classList.add("candidate");
-      }
-    } else if (e.key === "Tab") {
-      accept_candidate(container, input_elem);
-      e.preventDefault();
-    } else if (!e.shiftKey) {
-      // populate auto complete list
-      setTimeout(() => {
-        container.querySelector(".search-options")?.remove();
-        let text = input_elem.innerText.trim();
-        if (text === "") return;
-        let options = all_properties.filter((name) => name.includes(text));
-        options.sort((a, b) => {
-          if (a.startsWith(text)) {
-            if (b.startsWith(text)) {
-              return a.length - b.length;
+let input = (editor) =>
+  h("div", {
+    class: "input",
+    contenteditable: true,
+    placeholder: "insert property...",
+    async "@keydown"(e) {
+      let container = this.closest(".insert-property-container");
+      if (e.key === "Enter") {
+        e.preventDefault();
+        // if there's a candidate auto complete it
+        // important! this does not mean it submits something
+        if (container.querySelector(".search-options .candidate")) {
+          return accept_candidate(container, this);
+        } else {
+          // otherwise submit & reload
+          await invoke("insert_property", {
+            selector: editor.dataset.selector,
+            property: e.target.innerText,
+          });
+          this.dispatchEvent(new Event("reload", { bubbles: true }));
+        }
+      } else if (e.key === "Escape") {
+        this.blur();
+      } else if (e.key === "ArrowUp") {
+        // go up in search options
+        e.preventDefault();
+        let options = container.querySelector(".search-options");
+        let elem = options.querySelector(".candidate");
+        if (elem.previousElementSibling) {
+          elem.classList.remove("candidate");
+          elem.previousElementSibling.classList.add("candidate");
+        }
+      } else if (e.key === "ArrowDown") {
+        // go down in search options
+        e.preventDefault();
+        let options = container.querySelector(".search-options");
+        let elem = options.querySelector(".candidate");
+        if (elem.nextElementSibling) {
+          elem.classList.remove("candidate");
+          elem.nextElementSibling.classList.add("candidate");
+        }
+      } else if (e.key === "Tab") {
+        accept_candidate(container, this);
+        e.preventDefault();
+      } else if (!e.shiftKey) {
+        // populate auto complete list
+        // setTimeout is needed so that `this.innerText` gets populated :facepalm:
+        setTimeout(() => {
+          container.querySelector(".search-options")?.remove();
+          let text = this.innerText.trim();
+          if (text === "") return;
+          let options = all_properties.filter((name) => name.includes(text));
+          options.sort((a, b) => {
+            if (a.startsWith(text)) {
+              if (b.startsWith(text)) {
+                return a.length - b.length;
+              } else {
+                return -1;
+              }
             } else {
-              return -1;
+              return 1;
             }
-          } else {
-            return 1;
-          }
+          });
+          // for now we only get the first 10 results, and we don't allow you
+          // to arrow-down beyond 10.. it would be nice if this was added.
+          options = options.slice(0, 10);
+          container.append(search_options(options));
         });
-        options = options.slice(0, 10);
-        container.append(search_options(options));
-      });
-    }
-  });
-  input_elem.addEventListener("blur", (_) => (input_elem.innerText = ""));
-  input_elem.addEventListener("click", (_) => {
-    window.getSelection().selectAllChildren(input_elem);
+      }
+    },
+    "@blur"(_) {
+      this.innerText = "";
+      container.querySelector(".search-options")?.remove();
+    },
+    "@click"(_) {
+      window.getSelection().selectAllChildren(this);
+    },
   });
 
-  container.append(input_elem);
-  return container;
-}
+let input_container = (editor) =>
+  h("div", { class: "insert-property-container" }, input(editor));
 
 function init(editor) {
   let properties = editor.querySelector(
     "[data-kind=rule] > [data-attr=properties]",
   );
 
-  properties.append(input(editor));
+  properties.append(input_container(editor));
 }
 window.addEventListener("keydown", (e) => {
   if (

@@ -1,26 +1,20 @@
-function close(group) {
-  let close_btn = document.createElement("button");
-  close_btn.classList.add("close");
-  close_btn.addEventListener("click", (_) => group.remove());
-  return close_btn;
-}
+import { h } from "./html.js";
 
-function minimize() {
-  let minimize_btn = document.createElement("button");
-  minimize_btn.classList.add("minimize");
-  minimize_btn.addEventListener("click", (_) => {
-    minimize_btn.classList.toggle("active");
+let close = (group) =>
+  h("button", {
+    class: "close",
+    "@click": (_) => group.remove(),
   });
-  return minimize_btn;
-}
-function menu(group) {
-  let menu_elem = document.createElement("div");
-  menu_elem.classList.add("menu");
 
-  menu_elem.append(close(group));
-  menu_elem.append(minimize(group));
-  return menu_elem;
-}
+let minimize = () =>
+  h("button", {
+    class: "minimize",
+    "@click"() {
+      this.classList.toggle("active");
+    },
+  });
+
+let menu = (group) => h("div", { class: "menu" }, close(group), minimize());
 
 function init(group) {
   if (group.querySelector(":scope > .menu")) return;
