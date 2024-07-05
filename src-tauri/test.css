@@ -1,4 +1,7 @@
-b {
+bo {
+    
+}
+d {
     
 }
 body {
@@ -7,6 +10,6 @@ body {
 body:has(button) {
     color: red;
 }
-d {
+b {
     
 }

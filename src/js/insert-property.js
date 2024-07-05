@@ -109,6 +109,7 @@ let input = (editor) =>
       }
     },
     "@blur"(_) {
+      let container = this.closest(".insert-property-container");
       this.innerText = "";
       container.querySelector(".search-options")?.remove();
     },
