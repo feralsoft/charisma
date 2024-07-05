@@ -216,6 +216,10 @@ body {
     }
 }
 
+[data-attr="selector"] [data-kind="identifier"] {
+    color: var(--attribute-color);
+}
+
 [data-kind="property"] {
     flex-wrap: wrap;
 }
