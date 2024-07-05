@@ -117,11 +117,12 @@ document.addEventListener("DOMContentLoaded", (_) => {
         options.innerHTML = results.join("");
       });
     } else {
+      let old_text = input.innerText;
       setTimeout(async () => {
         // setTimeout so that innerText gets populated
         if (input.innerText.trim() === "") {
           options.innerHTML = "";
-        } else {
+        } else if (old_text !== input.innerText) {
           let results = await invoke("search", { q: input.innerText });
 
           options.innerHTML = results.join("");

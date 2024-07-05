@@ -6,7 +6,7 @@ use biome_css_syntax::{
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
-    CssRelativeSelector,
+    CssPseudoClassFunctionRelativeSelectorList, CssRelativeSelector,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -697,6 +697,33 @@ impl Storage for biome_css_syntax::CssCompoundSelector {
     }
 }
 
+impl Storage for CssPseudoClassFunctionRelativeSelectorList {
+    fn to_css_db_path(&self) -> Vec<String> {
+        let name = self.name_token().unwrap();
+        let relative_selectors = self.relative_selectors();
+
+        let paths: Vec<Vec<String>> = relative_selectors
+            .into_iter()
+            .map(|s| s.unwrap())
+            .map(|s| s.to_css_db_path())
+            .collect();
+
+        assert!(paths.len() == 1); // todo: Storage::to_css_db_path should return Vec<Vec<String>>
+
+        // eg. body:has(button.active) -> ["body", ":has(", "button.active", ")"]
+        // this encoding allows us to navigate siblings of "button.active"
+        // ... although ... now I'm wondering .. can't we just encode it like
+        // ["body", ":has(", "button", ".active", ")"]
+        // ... what would be the consequence of this?
+
+        vec![
+            format!(":{}(", name.text_trimmed()),
+            paths[0].join(""),
+            String::from(")"),
+        ]
+    }
+}
+
 impl Storage for AnyCssPseudoClass {
     fn to_css_db_path(&self) -> Vec<String> {
         match self {
@@ -705,7 +732,7 @@ impl Storage for AnyCssPseudoClass {
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => s.to_css_db_path(),
             AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),

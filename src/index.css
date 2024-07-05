@@ -50,13 +50,40 @@ body:has(> button.open-help.active) article.help-modal {
     padding: 1em;
     justify-content: center;
     background-color: rgb(0, 0, 0, 0.5);
+
     h2 {
         margin: 0;
     }
+
     button.close {
         position: absolute;
         top: 0.5em;
         right: 0.5em;
+    }
+}
+
+[data-kind="pseudo-class-function"] {
+    display: flex;
+
+    > [data-attr="function-name"] [data-value] {
+        &::before {
+            content: ":";
+            color: var(--foreground-color);
+        }
+
+        color: var(--function-color);
+    }
+
+    > [data-attr="args"] {
+        &::before {
+            content: "(";
+            color: var(--foreground-color);
+        }
+
+        &::after {
+            content: ")";
+            color: var(--foreground-color);
+        }
     }
 }
 
@@ -197,10 +224,12 @@ body {
         &:not(:has(.candidate)) > [data-kind]:first-child {
             text-decoration: underline;
         }
+
         > [data-kind] {
             &.candidate {
                 text-decoration: underline;
             }
+
             cursor: pointer;
 
             * {
@@ -210,8 +239,12 @@ body {
     }
 }
 
-[data-kind="identifier"] {
+[data-attr="properties"] [data-kind="identifier"] {
     color: var(--foreground-color);
+}
+
+[data-kind="identifier"] {
+    color: var(--attribute-color);
 }
 
 [data-attr="properties"] > [data-kind="property"].focused {
@@ -765,6 +798,7 @@ a {
 .--editor > .menu:not(:has(> .minimize.active)) {
     right: 25px;
 }
+
 .canvas > .--editor > .menu:not(:has(> .minimize.active)) {
     right: 0;
 }
@@ -807,6 +841,7 @@ a {
         background-size: 0.7em;
         background-image: var(--line-icon);
     }
+
     .info {
         background-size: 1em;
         background-image: var(--info-icon);

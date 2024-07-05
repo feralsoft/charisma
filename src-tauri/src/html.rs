@@ -1,10 +1,11 @@
 use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssGenericComponentValue,
-    AnyCssPseudoClass, AnyCssSelector, AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue,
-    CssAttributeSelector, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
-    CssCompoundSelector, CssDashedIdentifier, CssFunction, CssIdentifier, CssNumber, CssParameter,
-    CssPercentage, CssPseudoClassIdentifier, CssPseudoClassSelector, CssPseudoElementSelector,
-    CssRegularDimension, CssString, CssTypeSelector,
+    AnyCssPseudoClass, AnyCssRelativeSelector, AnyCssSelector, AnyCssSimpleSelector,
+    AnyCssSubSelector, AnyCssValue, CssAttributeSelector, CssClassSelector, CssColor,
+    CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
+    CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage,
+    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassIdentifier, CssPseudoClassSelector,
+    CssPseudoElementSelector, CssRegularDimension, CssRelativeSelector, CssString, CssTypeSelector,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -91,6 +92,56 @@ impl Render for CssPseudoClassIdentifier {
     }
 }
 
+impl Render for CssRelativeSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self.combinator() {
+            Some(combinator) => {
+                let combinator_type = get_combinator_type(combinator.kind());
+                format!(
+                    "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" data-string-value=\"{}\">{}</div>",
+                    combinator_type,
+                    self.to_string(),
+                    self.selector().unwrap().render_html(options)
+                )
+            }
+            None => self.selector().unwrap().render_html(options),
+        }
+    }
+}
+
+impl Render for AnyCssRelativeSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self {
+            AnyCssRelativeSelector::CssBogusSelector(_) => todo!(),
+            AnyCssRelativeSelector::CssRelativeSelector(s) => s.render_html(options),
+        }
+    }
+}
+
+impl Render for CssPseudoClassFunctionRelativeSelectorList {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        let name = self.name_token().unwrap();
+        assert!(self.relative_selectors().into_iter().count() == 1);
+
+        let selector = self
+            .relative_selectors()
+            .into_iter()
+            .next()
+            .unwrap()
+            .unwrap();
+
+        format!(
+            "<div data-kind=\"pseudo-class-function\" data-string-value=\"{}\">
+                <div data-attr=\"function-name\">{}</div>
+                <div data-attr=\"args\">{}</div>
+            </div>",
+            self.to_string(),
+            render_value(name.text_trimmed()),
+            selector.render_html(options)
+        )
+    }
+}
+
 impl Render for CssPseudoClassSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self.class().unwrap() {
@@ -99,7 +150,9 @@ impl Render for CssPseudoClassSelector {
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => {
+                s.render_html(options)
+            }
             AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
