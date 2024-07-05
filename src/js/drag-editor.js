@@ -1,10 +1,6 @@
 import { px_var } from "./helpers.js";
 
-let state = {
-  editor: null,
-  position: null,
-  start_offset: null,
-};
+let state = { editor: null, position: null, start_offset: null };
 
 function set_position(x, y) {
   state.position = { x, y };
@@ -24,23 +20,31 @@ function finish() {
   state = { editor: null, position: null, start_offset: null };
 }
 
-// mousedown is too eager, we have to ignore clicks
+// mousedown is too eager, we have to ignore clicks so that links & buttons still work
 //
 // the way to do this is by on first click, we track who is clicked.
 // on mousemove, if the target is the same, it's a valid drag.
 // if a "click" event happens between, stop dragging & revert.
 
 let drag_candidate;
+let mousedown_position;
 
 window.addEventListener("mousedown", (e) => {
   let editor = e.target.closest(".--editor");
   if (!editor) return;
 
+  mousedown_position = { x: e.clientX, y: e.clientY };
+
   drag_candidate = editor;
 });
 
 window.addEventListener("mousemove", (e) => {
-  if (drag_candidate && drag_candidate === e.target.closest(".--editor")) {
+  if (drag_candidate) {
+    if (drag_candidate !== e.target.closest(".--editor")) return;
+    let diff =
+      Math.abs(e.clientX - mousedown_position.x) +
+      Math.abs(e.clientY - mousedown_position.y);
+    if (diff < 2) return;
     // a drag is starting
     let editor = drag_candidate;
     drag_candidate = null;

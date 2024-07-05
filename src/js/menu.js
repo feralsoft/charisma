@@ -24,7 +24,7 @@ function minimize(editor) {
 function info() {
   let info_btn = document.createElement("button");
   info_btn.classList.add("info");
-  info_btn.addEventListener("mousedown", (_) => {
+  info_btn.addEventListener("click", (_) => {
     info_btn.classList.toggle("active");
   });
   return info_btn;
