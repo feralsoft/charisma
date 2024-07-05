@@ -1,7 +1,7 @@
 function close(editor) {
   let close_btn = document.createElement("button");
   close_btn.classList.add("close");
-  close_btn.addEventListener("mousedown", (_) => {
+  close_btn.addEventListener("click", (_) => {
     let group = editor.closest(".--editor-group");
     editor.remove();
     if (!group.querySelector(".--editor")) group.remove();
@@ -12,7 +12,7 @@ function close(editor) {
 function minimize(editor) {
   let minimize_btn = document.createElement("button");
   minimize_btn.classList.add("minimize");
-  minimize_btn.addEventListener("mousedown", (_) => {
+  minimize_btn.addEventListener("click", (_) => {
     minimize_btn.dataset.selector = editor.querySelector(
       '[data-attr="selector"] > [data-kind]',
     ).dataset.stringValue;

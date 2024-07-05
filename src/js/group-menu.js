@@ -1,14 +1,14 @@
 function close(group) {
   let close_btn = document.createElement("button");
   close_btn.classList.add("close");
-  close_btn.addEventListener("mousedown", (_) => group.remove());
+  close_btn.addEventListener("click", (_) => group.remove());
   return close_btn;
 }
 
 function minimize() {
   let minimize_btn = document.createElement("button");
   minimize_btn.classList.add("minimize");
-  minimize_btn.addEventListener("mousedown", (_) => {
+  minimize_btn.addEventListener("click", (_) => {
     minimize_btn.classList.toggle("active");
   });
   return minimize_btn;
