@@ -455,12 +455,13 @@ body {
     }
 }
 
-.--editor:not(.focused) .input {
+/* hide cursor when dragging or not focused */
+.--editor:is(:not(.focused), .dragging) .input {
     /* safari is gross */
     caret-color: rgb(0, 0, 0, 0);
 }
 
-.--editor.focused
+.--editor.focused:not(.dragging)
     [data-kind="rule"]
     [data-attr="properties"]
     .input:is(:focus, :focus-within) {

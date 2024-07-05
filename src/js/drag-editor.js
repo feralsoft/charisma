@@ -11,6 +11,7 @@ function set_position(x, y) {
 function finish() {
   drag_candidate = null;
   if (!state.editor) return;
+  state.editor.classList.remove("dragging");
   state.editor.style.position = "initial";
   state.editor.style.left = "initial";
   state.editor.style.top = "initial";
@@ -49,6 +50,7 @@ window.addEventListener("mousemove", (e) => {
     let editor = drag_candidate;
     drag_candidate = null;
 
+    editor.classList.add("dragging");
     // unset the width
     editor.style.minWidth = "initial";
     editor.style.minHeight = "initial";
