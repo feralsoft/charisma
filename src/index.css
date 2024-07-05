@@ -20,6 +20,46 @@
     font-family: var(--font-family), menlo;
 }
 
+button {
+    -webkit-user-select: none;
+    cursor: pointer;
+    background: black;
+    color: var(--foreground-color);
+    font-family: inherit;
+    border: 0.1em solid rgb(40, 40, 40);
+}
+
+button.open-help {
+    position: absolute;
+    top: 1.5em;
+    right: 0.5em;
+}
+
+article.help-modal {
+    display: none;
+}
+
+body:has(> button.open-help.active) article.help-modal {
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 1.5em;
+    z-index: 10;
+    margin: auto;
+    padding: 1em;
+    justify-content: center;
+    background-color: rgb(0, 0, 0, 0.5);
+    h2 {
+        margin: 0;
+    }
+    button.close {
+        position: absolute;
+        top: 0.5em;
+        right: 0.5em;
+    }
+}
+
 /* editor not in a group */
 .canvas > .--editor {
     transform: translateX(var(--x-offset)) translateY(var(--y-offset));

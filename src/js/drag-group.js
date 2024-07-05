@@ -7,6 +7,7 @@ let state = {
 };
 
 function finish() {
+  if (!state.group) return;
   state.group.classList.remove("dragging");
   let { x, y } = snap_position({
     x: px_var(state.group, "left"),
