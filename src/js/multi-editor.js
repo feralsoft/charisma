@@ -107,7 +107,7 @@ function snap_size(editor) {
   editor.style.minHeight = `${height}px`;
 }
 
-function snap_position({ x, y }) {
+export function snap_position({ x, y }) {
   if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
   else x = x + (25 - (x % 25)) - SNAP_OFFSET;
 

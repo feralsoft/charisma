@@ -45,6 +45,10 @@ window.addEventListener("mousemove", (e) => {
     let editor = drag_candidate;
     drag_candidate = null;
 
+    // unset the width
+    editor.style.minWidth = "initial";
+    editor.style.minHeight = "initial";
+
     // grab the position before we ungroup the editor
     let { top, left } = editor.getBoundingClientRect();
 

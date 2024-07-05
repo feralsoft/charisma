@@ -203,8 +203,12 @@ body {
         );
     }
 
-    .dragging {
+    .--editor.dragging {
         outline: rgba(255, 255, 0, 0.2) solid 0.1em;
+    }
+
+    .--editor-group.dragging {
+        border-color: rgba(255, 255, 0, 0.5);
     }
 
     &.panning {
