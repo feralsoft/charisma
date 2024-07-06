@@ -14,6 +14,14 @@ mod html;
 mod parse_utils;
 mod properties;
 
+fn after_css_comment(string: String) -> String {
+    if let Some(idx) = string.find("*/") {
+        string.get((idx + 2)..).unwrap().to_string()
+    } else {
+        string
+    }
+}
+
 #[tauri::command]
 fn search(q: &str) -> Vec<String> {
     let mut db = CSSDB::new();
@@ -27,27 +35,14 @@ fn search(q: &str) -> Vec<String> {
         // .unwrap() since, it should never crash
         .map(|s| parse_selector(s).unwrap())
         .filter(|selector| {
-            // butt-ugly way to remove comments from the selector
-            let paths = selector.to_css_db_paths();
-            assert!(paths.len() == 1);
-            let path = paths.first().unwrap();
-            let str = path.join("");
+            let str = after_css_comment(selector.to_string());
             parts.iter().all(|q| str.contains(q))
         })
         .collect();
 
     results.sort_by(|a, b| {
-        // butt-ugly way to remove comments from the selector
-        let a_paths = a.to_css_db_paths();
-        assert!(a_paths.len() == 1);
-        let a_path = a_paths.first().unwrap();
-        let a = a_path.join("");
-
-        let b_paths = b.to_css_db_paths();
-        assert!(b_paths.len() == 1);
-        let b_path = b_paths.first().unwrap();
-        let b = b_path.join("");
-
+        let a = after_css_comment(a.to_string());
+        let b = after_css_comment(b.to_string());
         a.len().cmp(&b.len()).then_with(|| a.cmp(&b))
     });
 
