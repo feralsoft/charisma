@@ -32,7 +32,7 @@ window.addEventListener("mousedown", (e) => {
     };
   }
 });
-window.addEventListener("mouseup", finish);
+
 window.addEventListener("mousemove", (e) => {
   if (is_dragging) {
     document.body.style.setProperty(
@@ -46,6 +46,7 @@ window.addEventListener("mousemove", (e) => {
   }
 });
 
-window.addEventListener("blur", (_) => finish());
-window.addEventListener("mouseleave", (_) => finish());
-window.addEventListener("keydown", (_) => finish());
+window.addEventListener("mouseup", finish);
+window.addEventListener("blur", finish);
+window.addEventListener("mouseleave", finish);
+window.addEventListener("keydown", finish);
