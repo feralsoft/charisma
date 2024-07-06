@@ -93,6 +93,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
         return;
       current_candidate.classList.remove("candidate");
       current_candidate.previousElementSibling.classList.add("candidate");
+      input.innerText =
+        current_candidate.previousElementSibling.dataset.stringValue;
+      move_cursor_to_end_of_element(input);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       let current_candidate = options.querySelector(".candidate");
@@ -100,6 +103,9 @@ document.addEventListener("DOMContentLoaded", (_) => {
       if (!current_candidate.nextElementSibling) return;
       current_candidate.classList.remove("candidate");
       current_candidate.nextElementSibling.classList.add("candidate");
+      input.innerText =
+        current_candidate.nextElementSibling.dataset.stringValue;
+      move_cursor_to_end_of_element(input);
     } else if (e.key === "Tab") {
       e.preventDefault();
       let candidate =
