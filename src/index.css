@@ -311,6 +311,10 @@ body {
     }
 }
 
+[data-kind].selected {
+    background-color: rgb(255, 255, 0, 0.2);
+}
+
 [data-kind="multi-part-value"] {
     display: flex;
     gap: 0.25em;

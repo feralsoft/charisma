@@ -314,11 +314,11 @@ impl Render for AnyCssDimension {
 }
 
 impl Render for CssIdentifier {
-    fn render_html(&self, options: &RenderOptions) -> String {
+    fn render_html(&self, _options: &RenderOptions) -> String {
         let value = self.value_token().unwrap();
         format!(
-            "<div data-kind=\"identifier\" {}>{}</div>",
-            options.to_string(),
+            "<div data-kind=\"identifier\" data-string-value=\"{}\">{}</div>",
+            value.text_trimmed(),
             render_value(value.text_trimmed())
         )
     }

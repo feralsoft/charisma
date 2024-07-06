@@ -1,3 +1,9 @@
-body:has(button) {
+body:has(button.active) {
     color: red;
+}
+button {
+    color: orange;
+}
+button.active {
+    color: black;
 }

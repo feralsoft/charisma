@@ -31,6 +31,8 @@ let drag_candidate;
 let mousedown_position;
 
 window.addEventListener("mousedown", (e) => {
+  // shift is useful for selecting text
+  if (e.shiftKey) return;
   let editor = e.target.closest(".--editor");
   if (!editor) return;
 
