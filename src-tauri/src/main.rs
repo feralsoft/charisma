@@ -74,10 +74,10 @@ fn render_rule(selector: &str) -> String {
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let mut rule_properties = rule.properties.clone();
-    let i_p = db.inherited_properties_for(&path);
-    let mut inherited_properties = i_p.values().collect::<Vec<_>>();
-    let i_v = db.inherited_vars_for(&path, &i_p);
-    let mut inherited_vars = i_v.values().collect::<Vec<_>>();
+    let inherited_properties_map = db.inherited_properties_for(&path);
+    let mut inherited_properties = inherited_properties_map.values().collect::<Vec<_>>();
+    let inherited_vars_map = db.inherited_vars_for(&path, &inherited_properties_map);
+    let mut inherited_vars = inherited_vars_map.values().collect::<Vec<_>>();
     rule_properties.sort_by_key(|p| p.name());
     inherited_properties.sort_by_key(|(_, p)| p.name());
     inherited_vars.sort_by_key(|(_, p)| p.name());
@@ -121,12 +121,9 @@ fn render_rule(selector: &str) -> String {
 fn delete(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-
-    let paths = parse_selector(selector).unwrap().to_css_db_paths();
-    assert!(paths.len() == 1);
-    let path = paths.first().unwrap();
-
-    db.delete(&path, name, value);
+    for path in parse_selector(selector).unwrap().to_css_db_paths() {
+        db.delete(&path, name, value);
+    }
     fs::write("test.css", db.serialize()).unwrap()
 }
 
