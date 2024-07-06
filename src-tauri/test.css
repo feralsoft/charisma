@@ -1,9 +1,9 @@
-body:has(button) {
-    color: red;
-}
 button {
     
 }
 b {
     
+}
+body:has(button) {
+    color: red;
 }

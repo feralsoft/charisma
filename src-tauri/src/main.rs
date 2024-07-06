@@ -62,7 +62,9 @@ fn insert_empty_rule(selector: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector).unwrap();
-    db.insert_empty(&selector.to_selector(None));
+    for selector in selector.to_selectors(None) {
+        db.insert_empty(&selector);
+    }
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -137,8 +139,9 @@ fn delete(selector: &str, name: &str, value: &str) {
 fn disable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).unwrap().to_selector(None);
-    db.set_state(&selector.path, name, value, State::Commented);
+    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+        db.set_state(&selector.path, name, value, State::Commented);
+    }
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -146,8 +149,9 @@ fn disable(selector: &str, name: &str, value: &str) {
 fn enable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).unwrap().to_selector(None);
-    db.set_state(&selector.path, name, value, State::Valid);
+    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+        db.set_state(&selector.path, name, value, State::Valid);
+    }
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -161,10 +165,9 @@ fn insert_property(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
-    db.insert(
-        &parse_selector(selector).unwrap().to_selector(None),
-        &property,
-    );
+    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+        db.insert(&selector, &property);
+    }
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -177,25 +180,25 @@ struct JsonProperty {
 
 #[tauri::command]
 fn replace_all_properties(selector: &str, properties: Vec<JsonProperty>) {
-    let selector = parse_selector(selector).unwrap().to_selector(None);
     let mut db = CSSDB::new();
     db.load("test.css");
-    db.get_mut(&selector.path).unwrap().drain();
+    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+        db.get_mut(&selector.path).unwrap().drain();
 
-    for property in properties.iter() {
-        if property.is_commented {
-            db.insert_commented(
-                &selector,
-                parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
-            );
-        } else {
-            db.insert(
-                &selector,
-                &parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
-            );
+        for property in properties.iter() {
+            if property.is_commented {
+                db.insert_commented(
+                    &selector,
+                    parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
+                );
+            } else {
+                db.insert(
+                    &selector,
+                    &parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
+                );
+            }
         }
     }
-
     fs::write("test.css", db.serialize()).unwrap()
 }
 
@@ -204,10 +207,10 @@ fn update_value(selector: &str, name: &str, original_value: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
-    let selector = parse_selector(selector).unwrap().to_selector(None);
-
-    db.delete(&selector.path, name.trim(), original_value);
-    db.insert(&selector, &property);
+    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+        db.delete(&selector.path, name.trim(), original_value);
+        db.insert(&selector, &property);
+    }
 
     fs::write("test.css", db.serialize()).unwrap()
 }

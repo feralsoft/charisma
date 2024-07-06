@@ -1,4 +1,7 @@
-use crate::{parse_utils::parse_property, properties};
+use crate::{
+    parse_utils::{get_combinator_type, parse_property},
+    properties,
+};
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
@@ -36,59 +39,58 @@ pub struct Selector {
     pub path: Vec<String>,
 }
 
-pub trait ToSelector {
-    fn to_selector(&self, parent: Option<&Selector>) -> Selector;
+pub trait ToSelectors {
+    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector>;
 }
 
-impl ToSelector for AnyCssRelativeSelector {
-    fn to_selector(&self, parent: Option<&Selector>) -> Selector {
-        let sel = self.as_css_relative_selector().unwrap();
-        let sel = sel.selector().unwrap();
-        let sel = sel.as_css_compound_selector().unwrap();
-        assert!(sel.simple_selector().is_none());
-        let sep = match sel.nesting_selector_token() {
-            Some(_) => todo!(),
+impl ToSelectors for AnyCssRelativeSelector {
+    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
+        let selector = self.as_css_relative_selector().unwrap();
+        let selector = selector.selector().unwrap();
+        let selector = selector.as_css_compound_selector().unwrap();
+        assert!(selector.simple_selector().is_none());
+        let separator = match selector.nesting_selector_token() {
+            Some(combinator) => get_combinator_type(combinator.kind()),
             None => " ".to_string(),
         };
 
-        let paths = sel.to_css_db_paths();
-        assert!(paths.len() == 1);
-        let path = paths.first().unwrap();
-
-        Selector {
-            string: parent
-                .as_ref()
-                .map(|p| p.string.clone())
-                .unwrap_or("".to_string())
-                + &sep
-                + sel.to_string().trim(),
-            path: [
-                parent.map(|p| p.path.clone()).unwrap_or(vec![]),
-                vec![sep],
-                path.clone(),
-            ]
-            .concat(),
-        }
+        selector
+            .to_css_db_paths()
+            .iter()
+            .map(|path| Selector {
+                string: parent
+                    .as_ref()
+                    .map(|p| p.string.clone())
+                    .unwrap_or("".to_string())
+                    + &separator
+                    + selector.to_string().trim(),
+                path: [
+                    parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                    vec![separator.clone()],
+                    path.clone(),
+                ]
+                .concat(),
+            })
+            .collect()
     }
 }
-impl ToSelector for AnyCssSelector {
-    fn to_selector(&self, parent: Option<&Selector>) -> Selector {
-        let paths = self.to_css_db_paths();
-        assert!(paths.len() == 1);
-        let path = paths.first().unwrap();
-
-        Selector {
-            string: parent
-                .as_ref()
-                .map(|p| p.string.clone())
-                .unwrap_or("".to_string())
-                + self.to_string().trim(),
-            path: [
-                parent.map(|p| p.path.clone()).unwrap_or(vec![]),
-                path.clone(),
-            ]
-            .concat(),
-        }
+impl ToSelectors for AnyCssSelector {
+    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
+        self.to_css_db_paths()
+            .iter()
+            .map(|path| Selector {
+                string: parent
+                    .as_ref()
+                    .map(|p| p.string.clone())
+                    .unwrap_or("".to_string())
+                    + self.to_string().trim(),
+                path: [
+                    parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                    path.clone(),
+                ]
+                .concat(),
+            })
+            .collect()
     }
 }
 
@@ -268,7 +270,9 @@ impl CSSDB {
                     let block = block.as_css_declaration_or_rule_block().unwrap();
                     for child in rule.prelude() {
                         let child = child.unwrap();
-                        self.load_rule(child.to_selector(Some(&selector)), block);
+                        for selector in child.to_selectors(Some(&selector)) {
+                            self.load_rule(selector, block);
+                        }
                     }
                 }
                 biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => todo!(),
@@ -292,11 +296,12 @@ impl CSSDB {
         for rule in ast.tree().rules() {
             let rule = rule.as_css_qualified_rule().unwrap();
             for selector in rule.prelude().into_iter() {
-                let selector = selector.unwrap().to_selector(None);
                 let block = rule.block().unwrap();
                 let block = block.as_css_declaration_or_rule_block().unwrap();
-                self.insert_empty(&selector);
-                self.load_rule(selector, block);
+                for selector in selector.unwrap().to_selectors(None) {
+                    self.insert_empty(&selector);
+                    self.load_rule(selector, block);
+                }
             }
         }
     }
