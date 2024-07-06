@@ -51,6 +51,10 @@ impl ToSelector for AnyCssRelativeSelector {
             None => " ".to_string(),
         };
 
+        let paths = sel.to_css_db_paths();
+        assert!(paths.len() == 1);
+        let path = paths.first().unwrap();
+
         Selector {
             string: parent
                 .as_ref()
@@ -61,7 +65,7 @@ impl ToSelector for AnyCssRelativeSelector {
             path: [
                 parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                 vec![sep],
-                sel.to_css_db_path(),
+                path.clone(),
             ]
             .concat(),
         }
@@ -69,6 +73,10 @@ impl ToSelector for AnyCssRelativeSelector {
 }
 impl ToSelector for AnyCssSelector {
     fn to_selector(&self, parent: Option<&Selector>) -> Selector {
+        let paths = self.to_css_db_paths();
+        assert!(paths.len() == 1);
+        let path = paths.first().unwrap();
+
         Selector {
             string: parent
                 .as_ref()
@@ -77,7 +85,7 @@ impl ToSelector for AnyCssSelector {
                 + self.to_string().trim(),
             path: [
                 parent.map(|p| p.path.clone()).unwrap_or(vec![]),
-                self.to_css_db_path(),
+                path.clone(),
             ]
             .concat(),
         }
@@ -644,38 +652,44 @@ impl CSSDB {
 }
 
 pub trait Storage {
-    fn to_css_db_path(&self) -> Vec<String>;
+    fn to_css_db_paths(&self) -> Vec<Vec<String>>;
 }
 
 impl Storage for biome_css_syntax::AnyCssSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             CssBogusSelector(_) => todo!(),
             CssComplexSelector(s) => {
                 let fields = s.as_fields();
                 let left = fields.left.unwrap();
                 let right = fields.right.unwrap();
-                let mut parts = left.to_css_db_path();
-                parts.push(" ".to_string());
-                parts.extend(right.to_css_db_path());
-                parts
+                let rhs_paths = right.to_css_db_paths();
+
+                left.to_css_db_paths()
+                    .iter()
+                    .flat_map(|lhs| {
+                        rhs_paths
+                            .iter()
+                            .map(|rhs| [lhs.clone(), vec![String::from(" ")], rhs.clone()].concat())
+                    })
+                    .collect()
             }
-            CssCompoundSelector(selector) => selector.to_css_db_path(),
+            CssCompoundSelector(selector) => selector.to_css_db_paths(),
         }
     }
 }
 
 impl Storage for biome_css_syntax::AnyCssSimpleSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             biome_css_syntax::AnyCssSimpleSelector::CssTypeSelector(t) => {
-                vec![t
+                vec![vec![t
                     .ident()
                     .unwrap()
                     .value_token()
                     .unwrap()
                     .text_trimmed()
-                    .to_string()]
+                    .to_string()]]
             }
             biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(_) => todo!(),
         }
@@ -683,70 +697,92 @@ impl Storage for biome_css_syntax::AnyCssSimpleSelector {
 }
 
 impl Storage for biome_css_syntax::CssCompoundSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
-        [
-            self.simple_selector()
-                .map(|s| s.to_css_db_path())
-                .unwrap_or(vec![]),
-            self.sub_selectors()
-                .into_iter()
-                .flat_map(|selector| selector.to_css_db_path())
-                .collect(),
-        ]
-        .concat()
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        let lhs = self
+            .simple_selector()
+            .map(|s| s.to_css_db_paths())
+            .unwrap_or(vec![]);
+        assert!(lhs.len() == 1);
+
+        let lhs = lhs.first().unwrap();
+
+        if self.sub_selectors().into_iter().count() == 0 {
+            return vec![lhs.clone()];
+        }
+
+        self.sub_selectors()
+            .into_iter()
+            .map(|selector| {
+                let paths = selector.to_css_db_paths();
+                assert!(paths.len() == 1);
+                let path = paths.first().unwrap();
+                [lhs.clone(), path.clone()].concat()
+            })
+            .collect()
     }
 }
 
 impl Storage for CssPseudoClassFunctionRelativeSelectorList {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         let name = self.name_token().unwrap();
         let relative_selectors = self.relative_selectors();
 
-        let paths: Vec<Vec<String>> = relative_selectors
+        let path_of_paths: Vec<Vec<Vec<String>>> = relative_selectors
+            .clone()
             .into_iter()
             .map(|s| s.unwrap())
-            .map(|s| s.to_css_db_path())
+            .map(|s| s.to_css_db_paths())
             .collect();
-
-        assert!(paths.len() == 1); // todo: Storage::to_css_db_path should return Vec<Vec<String>>
 
         // eg. body:has(button.active) -> ["body", ":has(", "button.active", ")"]
         // this encoding allows us to navigate siblings of "button.active"
         // ... although ... now I'm wondering .. can't we just encode it like
         // ["body", ":has(", "button", ".active", ")"]
+        // ["body", ":has(", "button" ")"]
         // ... what would be the consequence of this?
+        // idfk, let's try it :)
 
-        vec![
-            format!(":{}(", name.text_trimmed()),
-            paths[0].join(""),
-            String::from(")"),
-        ]
+        path_of_paths
+            .iter()
+            .map(|paths| {
+                // this will break when you have :has(:is(a, b))
+                assert!(paths.len() == 1);
+                let path = paths.first().unwrap();
+
+                [
+                    vec![format!(":{}(", name.text_trimmed())],
+                    path.clone(),
+                    vec![String::from(")")],
+                ]
+                .concat()
+            })
+            .collect()
     }
 }
 
 impl Storage for AnyCssPseudoClass {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => s.to_css_db_path(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => s.to_css_db_paths(),
             AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
             AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![format!(":{}", name)]
+                vec![vec![format!(":{}", name)]]
             }
         }
     }
 }
 
 impl Storage for CssAttributeSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         let name = self.name().unwrap();
         match self.matcher() {
             Some(matcher) => {
@@ -756,62 +792,62 @@ impl Storage for CssAttributeSelector {
 
                 // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
                 // so that you can explore siblings along [data-kind]
-                vec![
+                vec![vec![
                     format!("[{}]", name),
                     format!("[{}{}{}]", name, operator, value),
-                ]
+                ]]
             }
             None => {
-                vec![format!("[{}]", name)]
+                vec![vec![format!("[{}]", name)]]
             }
         }
     }
 }
 
 impl Storage for AnyCssPseudoElement {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             AnyCssPseudoElement::CssBogusPseudoElement(_) => todo!(),
             AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(_) => todo!(),
             AnyCssPseudoElement::CssPseudoElementFunctionSelector(_) => todo!(),
             AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
-                vec![format!("::{}", name.text_trimmed())]
+                vec![vec![format!("::{}", name.text_trimmed())]]
             }
         }
     }
 }
 
 impl Storage for CssRelativeSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         assert!(self.combinator().is_none());
-        self.selector().unwrap().to_css_db_path()
+        self.selector().unwrap().to_css_db_paths()
     }
 }
 
 impl Storage for AnyCssRelativeSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             AnyCssRelativeSelector::CssBogusSelector(_) => todo!(),
-            AnyCssRelativeSelector::CssRelativeSelector(selector) => selector.to_css_db_path(),
+            AnyCssRelativeSelector::CssRelativeSelector(selector) => selector.to_css_db_paths(),
         }
     }
 }
 
 impl Storage for AnyCssSubSelector {
-    fn to_css_db_path(&self) -> Vec<String> {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
-            CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_path(),
+            CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_paths(),
             CssBogusSubSelector(_) => vec![],
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![format!(".{}", name)]
+                vec![vec![format!(".{}", name)]]
             }
             CssIdSelector(_) => todo!(),
-            CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_path(),
+            CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_paths(),
             CssPseudoElementSelector(pseudo_element) => {
-                pseudo_element.element().unwrap().to_css_db_path()
+                pseudo_element.element().unwrap().to_css_db_paths()
             }
         }
     }

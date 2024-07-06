@@ -28,15 +28,25 @@ fn search(q: &str) -> Vec<String> {
         .map(|s| parse_selector(s).unwrap())
         .filter(|selector| {
             // butt-ugly way to remove comments from the selector
-            let str = selector.to_css_db_path().join("");
+            let paths = selector.to_css_db_paths();
+            assert!(paths.len() == 1);
+            let path = paths.first().unwrap();
+            let str = path.join("");
             parts.iter().all(|q| str.contains(q))
         })
         .collect();
 
     results.sort_by(|a, b| {
         // butt-ugly way to remove comments from the selector
-        let a = a.to_css_db_path().join("");
-        let b = b.to_css_db_path().join("");
+        let a_paths = a.to_css_db_paths();
+        assert!(a_paths.len() == 1);
+        let a_path = a_paths.first().unwrap();
+        let a = a_path.join("");
+
+        let b_paths = b.to_css_db_paths();
+        assert!(b_paths.len() == 1);
+        let b_path = b_paths.first().unwrap();
+        let b = b_path.join("");
 
         a.len().cmp(&b.len()).then_with(|| a.cmp(&b))
     });
@@ -61,7 +71,9 @@ fn render_rule(selector: &str) -> String {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector).unwrap();
-    let path = selector.to_css_db_path();
+    let paths = selector.to_css_db_paths();
+    assert!(paths.len() == 1);
+    let path = paths.first().unwrap();
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let mut rule_properties = rule.properties.clone();
@@ -113,11 +125,11 @@ fn delete(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
 
-    db.delete(
-        &parse_selector(selector).unwrap().to_css_db_path(),
-        name,
-        value,
-    );
+    let paths = parse_selector(selector).unwrap().to_css_db_paths();
+    assert!(paths.len() == 1);
+    let path = paths.first().unwrap();
+
+    db.delete(&path, name, value);
     fs::write("test.css", db.serialize()).unwrap()
 }
 
