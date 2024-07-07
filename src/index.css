@@ -30,9 +30,10 @@ button {
 }
 
 button.open-help {
+    font-size: 0.8rem;
     position: absolute;
-    top: 1.5em;
-    right: 0.5em;
+    top: 1.5rem;
+    right: 0.5rem;
 }
 
 article.help-modal {
@@ -44,10 +45,10 @@ body:has(> button.open-help.active) article.help-modal {
     display: flex;
     flex-direction: column;
     position: absolute;
-    top: 1.5em;
+    top: 1.5rem;
     z-index: 10;
     margin: auto;
-    padding: 1em;
+    padding: 1rem;
     justify-content: center;
     background-color: rgb(0, 0, 0, 0.5);
 
@@ -57,8 +58,8 @@ body:has(> button.open-help.active) article.help-modal {
 
     button.close {
         position: absolute;
-        top: 0.5em;
-        right: 0.5em;
+        top: 0.5rem;
+        right: 0.5rem;
     }
 }
 
@@ -802,6 +803,7 @@ a {
 
 .--editor > .menu:not(:has(> .minimize.active)) {
     right: 25px;
+    margin-top: -1em;
 }
 
 .canvas > .--editor > .menu:not(:has(> .minimize.active)) {

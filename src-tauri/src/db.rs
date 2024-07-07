@@ -18,6 +18,59 @@ pub enum State {
     Commented,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Specificity {
+    // # of ids
+    a: u64,
+    // # of classes, attributes and pseudo-classes
+    b: u64,
+    // # of elements and pseudo-elements
+    c: u64,
+}
+
+impl Specificity {
+    pub fn new(a: u64, b: u64, c: u64) -> Self {
+        Specificity { a, b, c }
+    }
+}
+
+// SPECIFICITY ALGORITHM FROM SPEC
+// count the number of ID selectors in the selector (= A)
+// count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= B)
+// count the number of type selectors and pseudo-elements in the selector (= C)
+// ignore the universal selector (*)
+//
+// when calculating which selector wins, match components 1 by 1,
+// for eg.
+//   #my-id           => (1, 0, 0)
+//   .card:has(.name) => (0, 2, 0)
+//
+// #my-id will win!
+
+impl PartialOrd for Specificity {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(
+            self.a
+                .cmp(&other.a)
+                .then_with(|| self.b.cmp(&other.b))
+                .then_with(|| self.c.cmp(&other.c)),
+        )
+    }
+}
+
+impl Ord for Specificity {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+#[test]
+fn id_has_greater_specifity_than_class() {
+    let id_spec = Specificity::new(1, 0, 0); // #name
+    let class_spec = Specificity::new(0, 2, 0); // .name.active
+    assert!(id_spec > class_spec)
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Property {
     pub state: State,
@@ -339,6 +392,7 @@ impl CSSDB {
         &self,
         path: &[String],
         is_root: bool,
+        current_part_name: &str,
         super_paths: &mut Vec<Vec<String>>,
     ) {
         if !is_root {
@@ -347,15 +401,29 @@ impl CSSDB {
                 .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
             {
                 super_paths.push(path)
+            } else if current_part_name == ":has(" {
+                if let Some(path) = self
+                    .get(&[path, &[")".to_string()]].concat())
+                    .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
+                {
+                    // body:has(button.active) is not getting detected as a superpath of
+                    // button.active
+                    // since given the path ["body", ":has(", "button", "active", ")"]
+                    // when I'm at ["body", ":has"] & I get ["button", "active"]
+                    // there is no rule there since we need to go to the ")"
+                    super_paths.push(path)
+                }
             }
         }
-        for (_, t) in &self.children {
-            t.super_paths_of_aux(path, false, super_paths);
+        for (name, t) in &self.children {
+            t.super_paths_of_aux(path, false, &name, super_paths);
         }
     }
+
+    // a super path is a path which contains the searched path
     pub fn super_paths_of(&self, path: &[String]) -> Vec<Vec<String>> {
         let mut super_paths: Vec<Vec<String>> = vec![];
-        self.super_paths_of_aux(path, true, &mut super_paths);
+        self.super_paths_of_aux(path, true, "", &mut super_paths);
         super_paths
     }
 
