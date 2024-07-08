@@ -567,41 +567,43 @@ impl CSSDB {
         path: &[String],
     ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut properties: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
+        let mut inherited_properties: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
         if !tree.is_root() {
             self.get_root()
-                .inspect(|tree| properties.extend(tree.inheritable_properties()));
+                .inspect(|tree| inherited_properties.extend(tree.inheritable_properties()));
         }
         // go directly do my current path
         // eg. `body table td` ->
         // 1 - go to `body` & get all inherited properties
         // 2 - go to `body table` & get inherited properties (overwrite from `body`)
-        self.inherited_properties_for_aux(path, &mut properties);
+        self.inherited_properties_for_aux(path, &mut inherited_properties);
         // now we are going up super paths, in the case we are overwriting
         // a property, we need to compare specifcity to understand which property will rule
         for super_path in self.super_paths_of(path) {
             for (property_name, (super_path_selector, super_path_property)) in
                 self.get(&super_path).unwrap().inheritable_properties()
             {
-                if let Some((selector, _)) = properties.get(&property_name) {
+                if let Some((selector, _)) = inherited_properties.get(&property_name) {
                     if selector.specificity < super_path_selector.specificity {
-                        properties
+                        inherited_properties
                             .insert(property_name, (super_path_selector, super_path_property));
                     }
                 } else {
-                    properties.insert(property_name, (super_path_selector, super_path_property));
+                    inherited_properties
+                        .insert(property_name, (super_path_selector, super_path_property));
                 }
             }
         }
 
         for property in tree.valid_properties() {
-            // wtf is this about?
+            // this just means if for example we have `color: inherit`
+            // then don't remove the inherited property if we have it
             if property.value() != "inherit" {
-                properties.remove(&property.name());
+                inherited_properties.remove(&property.name());
             }
         }
 
-        properties
+        inherited_properties
     }
 
     fn valid_vars_with_selector(&self) -> HashMap<String, (Selector, Rc<Property>)> {
@@ -664,28 +666,28 @@ impl CSSDB {
         inherited_properties: &HashMap<String, (Selector, Rc<Property>)>,
     ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut vars: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
+        let mut inherited_vars: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
         if !tree.is_root() {
             self.get_root()
-                .inspect(|tree| vars.extend(tree.valid_vars_with_selector()));
+                .inspect(|tree| inherited_vars.extend(tree.valid_vars_with_selector()));
         }
-        self.inherited_vars_for_aux(path, &mut vars);
+        self.inherited_vars_for_aux(path, &mut inherited_vars);
         for super_path in self.super_paths_of(path) {
             for (var_name, (super_path_selector, super_path_property)) in
                 self.get(&super_path).unwrap().valid_vars_with_selector()
             {
-                if let Some((selector, _)) = vars.get(&var_name) {
+                if let Some((selector, _)) = inherited_vars.get(&var_name) {
                     if selector.specificity < super_path_selector.specificity {
-                        vars.insert(var_name, (super_path_selector, super_path_property));
+                        inherited_vars.insert(var_name, (super_path_selector, super_path_property));
                     }
                 } else {
-                    vars.insert(var_name, (super_path_selector, super_path_property));
+                    inherited_vars.insert(var_name, (super_path_selector, super_path_property));
                 }
             }
         }
 
         for name in tree.valid_vars_with_selector().keys() {
-            vars.remove(name);
+            inherited_vars.remove(name);
         }
 
         let var_references_in_rule = tree.valid_var_lookup_ids();
@@ -694,11 +696,11 @@ impl CSSDB {
             .filter_map(|(_, (_, p))| p.var_ref())
             .collect();
 
-        vars.retain(|key, _| {
+        inherited_vars.retain(|key, _| {
             var_references_in_rule.contains(key)
                 || var_references_in_inherited_properties.contains(key)
         });
-        vars
+        inherited_vars
     }
 
     pub fn set_state(
