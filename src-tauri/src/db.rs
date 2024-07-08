@@ -9,7 +9,12 @@ use biome_css_syntax::{
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
-    CssPseudoClassFunctionRelativeSelectorList, CssRelativeSelector,
+    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
+    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
+    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
+    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList,
+    CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
+    CssUniversalSelector,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -388,7 +393,7 @@ impl CSSDB {
                         }
                     }
                 }
-                biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => todo!(),
+                biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => panic!(),
                 biome_css_syntax::AnyCssDeclarationOrRule::CssDeclarationWithSemicolon(
                     property,
                 ) => {
@@ -812,14 +817,14 @@ impl CSSDB {
     }
 }
 
-pub trait Storage {
+pub trait DBPath {
     fn to_css_db_paths(&self) -> Vec<Vec<String>>;
 }
 
-impl Storage for biome_css_syntax::AnyCssSelector {
+impl DBPath for biome_css_syntax::AnyCssSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
-            CssBogusSelector(_) => todo!(),
+            CssBogusSelector(_) => panic!(),
             CssComplexSelector(s) => {
                 let fields = s.as_fields();
                 let left = fields.left.unwrap();
@@ -840,7 +845,13 @@ impl Storage for biome_css_syntax::AnyCssSelector {
     }
 }
 
-impl Storage for biome_css_syntax::AnyCssSimpleSelector {
+impl DBPath for CssUniversalSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for biome_css_syntax::AnyCssSimpleSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             biome_css_syntax::AnyCssSimpleSelector::CssTypeSelector(t) => {
@@ -852,12 +863,12 @@ impl Storage for biome_css_syntax::AnyCssSimpleSelector {
                     .text_trimmed()
                     .to_string()]]
             }
-            biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(_) => todo!(),
+            biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(s) => s.to_css_db_paths(),
         }
     }
 }
 
-impl Storage for biome_css_syntax::CssCompoundSelector {
+impl DBPath for biome_css_syntax::CssCompoundSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self.simple_selector() {
             Some(lhs) => {
@@ -905,7 +916,7 @@ impl Storage for biome_css_syntax::CssCompoundSelector {
     }
 }
 
-impl Storage for CssPseudoClassFunctionRelativeSelectorList {
+impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         let name = self.name_token().unwrap();
         let relative_selectors = self.relative_selectors();
@@ -943,18 +954,60 @@ impl Storage for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 
-impl Storage for AnyCssPseudoClass {
+impl DBPath for CssPseudoClassFunctionNth {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionValueList {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionCompoundSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionCompoundSelectorList {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionIdentifier {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionSelectorList {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for AnyCssPseudoClass {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
-            AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
+            AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.to_css_db_paths(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => s.to_css_db_paths(),
+            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(s) => s.to_css_db_paths(),
+            AnyCssPseudoClass::CssPseudoClassFunctionNth(s) => s.to_css_db_paths(),
             AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => s.to_css_db_paths(),
-            AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelector(s) => s.to_css_db_paths(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(s) => s.to_css_db_paths(),
+            AnyCssPseudoClass::CssPseudoClassFunctionValueList(s) => s.to_css_db_paths(),
             AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
@@ -964,7 +1017,7 @@ impl Storage for AnyCssPseudoClass {
     }
 }
 
-impl Storage for CssAttributeSelector {
+impl DBPath for CssAttributeSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         let name = self.name().unwrap();
         match self.matcher() {
@@ -987,12 +1040,24 @@ impl Storage for CssAttributeSelector {
     }
 }
 
-impl Storage for AnyCssPseudoElement {
+impl DBPath for CssPseudoElementFunctionIdentifier {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoElementFunctionSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+        todo!()
+    }
+}
+
+impl DBPath for AnyCssPseudoElement {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
-            AnyCssPseudoElement::CssBogusPseudoElement(_) => todo!(),
-            AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(_) => todo!(),
-            AnyCssPseudoElement::CssPseudoElementFunctionSelector(_) => todo!(),
+            AnyCssPseudoElement::CssBogusPseudoElement(_) => panic!(),
+            AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(s) => s.to_css_db_paths(),
+            AnyCssPseudoElement::CssPseudoElementFunctionSelector(s) => s.to_css_db_paths(),
             AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 vec![vec![format!("::{}", name.text_trimmed())]]
@@ -1001,23 +1066,23 @@ impl Storage for AnyCssPseudoElement {
     }
 }
 
-impl Storage for CssRelativeSelector {
+impl DBPath for CssRelativeSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         assert!(self.combinator().is_none());
         self.selector().unwrap().to_css_db_paths()
     }
 }
 
-impl Storage for AnyCssRelativeSelector {
+impl DBPath for AnyCssRelativeSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
-            AnyCssRelativeSelector::CssBogusSelector(_) => todo!(),
-            AnyCssRelativeSelector::CssRelativeSelector(selector) => selector.to_css_db_paths(),
+            AnyCssRelativeSelector::CssBogusSelector(_) => panic!(),
+            AnyCssRelativeSelector::CssRelativeSelector(s) => s.to_css_db_paths(),
         }
     }
 }
 
-impl Storage for AnyCssSubSelector {
+impl DBPath for AnyCssSubSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
         match self {
             CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_paths(),

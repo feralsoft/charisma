@@ -1,12 +1,17 @@
 use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssGenericComponentValue,
-    AnyCssPseudoClass, AnyCssRelativeSelector, AnyCssSelector, AnyCssSimpleSelector,
-    AnyCssSubSelector, AnyCssValue, CssAttributeSelector, CssClassSelector, CssColor,
-    CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
-    CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage,
-    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassIdentifier, CssPseudoClassSelector,
-    CssPseudoElementSelector, CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString,
-    CssTypeSelector,
+    AnyCssPseudoClass, AnyCssPseudoClassNthSelector, AnyCssRelativeSelector, AnyCssSelector,
+    AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
+    CssBinaryExpression, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
+    CssCompoundSelector, CssCustomIdentifier, CssDashedIdentifier, CssFunction, CssIdSelector,
+    CssIdentifier, CssNumber, CssParameter, CssParenthesizedExpression, CssPercentage,
+    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
+    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
+    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
+    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassIdentifier,
+    CssPseudoClassNthSelector, CssPseudoClassSelector, CssPseudoElementSelector, CssRatio,
+    CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector,
+    CssUniversalSelector, CssUrlFunction,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -44,7 +49,7 @@ impl Render for AnyCssSelector {
             attrs: vec![("data-string-value".to_string(), self.to_string())],
         };
         match self {
-            AnyCssSelector::CssBogusSelector(_) => todo!(),
+            AnyCssSelector::CssBogusSelector(_) => panic!(),
             AnyCssSelector::CssComplexSelector(s) => s.render_html(&options),
             AnyCssSelector::CssCompoundSelector(s) => s.render_html(&options),
         }
@@ -113,7 +118,7 @@ impl Render for CssRelativeSelector {
 impl Render for AnyCssRelativeSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self {
-            AnyCssRelativeSelector::CssBogusSelector(_) => todo!(),
+            AnyCssRelativeSelector::CssBogusSelector(_) => panic!(),
             AnyCssRelativeSelector::CssRelativeSelector(s) => s.render_html(options),
         }
     }
@@ -143,20 +148,86 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 
+impl Render for CssPseudoClassNthSelector {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        let _nth = self.nth().unwrap();
+        let _selector_of = self.of_selector().unwrap();
+        todo!()
+    }
+}
+
+impl Render for AnyCssPseudoClassNthSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self {
+            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => panic!(),
+            AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.render_html(options),
+        }
+    }
+}
+
+impl Render for CssPseudoClassFunctionNth {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        let name = self.name().unwrap();
+        let selector = self.selector().unwrap();
+        format!(
+            "<div data-kind=\"pseudo-class-function-nth\" data-string-value='{}'>
+                    <div data-attr=\"name\">{}</div>
+                    <div data-attr=\"selector\">{}</div>
+                </div>",
+            self.to_string(),
+            render_value(name.text_trimmed()),
+            selector.render_html(options)
+        )
+    }
+}
+
+impl Render for CssPseudoClassFunctionCompoundSelector {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+impl Render for CssPseudoClassFunctionCompoundSelectorList {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+impl Render for CssPseudoClassFunctionIdentifier {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+impl Render for CssPseudoClassFunctionSelector {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+impl Render for CssPseudoClassFunctionSelectorList {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+impl Render for CssPseudoClassFunctionValueList {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
 impl Render for CssPseudoClassSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self.class().unwrap() {
-            AnyCssPseudoClass::CssBogusPseudoClass(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionNth(_) => todo!(),
+            AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.render_html(options),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => {
+                s.render_html(options)
+            }
+            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(s) => s.render_html(options),
+            AnyCssPseudoClass::CssPseudoClassFunctionNth(s) => s.render_html(options),
             AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => {
                 s.render_html(options)
             }
-            AnyCssPseudoClass::CssPseudoClassFunctionSelector(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(_) => todo!(),
-            AnyCssPseudoClass::CssPseudoClassFunctionValueList(_) => todo!(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelector(s) => s.render_html(options),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(s) => s.render_html(options),
+            AnyCssPseudoClass::CssPseudoClassFunctionValueList(s) => s.render_html(options),
             AnyCssPseudoClass::CssPseudoClassIdentifier(id) => id.render_html(options),
         }
     }
@@ -211,15 +282,30 @@ impl Render for CssPseudoElementSelector {
     }
 }
 
+impl Render for CssIdSelector {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        let name = self.name().unwrap();
+        let name = name.value_token().unwrap();
+
+        format!(
+            "<div data-kind=\"id-selector\" data-string-value=\"{}\">
+                <div data-attr=\"name\">{}</div>
+            </div>",
+            self.to_string(),
+            render_value(name.text_trimmed())
+        )
+    }
+}
+
 impl Render for AnyCssSubSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self {
             AnyCssSubSelector::CssAttributeSelector(attribute_selector) => {
                 attribute_selector.render_html(options)
             }
-            AnyCssSubSelector::CssBogusSubSelector(_) => todo!(),
+            AnyCssSubSelector::CssBogusSubSelector(_) => panic!(),
             AnyCssSubSelector::CssClassSelector(class) => class.render_html(options),
-            AnyCssSubSelector::CssIdSelector(_) => todo!(),
+            AnyCssSubSelector::CssIdSelector(s) => s.render_html(options),
             AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => {
                 pseudo_class.render_html(options)
             }
@@ -238,11 +324,17 @@ impl Render for CssTypeSelector {
     }
 }
 
+impl Render for CssUniversalSelector {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        format!("<div data-kind=\"universal-selector\"></div>")
+    }
+}
+
 impl Render for AnyCssSimpleSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self {
             AnyCssSimpleSelector::CssTypeSelector(node) => node.render_html(options),
-            AnyCssSimpleSelector::CssUniversalSelector(_) => todo!(),
+            AnyCssSimpleSelector::CssUniversalSelector(s) => s.render_html(options),
         }
     }
 }
@@ -309,7 +401,7 @@ impl Render for AnyCssDimension {
         match self {
             AnyCssDimension::CssPercentage(node) => node.render_html(options),
             AnyCssDimension::CssRegularDimension(node) => node.render_html(options),
-            AnyCssDimension::CssUnknownDimension(_) => todo!(),
+            AnyCssDimension::CssUnknownDimension(_) => panic!(),
         }
     }
 }
@@ -333,14 +425,26 @@ impl Render for CssComponentValueList {
     }
 }
 
+impl Render for CssBinaryExpression {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
+impl Render for CssParenthesizedExpression {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
 impl Render for AnyCssExpression {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self {
-            AnyCssExpression::CssBinaryExpression(_) => todo!(),
+            AnyCssExpression::CssBinaryExpression(s) => s.render_html(options),
             AnyCssExpression::CssListOfComponentValuesExpression(list) => {
                 list.css_component_value_list().render_html(options)
             }
-            AnyCssExpression::CssParenthesizedExpression(_) => todo!(),
+            AnyCssExpression::CssParenthesizedExpression(s) => s.render_html(options),
         }
     }
 }
@@ -374,11 +478,17 @@ impl Render for CssFunction {
     }
 }
 
+impl Render for CssUrlFunction {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
 impl Render for AnyCssFunction {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self {
             AnyCssFunction::CssFunction(f) => f.render_html(options),
-            AnyCssFunction::CssUrlFunction(_) => todo!(),
+            AnyCssFunction::CssUrlFunction(s) => s.render_html(options),
         }
     }
 }
@@ -436,6 +546,18 @@ impl Render for CssString {
     }
 }
 
+impl Render for CssRatio {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
+impl Render for CssCustomIdentifier {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
 impl Render for AnyCssValue {
     fn render_html(&self, _options: &RenderOptions) -> String {
         let options = RenderOptions {
@@ -445,11 +567,11 @@ impl Render for AnyCssValue {
             AnyCssValue::AnyCssDimension(dim) => dim.render_html(&options),
             AnyCssValue::AnyCssFunction(f) => f.render_html(&options),
             AnyCssValue::CssColor(color) => color.render_html(&options),
-            AnyCssValue::CssCustomIdentifier(_) => todo!(),
+            AnyCssValue::CssCustomIdentifier(s) => s.render_html(&options),
             AnyCssValue::CssDashedIdentifier(id) => id.render_html(&options),
             AnyCssValue::CssIdentifier(id) => id.render_html(&options),
             AnyCssValue::CssNumber(num) => num.render_html(&options),
-            AnyCssValue::CssRatio(_) => todo!(),
+            AnyCssValue::CssRatio(s) => s.render_html(&options),
             AnyCssValue::CssString(css_string) => css_string.render_html(&options),
         }
     }
