@@ -2,7 +2,7 @@ use crate::{
     parse_utils::{get_combinator_type, parse_property},
     properties,
 };
-use std::{collections::HashMap, fs, rc::Rc};
+use std::{collections::HashMap, fs, ops, rc::Rc};
 
 use biome_css_syntax::{
     AnyCssPseudoClass, AnyCssPseudoElement, AnyCssRelativeSelector,
@@ -18,7 +18,7 @@ pub enum State {
     Commented,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Specificity {
     // # of ids
     a: u64,
@@ -28,9 +28,78 @@ pub struct Specificity {
     c: u64,
 }
 
+impl ops::Add<Specificity> for Specificity {
+    type Output = Specificity;
+
+    fn add(self, rhs: Specificity) -> Self::Output {
+        Specificity {
+            a: self.a + rhs.a,
+            b: self.b + rhs.b,
+            c: self.c + rhs.c,
+        }
+    }
+}
+
 impl Specificity {
     pub fn new(a: u64, b: u64, c: u64) -> Self {
         Specificity { a, b, c }
+    }
+
+    fn from_part(part: &String) -> Self {
+        if part.starts_with("#") {
+            Self { a: 1, b: 0, c: 0 }
+        } else if part.starts_with(".") {
+            Self { a: 0, b: 1, c: 0 }
+        } else if part.starts_with("::") {
+            Self { a: 0, b: 0, c: 1 }
+        } else if part.starts_with(":") {
+            Self { a: 0, b: 1, c: 0 }
+        } else if part.chars().all(|c| c.is_alphabetic() || c == '-') {
+            // element
+            Self { a: 0, b: 0, c: 1 }
+        } else {
+            panic!("no specificity for {:?}", part)
+        }
+    }
+
+    pub fn from_path(path: &[String]) -> Self {
+        let mut specificity = Specificity { a: 0, b: 0, c: 0 };
+        let mut iter = path.iter();
+
+        // go until we hit ":has(" (or ":is(", ":not(")
+        loop {
+            match iter.next() {
+                Some(part) => {
+                    if part.contains("(") {
+                        break;
+                    }
+                    if ![">", " ", "~", "+"].contains(&part.as_str()) {
+                        specificity = specificity + Specificity::from_part(part)
+                    }
+                }
+                None => return specificity,
+            }
+        }
+
+        // check out the sub path until we get to ")"
+        loop {
+            match iter.next() {
+                Some(part) => {
+                    if part.as_str() == ")" {
+                        break;
+                    }
+                    if ![">", " ", "~", "+"].contains(&part.as_str()) {
+                        specificity = specificity + Specificity::from_part(part)
+                    }
+                }
+                None => return specificity,
+            }
+        }
+
+        match iter.cloned().collect::<Vec<_>>().as_slice() {
+            [] => specificity,
+            rest => specificity + Specificity::from_path(&rest),
+        }
     }
 }
 
@@ -64,13 +133,6 @@ impl Ord for Specificity {
     }
 }
 
-#[test]
-fn id_has_greater_specifity_than_class() {
-    let id_spec = Specificity::new(1, 0, 0); // #name
-    let class_spec = Specificity::new(0, 2, 0); // .name.active
-    assert!(id_spec > class_spec)
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Property {
     pub state: State,
@@ -90,6 +152,7 @@ impl Property {
 pub struct Selector {
     pub string: String,
     pub path: Vec<String>,
+    // pub specificity: Specificity,
 }
 
 pub trait ToSelectors {
@@ -127,6 +190,7 @@ impl ToSelectors for AnyCssRelativeSelector {
             .collect()
     }
 }
+
 impl ToSelectors for AnyCssSelector {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
         self.to_css_db_paths()
@@ -136,7 +200,7 @@ impl ToSelectors for AnyCssSelector {
                     .as_ref()
                     .map(|p| p.string.clone())
                     .unwrap_or("".to_string())
-                    + self.to_string().trim(),
+                    + &path.join(""),
                 path: [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                     path.clone(),
@@ -771,27 +835,49 @@ impl Storage for biome_css_syntax::AnyCssSimpleSelector {
 
 impl Storage for biome_css_syntax::CssCompoundSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<String>> {
-        let lhs = self
-            .simple_selector()
-            .map(|s| s.to_css_db_paths())
-            .unwrap_or(vec![]);
-        assert!(lhs.len() == 1);
+        match self.simple_selector() {
+            Some(lhs) => {
+                let lhs_paths = lhs.to_css_db_paths();
 
-        let lhs = lhs.first().unwrap();
+                if self.sub_selectors().into_iter().count() == 0 {
+                    return lhs_paths;
+                }
 
-        if self.sub_selectors().into_iter().count() == 0 {
-            return vec![lhs.clone()];
+                self.sub_selectors()
+                    .into_iter()
+                    .flat_map(|selector| {
+                        selector
+                            .to_css_db_paths()
+                            .iter()
+                            .flat_map(|path| {
+                                lhs_paths
+                                    .iter()
+                                    .map(|lhs| [lhs.clone(), path.clone()].concat())
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .collect()
+            }
+            None => {
+                let paths: Vec<_> = self
+                    .sub_selectors()
+                    .into_iter()
+                    .flat_map(|selector| selector.to_css_db_paths())
+                    .fold::<Vec<Vec<String>>, _>(vec![], |acc_paths, cur_path| {
+                        // this breaks my mind, but it is appearing to work :sweat_smile:
+                        if acc_paths.is_empty() {
+                            vec![cur_path]
+                        } else {
+                            acc_paths
+                                .iter()
+                                .map(|lhs| [lhs.clone(), cur_path.clone()].concat())
+                                .collect()
+                        }
+                    });
+
+                paths
+            }
         }
-
-        self.sub_selectors()
-            .into_iter()
-            .map(|selector| {
-                let paths = selector.to_css_db_paths();
-                assert!(paths.len() == 1);
-                let path = paths.first().unwrap();
-                [lhs.clone(), path.clone()].concat()
-            })
-            .collect()
     }
 }
 
@@ -917,11 +1003,126 @@ impl Storage for AnyCssSubSelector {
                 let name = name.text_trimmed();
                 vec![vec![format!(".{}", name)]]
             }
-            CssIdSelector(_) => todo!(),
+            CssIdSelector(id) => {
+                let name = id.name().unwrap().value_token().unwrap();
+                let name = name.text_trimmed();
+                vec![vec![format!("#{}", name)]]
+            }
             CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_paths(),
             CssPseudoElementSelector(pseudo_element) => {
                 pseudo_element.element().unwrap().to_css_db_paths()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::parse_utils::parse_selector;
+
+    use super::*;
+
+    fn selectors(str: &str) -> Vec<Selector> {
+        let selector_list = parse_selector(str).unwrap();
+
+        selector_list
+            .into_iter()
+            .flat_map(|s| s.unwrap().to_selectors(None))
+            .collect()
+    }
+
+    fn one_selector(str: &str) -> Selector {
+        let selectors = selectors(str);
+        assert!(selectors.len() == 1);
+        selectors.first().unwrap().clone()
+    }
+
+    #[test]
+    fn id_has_greater_specificity_than_class() {
+        let id_spec = Specificity::new(1, 0, 0); // #name
+        let class_spec = Specificity::new(0, 2, 0); // .name.active
+        assert!(id_spec > class_spec)
+    }
+
+    #[test]
+    fn or_to_selectors() {
+        let selectors = selectors("div, input");
+        assert_eq!(selectors.len(), 2);
+    }
+
+    #[test]
+    fn element_specificity() {
+        let selectors = selectors("div, input");
+
+        let div = selectors.iter().find(|s| s.string.contains("div")).unwrap();
+        let input = selectors
+            .iter()
+            .find(|s| s.string.contains("input"))
+            .unwrap();
+
+        assert_eq!(
+            Specificity::from_path(&div.path),
+            Specificity::from_path(&input.path)
+        );
+    }
+
+    #[test]
+    fn class_specificity() {
+        let selectors = selectors(".name, input");
+
+        let name = selectors
+            .iter()
+            .find(|s| s.string.contains(".name"))
+            .unwrap();
+        let input = selectors
+            .iter()
+            .find(|s| s.string.contains("input"))
+            .unwrap();
+
+        assert!(Specificity::from_path(&name.path) > Specificity::from_path(&input.path));
+    }
+
+    #[test]
+    fn id_specificity() {
+        let selectors = selectors("#name, .input");
+
+        let name = selectors
+            .iter()
+            .find(|s| s.string.contains("#name"))
+            .unwrap();
+        let input = selectors
+            .iter()
+            .find(|s| s.string.contains(".input"))
+            .unwrap();
+
+        assert!(Specificity::from_path(&name.path) > Specificity::from_path(&input.path));
+    }
+
+    #[test]
+    fn complex_compare() {
+        let selector = one_selector(".name:has(.you)"); // (0, 2, 0)
+
+        assert_eq!(
+            Specificity::from_path(&selector.path),
+            Specificity { a: 0, b: 2, c: 0 }
+        );
+    }
+
+    #[test]
+    fn complex_compare_with_id() {
+        let selector = one_selector("#name:has(.you)"); // (1, 1, 0)
+
+        assert_eq!(
+            Specificity::from_path(&selector.path),
+            Specificity { a: 1, b: 1, c: 0 }
+        );
+    }
+
+    #[test]
+    fn complex_compare_with_id_against_class() {
+        let s1 = one_selector("#name:has(.you)"); // (1, 1, 0)
+        let s2 = one_selector(".name:has(.you)"); // (0, 2, 0)
+
+        assert!(Specificity::from_path(&s1.path) > Specificity::from_path(&s2.path));
     }
 }

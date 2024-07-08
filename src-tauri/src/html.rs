@@ -5,7 +5,8 @@ use biome_css_syntax::{
     CssComplexSelector, CssComponentValueList, CssCompoundSelector, CssDashedIdentifier,
     CssFunction, CssIdentifier, CssNumber, CssParameter, CssPercentage,
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassIdentifier, CssPseudoClassSelector,
-    CssPseudoElementSelector, CssRegularDimension, CssRelativeSelector, CssString, CssTypeSelector,
+    CssPseudoElementSelector, CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString,
+    CssTypeSelector,
 };
 
 use crate::{parse_utils::get_combinator_type, Property, State};
@@ -461,6 +462,26 @@ impl Render for AnyCssGenericComponentValue {
             // these are just commas I believe
             AnyCssGenericComponentValue::CssGenericDelimiter(_) => String::from(""),
         }
+    }
+}
+
+impl Render for CssSelectorList {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        let string_value = self
+            .into_iter()
+            .map(|s| s.unwrap().to_string())
+            .reduce(|acc, cur| acc + ", " + &cur)
+            .unwrap();
+
+        format!(
+            "<div data-kind=\"selector-list\" data-string-value='{}'>
+                <div data-attr=\"selectors\">{}</div>
+            </div>",
+            string_value,
+            self.into_iter()
+                .map(|s| s.unwrap().render_html(options))
+                .collect::<String>()
+        )
     }
 }
 

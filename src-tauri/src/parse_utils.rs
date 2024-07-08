@@ -1,9 +1,10 @@
-use biome_css_syntax::{AnyCssSelector, CssDeclarationWithSemicolon, CssSyntaxKind};
+use biome_css_syntax::{CssDeclarationWithSemicolon, CssSelectorList, CssSyntaxKind};
 
-pub fn parse_selector(str: &str) -> Option<AnyCssSelector> {
+pub fn parse_selector(str: &str) -> Option<CssSelectorList> {
     // eh heck, `url::form_urlencoded::byte_serialize` encodes ' ' as '+'
     // this is gonna get real fucked when we get sibling selectors..
-    let str = str.replace("+", " ");
+    assert!(!str.contains("+"));
+
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),
@@ -13,11 +14,7 @@ pub fn parse_selector(str: &str) -> Option<AnyCssSelector> {
     .into_iter()
     .next()?;
 
-    let prelude = rule.as_css_qualified_rule()?.prelude();
-
-    assert!((&prelude).into_iter().count() == 1);
-
-    prelude.into_iter().next().and_then(|result| result.ok())
+    Some(rule.as_css_qualified_rule()?.prelude())
 }
 
 fn parse_one(rule: String) -> Option<biome_css_syntax::CssQualifiedRule> {

@@ -5,5 +5,5 @@ button {
     color: orange;
 }
 button.active {
-    /* color: black; */
+    color: black;
 }

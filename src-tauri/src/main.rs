@@ -33,7 +33,8 @@ fn search(q: &str) -> Vec<String> {
         .all_selectors_with_properties()
         .iter()
         // .unwrap() since, it should never crash
-        .map(|s| parse_selector(s).unwrap())
+        .flat_map(|s| parse_selector(s).unwrap())
+        .map(|s| s.unwrap())
         .filter(|selector| {
             let str = after_css_comment(selector.to_string());
             parts.iter().all(|q| str.contains(q))
@@ -56,8 +57,11 @@ fn search(q: &str) -> Vec<String> {
 fn insert_empty_rule(selector: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    let selector = parse_selector(selector).unwrap();
-    for selector in selector.to_selectors(None) {
+    let selector_list = parse_selector(selector).unwrap();
+    for selector in selector_list
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.insert_empty(&selector);
     }
     fs::write("test.css", db.serialize()).unwrap()
@@ -68,7 +72,10 @@ fn render_rule(selector: &str) -> String {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector).unwrap();
-    let paths = selector.to_css_db_paths();
+    let paths: Vec<Vec<String>> = selector
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_css_db_paths())
+        .collect();
     assert!(paths.len() == 1);
     let path = paths.first().unwrap();
     let tree = db.get(&path).unwrap();
@@ -121,7 +128,12 @@ fn render_rule(selector: &str) -> String {
 fn delete(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    for path in parse_selector(selector).unwrap().to_css_db_paths() {
+    let selector_list = parse_selector(selector).unwrap();
+
+    for path in selector_list
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_css_db_paths())
+    {
         db.delete(&path, name, value);
     }
     fs::write("test.css", db.serialize()).unwrap()
@@ -131,7 +143,11 @@ fn delete(selector: &str, name: &str, value: &str) {
 fn disable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+    for selector in parse_selector(selector)
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.set_state(&selector.path, name, value, State::Commented);
     }
     fs::write("test.css", db.serialize()).unwrap()
@@ -141,7 +157,11 @@ fn disable(selector: &str, name: &str, value: &str) {
 fn enable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+    for selector in parse_selector(selector)
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.set_state(&selector.path, name, value, State::Valid);
     }
     fs::write("test.css", db.serialize()).unwrap()
@@ -157,7 +177,11 @@ fn insert_property(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
     db.load("test.css");
-    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+    for selector in parse_selector(selector)
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.insert(&selector, &property);
     }
     fs::write("test.css", db.serialize()).unwrap()
@@ -174,7 +198,11 @@ struct JsonProperty {
 fn replace_all_properties(selector: &str, properties: Vec<JsonProperty>) {
     let mut db = CSSDB::new();
     db.load("test.css");
-    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+    for selector in parse_selector(selector)
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.get_mut(&selector.path).unwrap().drain();
 
         for property in properties.iter() {
@@ -199,7 +227,11 @@ fn update_value(selector: &str, name: &str, original_value: &str, value: &str) {
     let mut db = CSSDB::new();
     db.load("test.css");
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
-    for selector in parse_selector(selector).unwrap().to_selectors(None) {
+    for selector in parse_selector(selector)
+        .unwrap()
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
         db.delete(&selector.path, name.trim(), original_value);
         db.insert(&selector, &property);
     }
