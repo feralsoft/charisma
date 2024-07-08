@@ -113,18 +113,16 @@ impl Specificity {
 
 impl PartialOrd for Specificity {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(
-            self.a
-                .cmp(&other.a)
-                .then_with(|| self.b.cmp(&other.b))
-                .then_with(|| self.c.cmp(&other.c)),
-        )
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Specificity {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        self.a
+            .cmp(&other.a)
+            .then_with(|| self.b.cmp(&other.b))
+            .then_with(|| self.c.cmp(&other.c))
     }
 }
 

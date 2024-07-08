@@ -1,3 +1,11 @@
+body main button.active {
+    color: purple;
+    /* --color: black; */
+}
+body:has(button.active) {
+    color: red;
+    --color: red;
+}
 bo {
     
 }
@@ -5,20 +13,12 @@ button {
     color: orange;
     /* --color: orange; */
 }
-button.active {
-    /* color: var(--color); */
-}
 button active {
     
 }
 button ac {
     
 }
-body:has(button.active) {
-    color: red;
-    /* --color: red; */
-}
-body main button.active {
-    color: purple;
-    /* --color: black; */
+button.active {
+    color: var(--color);
 }
