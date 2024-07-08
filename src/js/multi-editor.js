@@ -97,17 +97,6 @@ function put_in_group(editor, position) {
 
 const SNAP_OFFSET = 4;
 
-function snap_size(editor) {
-  editor.style.minWidth = "initial";
-  editor.style.minHeight = "initial";
-  let { width, height } = editor.getBoundingClientRect();
-  width = width + (25 - (width % 25)) - SNAP_OFFSET;
-  height = height + (25 - (height % 25)) - SNAP_OFFSET;
-
-  editor.style.minWidth = `${width}px`;
-  editor.style.minHeight = `${height}px`;
-}
-
 export function snap_position({ x, y }) {
   if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
   else x = x + (25 - (x % 25)) - SNAP_OFFSET;
@@ -116,11 +105,6 @@ export function snap_position({ x, y }) {
   else y = y + (25 - (y % 25)) - SNAP_OFFSET;
 
   return { x, y };
-}
-
-function snap_and_group(editor, position) {
-  put_in_group(editor, position);
-  snap_size(editor);
 }
 
 function init(editor) {
@@ -132,7 +116,7 @@ function init(editor) {
   let { width: editor_width, height: editor_height } =
     editor.getBoundingClientRect();
 
-  snap_and_group(editor, {
+  put_in_group(editor, {
     x: body_width / 2 - editor_width / 3,
     y: body_height / 2 - editor_height / 3,
   });
@@ -144,12 +128,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
     editor.addEventListener("drag-finished", ({ detail: { position } }) =>
-      snap_and_group(editor, position),
+      put_in_group(editor, position),
     );
-    editor.addEventListener("blur", (_) => snap_size(editor));
-    editor.addEventListener("loaded", (_) => snap_size(editor));
-    editor.addEventListener("focus", (_) => snap_size(editor));
-    editor.addEventListener("click", (_) => snap_size(editor));
   });
 });
 
