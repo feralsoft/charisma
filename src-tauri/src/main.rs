@@ -115,11 +115,11 @@ fn render_rule(selector: &str) -> String {
             .collect::<String>(),
         inherited_properties
             .iter()
-            .map(|(selector, p)| link_for(selector, p))
+            .map(|(selector, p)| link_for(&selector.string, p))
             .collect::<String>()
             + &inherited_vars
                 .iter()
-                .map(|(selector, p)| link_for(selector, p))
+                .map(|(selector, p)| link_for(&selector.string, p))
                 .collect::<String>()
     )
 }

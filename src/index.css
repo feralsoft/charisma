@@ -403,6 +403,10 @@ body {
     padding-bottom: var(--spacing);
 }
 
+.--editor:has(> .menu .info.active) [data-attr="inherited-properties"] {
+    display: flex;
+}
+
 .--editor:not(:has(> .menu .info.active)) [data-attr="inherited-properties"] {
     display: none;
 }

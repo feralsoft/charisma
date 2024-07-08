@@ -23,7 +23,7 @@ let minimize = (editor) =>
 
 let info = () =>
   h("button", {
-    class: "info",
+    class: "info active",
     "@click"(_) {
       this.classList.toggle("active");
     },

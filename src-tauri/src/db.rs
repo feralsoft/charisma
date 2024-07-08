@@ -32,11 +32,7 @@ impl ops::Add<Specificity> for Specificity {
     type Output = Specificity;
 
     fn add(self, rhs: Specificity) -> Self::Output {
-        Specificity {
-            a: self.a + rhs.a,
-            b: self.b + rhs.b,
-            c: self.c + rhs.c,
-        }
+        Specificity::new(self.a + rhs.a, self.b + rhs.b, self.c + rhs.c)
     }
 }
 
@@ -45,25 +41,37 @@ impl Specificity {
         Specificity { a, b, c }
     }
 
+    // SPECIFICITY ALGORITHM FROM SPEC
+    // count the number of ID selectors in the selector (= A)
+    // count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= B)
+    // count the number of type selectors and pseudo-elements in the selector (= C)
+    // ignore the universal selector (*)
+    //
+    // when calculating which selector wins, match components 1 by 1,
+    // for eg.
+    //   #my-id           => (1, 0, 0)
+    //   .card:has(.name) => (0, 2, 0)
+    //
+    // #my-id will win!
     fn from_part(part: &String) -> Self {
         if part.starts_with("#") {
-            Self { a: 1, b: 0, c: 0 }
+            Self::new(1, 0, 0)
         } else if part.starts_with(".") {
-            Self { a: 0, b: 1, c: 0 }
+            Self::new(0, 1, 0)
         } else if part.starts_with("::") {
-            Self { a: 0, b: 0, c: 1 }
+            Self::new(0, 0, 1)
         } else if part.starts_with(":") {
-            Self { a: 0, b: 1, c: 0 }
+            Self::new(0, 1, 0)
         } else if part.chars().all(|c| c.is_alphabetic() || c == '-') {
             // element
-            Self { a: 0, b: 0, c: 1 }
+            Self::new(0, 0, 1)
         } else {
             panic!("no specificity for {:?}", part)
         }
     }
 
     pub fn from_path(path: &[String]) -> Self {
-        let mut specificity = Specificity { a: 0, b: 0, c: 0 };
+        let mut specificity = Self::new(0, 0, 0);
         let mut iter = path.iter();
 
         // go until we hit ":has(" (or ":is(", ":not(")
@@ -103,19 +111,6 @@ impl Specificity {
     }
 }
 
-// SPECIFICITY ALGORITHM FROM SPEC
-// count the number of ID selectors in the selector (= A)
-// count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= B)
-// count the number of type selectors and pseudo-elements in the selector (= C)
-// ignore the universal selector (*)
-//
-// when calculating which selector wins, match components 1 by 1,
-// for eg.
-//   #my-id           => (1, 0, 0)
-//   .card:has(.name) => (0, 2, 0)
-//
-// #my-id will win!
-
 impl PartialOrd for Specificity {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(
@@ -152,7 +147,7 @@ impl Property {
 pub struct Selector {
     pub string: String,
     pub path: Vec<String>,
-    // pub specificity: Specificity,
+    pub specificity: Specificity,
 }
 
 pub trait ToSelectors {
@@ -173,19 +168,23 @@ impl ToSelectors for AnyCssRelativeSelector {
         selector
             .to_css_db_paths()
             .iter()
-            .map(|path| Selector {
-                string: parent
-                    .as_ref()
-                    .map(|p| p.string.clone())
-                    .unwrap_or("".to_string())
-                    + &separator
-                    + selector.to_string().trim(),
-                path: [
+            .map(|path| {
+                let path = [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                     vec![separator.clone()],
                     path.clone(),
                 ]
-                .concat(),
+                .concat();
+                Selector {
+                    string: parent
+                        .as_ref()
+                        .map(|p| p.string.clone())
+                        .unwrap_or("".to_string())
+                        + &separator
+                        + selector.to_string().trim(),
+                    specificity: Specificity::from_path(&path),
+                    path,
+                }
             })
             .collect()
     }
@@ -195,17 +194,21 @@ impl ToSelectors for AnyCssSelector {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
         self.to_css_db_paths()
             .iter()
-            .map(|path| Selector {
-                string: parent
-                    .as_ref()
-                    .map(|p| p.string.clone())
-                    .unwrap_or("".to_string())
-                    + &path.join(""),
-                path: [
+            .map(|path| {
+                let path = [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                     path.clone(),
                 ]
-                .concat(),
+                .concat();
+                Selector {
+                    string: parent
+                        .as_ref()
+                        .map(|p| p.string.clone())
+                        .unwrap_or("".to_string())
+                        + &path.join(""),
+                    specificity: Specificity::from_path(&path),
+                    path,
+                }
             })
             .collect()
     }
@@ -514,13 +517,13 @@ impl CSSDB {
         }
     }
 
-    fn inheritable_properties(&self) -> HashMap<String, (String, Rc<Property>)> {
+    fn inheritable_properties(&self) -> HashMap<String, (Selector, Rc<Property>)> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 .filter(|p| p.state == State::Valid)
                 .filter(|p| properties::INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
-                .map(|p| (p.name(), (rule.selector.string.clone(), p.clone())))
+                .map(|p| (p.name(), (rule.selector.clone(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -530,7 +533,7 @@ impl CSSDB {
     fn inherited_properties_for_aux(
         &self,
         path: &[String],
-        inhertied_properties: &mut HashMap<String, (String, Rc<Property>)>,
+        inhertied_properties: &mut HashMap<String, (Selector, Rc<Property>)>,
     ) {
         let inherited_properties_from_self = self.inheritable_properties();
         match path {
@@ -562,19 +565,37 @@ impl CSSDB {
     pub fn inherited_properties_for(
         &self,
         path: &[String],
-    ) -> HashMap<String, (String, Rc<Property>)> {
+    ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut properties: HashMap<String, (String, Rc<Property>)> = HashMap::new();
+        let mut properties: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
         if !tree.is_root() {
             self.get_root()
                 .inspect(|tree| properties.extend(tree.inheritable_properties()));
         }
+        // go directly do my current path
+        // eg. `body table td` ->
+        // 1 - go to `body` & get all inherited properties
+        // 2 - go to `body table` & get inherited properties (overwrite from `body`)
         self.inherited_properties_for_aux(path, &mut properties);
+        // now we are going up super paths, in the case we are overwriting
+        // a property, we need to compare specifcity to understand which property will rule
         for super_path in self.super_paths_of(path) {
-            properties.extend(self.get(&super_path).unwrap().inheritable_properties());
+            let super_path_specificity = Specificity::from_path(&super_path);
+            for (property_name, super_path_property_value) in
+                self.get(&super_path).unwrap().inheritable_properties()
+            {
+                if let Some((selector, _)) = properties.get(&property_name) {
+                    if selector.specificity < super_path_specificity {
+                        properties.insert(property_name, super_path_property_value);
+                    }
+                } else {
+                    properties.insert(property_name, super_path_property_value);
+                }
+            }
         }
 
         for property in tree.valid_properties() {
+            // wtf is this about?
             if property.value() != "inherit" {
                 properties.remove(&property.name());
             }
@@ -583,12 +604,12 @@ impl CSSDB {
         properties
     }
 
-    fn valid_vars_with_selector_str(&self) -> HashMap<String, (String, Rc<Property>)> {
+    fn valid_vars_with_selector(&self) -> HashMap<String, (Selector, Rc<Property>)> {
         if let Some(rule) = &self.rule {
             rule.properties
                 .iter()
                 .filter(|p| p.is_var() && p.state == State::Valid)
-                .map(|p| (p.name(), (rule.selector.string.clone(), p.clone())))
+                .map(|p| (p.name(), (rule.selector.clone(), p.clone())))
                 .collect::<HashMap<_, _>>()
         } else {
             HashMap::new()
@@ -619,9 +640,9 @@ impl CSSDB {
     fn inherited_vars_for_aux(
         &self,
         path: &[String],
-        inherited_vars: &mut HashMap<String, (String, Rc<Property>)>,
+        inherited_vars: &mut HashMap<String, (Selector, Rc<Property>)>,
     ) {
-        let inherited_vars_from_self = self.valid_vars_with_selector_str();
+        let inherited_vars_from_self = self.valid_vars_with_selector();
         match path {
             [] => panic!("should never reach the end of path"),
             [_part] => {
@@ -640,25 +661,34 @@ impl CSSDB {
     pub fn inherited_vars_for(
         &self,
         path: &[String],
-        inherited_properties: &HashMap<String, (String, Rc<Property>)>,
-    ) -> HashMap<String, (String, Rc<Property>)> {
+        inherited_properties: &HashMap<String, (Selector, Rc<Property>)>,
+    ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
-        let mut vars: HashMap<String, (String, Rc<Property>)> = HashMap::new();
+        let mut vars: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
         if !tree.is_root() {
             self.get_root()
-                .inspect(|tree| vars.extend(tree.valid_vars_with_selector_str()));
+                .inspect(|tree| vars.extend(tree.valid_vars_with_selector()));
         }
         self.inherited_vars_for_aux(path, &mut vars);
         for super_path in self.super_paths_of(path) {
-            vars.extend(
-                self.get(&super_path)
-                    .unwrap()
-                    .valid_vars_with_selector_str(),
-            );
+            let super_path_specificity = Specificity::from_path(&super_path);
+            for (var_name, super_path_var_value) in
+                self.get(&super_path).unwrap().valid_vars_with_selector()
+            {
+                if let Some((selector, _)) = vars.get(&var_name) {
+                    if selector.specificity < super_path_specificity {
+                        vars.insert(var_name, super_path_var_value);
+                    }
+                } else {
+                    vars.insert(var_name, super_path_var_value);
+                }
+            }
         }
-        for name in tree.valid_vars_with_selector_str().keys() {
+
+        for name in tree.valid_vars_with_selector().keys() {
             vars.remove(name);
         }
+
         let var_references_in_rule = tree.valid_var_lookup_ids();
         let var_references_in_inherited_properties: Vec<String> = inherited_properties
             .iter()

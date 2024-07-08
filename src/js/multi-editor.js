@@ -17,6 +17,7 @@ async function reload(editor) {
   let new_rule = await invoke("render_rule", {
     selector: editor.dataset.selector,
   });
+
   editor.innerHTML = new_rule;
   catch_links(editor);
   editor.dispatchEvent(new Event("loaded"));
