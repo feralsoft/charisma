@@ -247,15 +247,10 @@ impl Property {
     }
 
     pub fn is_var(&self) -> bool {
-        let decl = self.node.as_fields().declaration.unwrap();
-        let property = decl.as_fields().property.unwrap();
-        let property = property.as_css_generic_property().unwrap();
-        let name = property.as_fields().name.unwrap();
-        let name = name.as_css_identifier().unwrap();
-        let name = name.value_token().unwrap();
-        name.text_trimmed().starts_with("--")
+        self.name().starts_with("--")
     }
 
+    // ughh this is soo ugly
     pub fn var_ref(&self) -> Option<String> {
         if self.state == State::Commented {
             return None;
