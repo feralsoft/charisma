@@ -580,16 +580,16 @@ impl CSSDB {
         // now we are going up super paths, in the case we are overwriting
         // a property, we need to compare specifcity to understand which property will rule
         for super_path in self.super_paths_of(path) {
-            let super_path_specificity = Specificity::from_path(&super_path);
-            for (property_name, super_path_property_value) in
+            for (property_name, (super_path_selector, super_path_property)) in
                 self.get(&super_path).unwrap().inheritable_properties()
             {
                 if let Some((selector, _)) = properties.get(&property_name) {
-                    if selector.specificity < super_path_specificity {
-                        properties.insert(property_name, super_path_property_value);
+                    if selector.specificity < super_path_selector.specificity {
+                        properties
+                            .insert(property_name, (super_path_selector, super_path_property));
                     }
                 } else {
-                    properties.insert(property_name, super_path_property_value);
+                    properties.insert(property_name, (super_path_selector, super_path_property));
                 }
             }
         }
@@ -671,16 +671,15 @@ impl CSSDB {
         }
         self.inherited_vars_for_aux(path, &mut vars);
         for super_path in self.super_paths_of(path) {
-            let super_path_specificity = Specificity::from_path(&super_path);
-            for (var_name, super_path_var_value) in
+            for (var_name, (super_path_selector, super_path_property)) in
                 self.get(&super_path).unwrap().valid_vars_with_selector()
             {
                 if let Some((selector, _)) = vars.get(&var_name) {
-                    if selector.specificity < super_path_specificity {
-                        vars.insert(var_name, super_path_var_value);
+                    if selector.specificity < super_path_selector.specificity {
+                        vars.insert(var_name, (super_path_selector, super_path_property));
                     }
                 } else {
-                    vars.insert(var_name, super_path_var_value);
+                    vars.insert(var_name, (super_path_selector, super_path_property));
                 }
             }
         }
