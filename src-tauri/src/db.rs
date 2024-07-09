@@ -558,6 +558,39 @@ impl CSSDB {
             self.get_root()
                 .inspect(|tree| inherited_properties.extend(tree.inheritable_properties()));
         }
+        // this is all wrong
+        // what we need to do is the following
+        //
+        // say my path is `.card button.active`
+        //
+        // we need to get the parent selectors -> [".card", ".card button"]
+        //
+        // and then get all super paths
+        // lets say there's `details .card button.active`, and `article .card button.active`
+        //
+        // when we going directly up my heirarchy, I can be confident
+        // that the properties are going to be inherited
+        //
+        // but if if there's an inheritable property set say 'color' set at both
+        // `details` and `article`, I will not be able to understand
+        // which color will come down the heirarchy
+        //
+        // none of this matters if .card sets 'color', but if it doesn't
+        // we'll have to aggregate a list of warnings - inherited property 'color' is ambigious
+        //
+        // there will also have to be a set of steps to check for siblings
+        // for eg. say there's `.card.user` which sets the color property.
+        //
+        // we will not know for sure that `.card button.active` isn't inside a user card
+        // so if `.card button` doesn't set 'color', we'll also have to say
+        // color could be ambigious, either solidify it, or be explicit that
+        // `.card button.active` is not in a user card -> `.card:not(.user) button.active`
+        //
+        // holy shit, this is beautiful, but a lot more work than I was expecting
+        //
+        // ... ok ... lets just think about this for a little bit
+
+        // -- this is the old / current broken strategy --
         // go directly do my current path
         // eg. `body table td` ->
         // 1 - go to `body` & get all inherited properties
