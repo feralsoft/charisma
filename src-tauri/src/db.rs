@@ -998,7 +998,7 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
         let name = self.name_token().unwrap();
         let relative_selectors = self.relative_selectors();
 
-        let path_of_paths: Vec<Vec<Vec<Part>>> = relative_selectors
+        let list_of_paths: Vec<Vec<Vec<Part>>> = relative_selectors
             .clone()
             .into_iter()
             .map(|s| s.unwrap())
@@ -1013,7 +1013,7 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
         // ... what would be the consequence of this?
         // idfk, let's try it :)
 
-        path_of_paths
+        list_of_paths
             .iter()
             .map(|paths| {
                 // this will break when you have :has(:is(a, b))
