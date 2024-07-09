@@ -14,7 +14,7 @@ use biome_css_syntax::{
     CssUniversalSelector, CssUrlFunction,
 };
 
-use crate::{parse_utils::get_combinator_type, Property, State};
+use crate::{get_combinator_type, Property, State};
 
 pub fn render_value(value: &str) -> String {
     format!("<div data-value=\"{}\">{}</div>", value, value)
@@ -68,7 +68,10 @@ impl Render for CssComplexSelector {
                 <div data-attr=\"left\">{}</div>
                 <div data-attr=\"right\">{}</div>
             </div>",
-            get_combinator_type(combinator.kind()),
+            match get_combinator_type(combinator.kind()) {
+                crate::Combinator::Descendant => "descendant",
+                crate::Combinator::DirectDescendant => "direct-descendant",
+            },
             self.to_string(),
             left.render_html(options),
             right.render_html(options)
@@ -102,10 +105,12 @@ impl Render for CssRelativeSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self.combinator() {
             Some(combinator) => {
-                let combinator_type = get_combinator_type(combinator.kind());
                 format!(
                     "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" data-string-value=\"{}\">{}</div>",
-                    combinator_type,
+                    match get_combinator_type(combinator.kind()) {
+                        crate::Combinator::Descendant => "descendant",
+                        crate::Combinator::DirectDescendant => "direct-descendant",
+                    },
                     self.to_string(),
                     self.selector().unwrap().render_html(options)
                 )

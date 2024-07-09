@@ -1,7 +1,4 @@
-use crate::{
-    parse_utils::{get_combinator_type, parse_property},
-    properties,
-};
+use crate::{parse_utils::parse_property, properties};
 use std::{collections::HashMap, fs, ops, rc::Rc};
 
 use biome_css_syntax::{
@@ -14,7 +11,7 @@ use biome_css_syntax::{
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
     CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList,
     CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
-    CssUniversalSelector,
+    CssSyntaxKind, CssUniversalSelector,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -58,38 +55,30 @@ impl Specificity {
     //   .card:has(.name) => (0, 2, 0)
     //
     // #my-id will win!
-    fn from_part(part: &String) -> Self {
-        if part.starts_with("#") {
-            Self::new(1, 0, 0)
-        } else if part.starts_with(".") {
-            Self::new(0, 1, 0)
-        } else if part.starts_with("::") {
-            Self::new(0, 0, 1)
-        } else if part.starts_with(":") {
-            Self::new(0, 1, 0)
-        } else if part.chars().all(|c| c.is_alphabetic() || c == '-') {
-            // element
-            Self::new(0, 0, 1)
-        } else {
-            panic!("no specificity for {:?}", part)
+    fn from_pattern(part: &Pattern) -> Self {
+        match part {
+            Pattern::Attribute(_) => Self::new(0, 1, 0),
+            Pattern::AttributeMatch(_, _, _) => Self::new(0, 1, 0),
+            Pattern::Class(_) => Self::new(0, 1, 0),
+            Pattern::Id(_) => Self::new(1, 0, 0),
+            Pattern::Element(_) => Self::new(0, 0, 1),
+            Pattern::PseudoElement(_) => Self::new(0, 0, 1),
+            Pattern::PseudoClass(_) => Self::new(0, 1, 0),
+            Pattern::PseudoClassWithSelectorList(_) => Self::new(0, 1, 0),
+            Pattern::CloseSelectorList => panic!("no specificity for {:?}", part),
         }
     }
 
-    pub fn from_path(path: &[String]) -> Self {
+    pub fn from_path(path: &[Part]) -> Self {
         let mut specificity = Self::new(0, 0, 0);
         let mut iter = path.iter();
 
         // go until we hit ":has(" (or ":is(", ":not(")
         loop {
             match iter.next() {
-                Some(part) => {
-                    if part.contains("(") {
-                        break;
-                    }
-                    if ![">", " ", "~", "+"].contains(&part.as_str()) {
-                        specificity = specificity + Specificity::from_part(part)
-                    }
-                }
+                Some(Part::Pattern(Pattern::PseudoClassWithSelectorList(_))) => break,
+                Some(Part::Combinator(_)) => {}
+                Some(Part::Pattern(p)) => specificity = specificity + Specificity::from_pattern(p),
                 None => return specificity,
             }
         }
@@ -97,14 +86,9 @@ impl Specificity {
         // check out the sub path until we get to ")"
         loop {
             match iter.next() {
-                Some(part) => {
-                    if part.as_str() == ")" {
-                        break;
-                    }
-                    if ![">", " ", "~", "+"].contains(&part.as_str()) {
-                        specificity = specificity + Specificity::from_part(part)
-                    }
-                }
+                Some(Part::Combinator(_)) => {}
+                Some(Part::Pattern(Pattern::CloseSelectorList)) => break,
+                Some(Part::Pattern(p)) => specificity = specificity + Specificity::from_pattern(p),
                 None => return specificity,
             }
         }
@@ -149,7 +133,7 @@ impl Property {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Selector {
     pub string: String,
-    pub path: Vec<String>,
+    pub path: Vec<Part>,
     pub specificity: Specificity,
 }
 
@@ -163,9 +147,9 @@ impl ToSelectors for AnyCssRelativeSelector {
         let selector = selector.selector().unwrap();
         let selector = selector.as_css_compound_selector().unwrap();
         assert!(selector.simple_selector().is_none());
-        let separator = match selector.nesting_selector_token() {
+        let combinator = match selector.nesting_selector_token() {
             Some(combinator) => get_combinator_type(combinator.kind()),
-            None => " ".to_string(),
+            None => Combinator::Descendant,
         };
 
         selector
@@ -174,7 +158,7 @@ impl ToSelectors for AnyCssRelativeSelector {
             .map(|path| {
                 let path = [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
-                    vec![separator.clone()],
+                    vec![Part::Combinator(combinator.clone())],
                     path.clone(),
                 ]
                 .concat();
@@ -183,7 +167,7 @@ impl ToSelectors for AnyCssRelativeSelector {
                         .as_ref()
                         .map(|p| p.string.clone())
                         .unwrap_or("".to_string())
-                        + &separator
+                        + &combinator.to_string()
                         + selector.to_string().trim(),
                     specificity: Specificity::from_path(&path),
                     path,
@@ -208,7 +192,7 @@ impl ToSelectors for AnyCssSelector {
                         .as_ref()
                         .map(|p| p.string.clone())
                         .unwrap_or("".to_string())
-                        + &path.join(""),
+                        + &path.iter().map(|s| s.to_string()).collect::<String>(),
                     specificity: Specificity::from_path(&path),
                     path,
                 }
@@ -342,7 +326,7 @@ impl Rule {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CSSDB {
-    children: HashMap<String, CSSDB>,
+    children: HashMap<Part, CSSDB>,
     pub rule: Option<Rule>,
 }
 
@@ -455,10 +439,10 @@ impl CSSDB {
 
     fn super_paths_of_aux(
         &self,
-        path: &[String],
+        path: &[Part],
         is_root: bool,
-        current_part_name: &str,
-        super_paths: &mut Vec<Vec<String>>,
+        current_part: Option<&Part>,
+        super_paths: &mut Vec<Vec<Part>>,
     ) {
         if !is_root {
             if let Some(path) = self
@@ -466,29 +450,33 @@ impl CSSDB {
                 .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
             {
                 super_paths.push(path)
-            } else if current_part_name == ":has(" {
-                if let Some(path) = self
-                    .get(&[path, &[")".to_string()]].concat())
-                    .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
-                {
-                    // body:has(button.active) is not getting detected as a superpath of
-                    // button.active
-                    // since given the path ["body", ":has(", "button", "active", ")"]
-                    // when I'm at ["body", ":has"] & I get ["button", "active"]
-                    // there is no rule there since we need to go to the ")"
-                    super_paths.push(path)
+            } else if let Some(Part::Pattern(Pattern::PseudoClassWithSelectorList(name))) =
+                current_part
+            {
+                // body:has(button.active) is not getting detected as a superpath of
+                // button.active
+                // since given the path ["body", ":has(", "button", "active", ")"]
+                // when I'm at ["body", ":has"] & I get ["button", "active"]
+                // there is no rule there since we need to go to the ")"
+                if name == "has" {
+                    if let Some(path) = self
+                        .get(&[path, &[Part::Pattern(Pattern::CloseSelectorList)]].concat())
+                        .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
+                    {
+                        super_paths.push(path)
+                    }
                 }
             }
         }
-        for (name, t) in &self.children {
-            t.super_paths_of_aux(path, false, &name, super_paths);
+        for (part, t) in &self.children {
+            t.super_paths_of_aux(path, false, Some(&part), super_paths);
         }
     }
 
     // a super path is a path which contains the searched path
-    pub fn super_paths_of(&self, path: &[String]) -> Vec<Vec<String>> {
-        let mut super_paths: Vec<Vec<String>> = vec![];
-        self.super_paths_of_aux(path, true, "", &mut super_paths);
+    pub fn super_paths_of(&self, path: &[Part]) -> Vec<Vec<Part>> {
+        let mut super_paths: Vec<Vec<Part>> = vec![];
+        self.super_paths_of_aux(path, true, None, &mut super_paths);
         super_paths
     }
 
@@ -530,7 +518,7 @@ impl CSSDB {
 
     fn inherited_properties_for_aux(
         &self,
-        path: &[String],
+        path: &[Part],
         inhertied_properties: &mut HashMap<String, (Selector, Rc<Property>)>,
     ) {
         let inherited_properties_from_self = self.inheritable_properties();
@@ -550,7 +538,10 @@ impl CSSDB {
     }
 
     pub fn get_root(&self) -> Option<&Self> {
-        self.get(&[":root".to_string()])
+        // TODO!
+        None
+
+        // self.get(&[":root".to_string()])
     }
 
     pub fn is_root(&self) -> bool {
@@ -562,7 +553,7 @@ impl CSSDB {
 
     pub fn inherited_properties_for(
         &self,
-        path: &[String],
+        path: &[Part],
     ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
         let mut inherited_properties: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
@@ -639,7 +630,7 @@ impl CSSDB {
 
     fn inherited_vars_for_aux(
         &self,
-        path: &[String],
+        path: &[Part],
         inherited_vars: &mut HashMap<String, (Selector, Rc<Property>)>,
     ) {
         let inherited_vars_from_self = self.valid_vars_with_selector();
@@ -660,7 +651,7 @@ impl CSSDB {
 
     pub fn inherited_vars_for(
         &self,
-        path: &[String],
+        path: &[Part],
         inherited_properties: &HashMap<String, (Selector, Rc<Property>)>,
     ) -> HashMap<String, (Selector, Rc<Property>)> {
         let tree = self.get(path).unwrap();
@@ -703,7 +694,7 @@ impl CSSDB {
 
     pub fn set_state(
         &mut self,
-        path: &[String],
+        path: &[Part],
         property_name: &str,
         property_value: &str,
         state: State,
@@ -723,7 +714,7 @@ impl CSSDB {
         }
     }
 
-    pub fn delete(&mut self, path: &[String], property_name: &str, property_value: &str) {
+    pub fn delete(&mut self, path: &[Part], property_name: &str, property_value: &str) {
         let tree = self.get_mut(path).unwrap();
         assert!(
             tree.rule.is_some(),
@@ -734,7 +725,7 @@ impl CSSDB {
             .retain(|p| !(&p.name() == property_name && &p.value() == property_value));
     }
 
-    fn insert_raw(&mut self, selector: Selector, path: &[String], property: Property) {
+    fn insert_raw(&mut self, selector: Selector, path: &[Part], property: Property) {
         match path {
             [] => {
                 match &mut self.rule {
@@ -768,7 +759,7 @@ impl CSSDB {
         )
     }
 
-    fn insert_empty_aux(&mut self, selector: Selector, path: &[String]) {
+    fn insert_empty_aux(&mut self, selector: Selector, path: &[Part]) {
         match path {
             [] => {
                 match &mut self.rule {
@@ -802,14 +793,14 @@ impl CSSDB {
         )
     }
 
-    pub fn get(&self, path: &[String]) -> Option<&CSSDB> {
+    pub fn get(&self, path: &[Part]) -> Option<&CSSDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get(part).and_then(|c| c.get(parts)),
         }
     }
 
-    pub fn get_mut(&mut self, path: &[String]) -> Option<&mut CSSDB> {
+    pub fn get_mut(&mut self, path: &[Part]) -> Option<&mut CSSDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get_mut(part).and_then(|c| c.get_mut(parts)),
@@ -818,11 +809,91 @@ impl CSSDB {
 }
 
 pub trait DBPath {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>>;
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>>;
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Combinator {
+    // " "
+    Descendant,
+    // ">"
+    DirectDescendant,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Pattern {
+    // [data-kind]
+    Attribute(String),
+    // [data-kind=rule]
+    AttributeMatch(String, String, String),
+    // .name
+    Class(String),
+    // #name
+    Id(String),
+    // div
+    Element(String),
+    // ::before
+    PseudoElement(String),
+    // :active
+    PseudoClass(String),
+    // :has(
+    PseudoClassWithSelectorList(String),
+    // )
+    CloseSelectorList,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Part {
+    Combinator(Combinator),
+    Pattern(Pattern),
+}
+
+impl ToString for Part {
+    fn to_string(&self) -> String {
+        match self {
+            Part::Combinator(c) => c.to_string(),
+            Part::Pattern(p) => p.to_string(),
+        }
+    }
+}
+
+impl ToString for Combinator {
+    fn to_string(&self) -> String {
+        match self {
+            Combinator::Descendant => String::from(" "),
+            Combinator::DirectDescendant => String::from(">"),
+        }
+    }
+}
+
+impl ToString for Pattern {
+    fn to_string(&self) -> String {
+        match self {
+            Pattern::Attribute(name) => format!("[{}]", name),
+            Pattern::AttributeMatch(name, matcher, value) => {
+                format!("[{}{}{}]", name, matcher, value)
+            }
+            Pattern::Class(name) => format!(".{}", name),
+            Pattern::Id(name) => format!("#{}", name),
+            Pattern::Element(name) => String::from(name),
+            Pattern::PseudoElement(name) => format!("::{}", name),
+            Pattern::PseudoClass(name) => format!(":{}", name),
+            Pattern::PseudoClassWithSelectorList(name) => format!(":{}(", name),
+            Pattern::CloseSelectorList => String::from(")"),
+        }
+    }
+}
+
+pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Combinator {
+    match token_kind {
+        CssSyntaxKind::CSS_SPACE_LITERAL => Combinator::Descendant,
+        CssSyntaxKind::R_ANGLE => Combinator::DirectDescendant,
+        _ => todo!(),
+    }
 }
 
 impl DBPath for biome_css_syntax::AnyCssSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             CssBogusSelector(_) => panic!(),
             CssComplexSelector(s) => {
@@ -834,9 +905,14 @@ impl DBPath for biome_css_syntax::AnyCssSelector {
                 left.to_css_db_paths()
                     .iter()
                     .flat_map(|lhs| {
-                        rhs_paths
-                            .iter()
-                            .map(|rhs| [lhs.clone(), vec![String::from(" ")], rhs.clone()].concat())
+                        rhs_paths.iter().map(|rhs| {
+                            [
+                                lhs.clone(),
+                                vec![Part::Combinator(Combinator::Descendant)],
+                                rhs.clone(),
+                            ]
+                            .concat()
+                        })
                     })
                     .collect()
             }
@@ -846,22 +922,23 @@ impl DBPath for biome_css_syntax::AnyCssSelector {
 }
 
 impl DBPath for CssUniversalSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for biome_css_syntax::AnyCssSimpleSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             biome_css_syntax::AnyCssSimpleSelector::CssTypeSelector(t) => {
-                vec![vec![t
-                    .ident()
-                    .unwrap()
-                    .value_token()
-                    .unwrap()
-                    .text_trimmed()
-                    .to_string()]]
+                vec![vec![Part::Pattern(Pattern::Element(
+                    t.ident()
+                        .unwrap()
+                        .value_token()
+                        .unwrap()
+                        .text_trimmed()
+                        .to_string(),
+                ))]]
             }
             biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(s) => s.to_css_db_paths(),
         }
@@ -869,7 +946,7 @@ impl DBPath for biome_css_syntax::AnyCssSimpleSelector {
 }
 
 impl DBPath for biome_css_syntax::CssCompoundSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self.simple_selector() {
             Some(lhs) => {
                 let lhs_paths = lhs.to_css_db_paths();
@@ -898,7 +975,7 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                     .sub_selectors()
                     .into_iter()
                     .flat_map(|selector| selector.to_css_db_paths())
-                    .fold::<Vec<Vec<String>>, _>(vec![], |acc_paths, cur_path| {
+                    .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_path| {
                         // this breaks my mind, but it is appearing to work :sweat_smile:
                         if acc_paths.is_empty() {
                             vec![cur_path]
@@ -917,11 +994,11 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
 }
 
 impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         let name = self.name_token().unwrap();
         let relative_selectors = self.relative_selectors();
 
-        let path_of_paths: Vec<Vec<Vec<String>>> = relative_selectors
+        let path_of_paths: Vec<Vec<Vec<Part>>> = relative_selectors
             .clone()
             .into_iter()
             .map(|s| s.unwrap())
@@ -944,9 +1021,11 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
                 let path = paths.first().unwrap();
 
                 [
-                    vec![format!(":{}(", name.text_trimmed())],
+                    vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(
+                        name.text_trimmed().to_string(),
+                    ))],
                     path.clone(),
-                    vec![String::from(")")],
+                    vec![Part::Pattern(Pattern::CloseSelectorList)],
                 ]
                 .concat()
             })
@@ -955,49 +1034,49 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
 }
 
 impl DBPath for CssPseudoClassFunctionNth {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionValueList {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionCompoundSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionCompoundSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionIdentifier {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for AnyCssPseudoClass {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.to_css_db_paths(),
@@ -1011,15 +1090,22 @@ impl DBPath for AnyCssPseudoClass {
             AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![format!(":{}", name)]]
+                vec![vec![Part::Pattern(Pattern::PseudoClass(name.to_string()))]]
             }
         }
     }
 }
 
 impl DBPath for CssAttributeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         let name = self.name().unwrap();
+        let name = name
+            .name()
+            .unwrap()
+            .value_token()
+            .unwrap()
+            .text_trimmed()
+            .to_string();
         match self.matcher() {
             Some(matcher) => {
                 assert!(matcher.modifier().is_none());
@@ -1029,52 +1115,59 @@ impl DBPath for CssAttributeSelector {
                 // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
                 // so that you can explore siblings along [data-kind]
                 vec![vec![
-                    format!("[{}]", name),
-                    format!("[{}{}{}]", name, operator, value),
+                    Part::Pattern(Pattern::Attribute(name.clone())),
+                    Part::Pattern(Pattern::AttributeMatch(
+                        name.clone(),
+                        operator.to_string(),
+                        value.to_string(),
+                    )),
                 ]]
             }
             None => {
-                vec![vec![format!("[{}]", name)]]
+                vec![vec![Part::Pattern(Pattern::Attribute(name))]]
             }
         }
     }
 }
 
 impl DBPath for CssPseudoElementFunctionIdentifier {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoElementFunctionSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
     }
 }
 
 impl DBPath for AnyCssPseudoElement {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             AnyCssPseudoElement::CssBogusPseudoElement(_) => panic!(),
             AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(s) => s.to_css_db_paths(),
             AnyCssPseudoElement::CssPseudoElementFunctionSelector(s) => s.to_css_db_paths(),
             AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
-                vec![vec![format!("::{}", name.text_trimmed())]]
+                let name = name.text_trimmed();
+                vec![vec![Part::Pattern(Pattern::PseudoElement(
+                    name.to_string(),
+                ))]]
             }
         }
     }
 }
 
 impl DBPath for CssRelativeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         assert!(self.combinator().is_none());
         self.selector().unwrap().to_css_db_paths()
     }
 }
 
 impl DBPath for AnyCssRelativeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             AnyCssRelativeSelector::CssBogusSelector(_) => panic!(),
             AnyCssRelativeSelector::CssRelativeSelector(s) => s.to_css_db_paths(),
@@ -1083,19 +1176,19 @@ impl DBPath for AnyCssRelativeSelector {
 }
 
 impl DBPath for AnyCssSubSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<String>> {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         match self {
             CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_paths(),
             CssBogusSubSelector(_) => vec![],
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![format!(".{}", name)]]
+                vec![vec![Part::Pattern(Pattern::Class(name.to_string()))]]
             }
             CssIdSelector(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![format!("#{}", name)]]
+                vec![vec![Part::Pattern(Pattern::Id(name.to_owned()))]]
             }
             CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_paths(),
             CssPseudoElementSelector(pseudo_element) => {

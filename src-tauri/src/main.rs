@@ -72,7 +72,7 @@ fn render_rule(selector: &str) -> String {
     let mut db = CSSDB::new();
     db.load("test.css");
     let selector = parse_selector(selector).unwrap();
-    let paths: Vec<Vec<String>> = selector
+    let paths: Vec<Vec<Part>> = selector
         .into_iter()
         .flat_map(|s| s.unwrap().to_css_db_paths())
         .collect();

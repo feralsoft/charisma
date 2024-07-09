@@ -1,4 +1,4 @@
-use biome_css_syntax::{CssDeclarationWithSemicolon, CssSelectorList, CssSyntaxKind};
+use biome_css_syntax::{CssDeclarationWithSemicolon, CssSelectorList};
 
 pub fn parse_selector(str: &str) -> Option<CssSelectorList> {
     // eh heck, `url::form_urlencoded::byte_serialize` encodes ' ' as '+'
@@ -35,12 +35,4 @@ pub fn parse_property(property_str: &str) -> Option<CssDeclarationWithSemicolon>
     let item = block.items().into_iter().next()?;
     item.as_css_declaration_with_semicolon()
         .map(|item| item.to_owned())
-}
-
-pub fn get_combinator_type(token_kind: CssSyntaxKind) -> String {
-    match token_kind {
-        CssSyntaxKind::CSS_SPACE_LITERAL => "descendent".to_string(),
-        CssSyntaxKind::R_ANGLE => "direct-descendant".to_string(),
-        _ => todo!(),
-    }
 }
