@@ -538,10 +538,7 @@ impl CSSDB {
     }
 
     pub fn get_root(&self) -> Option<&Self> {
-        // TODO!
-        None
-
-        // self.get(&[":root".to_string()])
+        self.get(&[Part::Pattern(Pattern::PseudoClass("root".to_string()))])
     }
 
     pub fn is_root(&self) -> bool {
