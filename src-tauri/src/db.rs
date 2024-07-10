@@ -1,5 +1,5 @@
 use crate::parse_utils::parse_property;
-use std::{collections::HashMap, fs, ops, rc::Rc};
+use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
     AnyCssPseudoClass, AnyCssPseudoElement, AnyCssRelativeSelector,
@@ -18,101 +18,6 @@ use biome_css_syntax::{
 pub enum State {
     Valid,
     Commented,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Specificity {
-    // # of ids
-    a: u64,
-    // # of classes, attributes and pseudo-classes
-    b: u64,
-    // # of elements and pseudo-elements
-    c: u64,
-}
-
-impl ops::Add<Specificity> for Specificity {
-    type Output = Specificity;
-
-    fn add(self, rhs: Specificity) -> Self::Output {
-        Specificity::new(self.a + rhs.a, self.b + rhs.b, self.c + rhs.c)
-    }
-}
-
-impl Specificity {
-    pub fn new(a: u64, b: u64, c: u64) -> Self {
-        Specificity { a, b, c }
-    }
-
-    // SPECIFICITY ALGORITHM FROM SPEC
-    // count the number of ID selectors in the selector (= A)
-    // count the number of class selectors, attributes selectors, and pseudo-classes in the selector (= B)
-    // count the number of type selectors and pseudo-elements in the selector (= C)
-    // ignore the universal selector (*)
-    //
-    // when calculating which selector wins, match components 1 by 1,
-    // for eg.
-    //   #my-id           => (1, 0, 0)
-    //   .card:has(.name) => (0, 2, 0)
-    //
-    // #my-id will win!
-    fn from_pattern(part: &Pattern) -> Self {
-        match part {
-            Pattern::Attribute(_) => Self::new(0, 1, 0),
-            Pattern::AttributeMatch(_, _, _) => Self::new(0, 1, 0),
-            Pattern::Class(_) => Self::new(0, 1, 0),
-            Pattern::Id(_) => Self::new(1, 0, 0),
-            Pattern::Element(_) => Self::new(0, 0, 1),
-            Pattern::PseudoElement(_) => Self::new(0, 0, 1),
-            Pattern::PseudoClass(_) => Self::new(0, 1, 0),
-            Pattern::PseudoClassWithSelectorList(_) => Self::new(0, 1, 0),
-            Pattern::CloseSelectorList => panic!("no specificity for {:?}", part),
-        }
-    }
-
-    pub fn from_path(path: &[Part]) -> Self {
-        let mut specificity = Self::new(0, 0, 0);
-        let mut iter = path.iter();
-
-        // go until we hit ":has(" (or ":is(", ":not(")
-        loop {
-            match iter.next() {
-                Some(Part::Pattern(Pattern::PseudoClassWithSelectorList(_))) => break,
-                Some(Part::Combinator(_)) => {}
-                Some(Part::Pattern(p)) => specificity = specificity + Specificity::from_pattern(p),
-                None => return specificity,
-            }
-        }
-
-        // check out the sub path until we get to ")"
-        loop {
-            match iter.next() {
-                Some(Part::Combinator(_)) => {}
-                Some(Part::Pattern(Pattern::CloseSelectorList)) => break,
-                Some(Part::Pattern(p)) => specificity = specificity + Specificity::from_pattern(p),
-                None => return specificity,
-            }
-        }
-
-        match iter.cloned().collect::<Vec<_>>().as_slice() {
-            [] => specificity,
-            rest => specificity + Specificity::from_path(&rest),
-        }
-    }
-}
-
-impl PartialOrd for Specificity {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Specificity {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.a
-            .cmp(&other.a)
-            .then_with(|| self.b.cmp(&other.b))
-            .then_with(|| self.c.cmp(&other.c))
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -134,7 +39,6 @@ impl Property {
 pub struct Selector {
     pub string: String,
     pub path: Vec<Part>,
-    pub specificity: Specificity,
 }
 
 pub trait ToSelectors {
@@ -169,7 +73,7 @@ impl ToSelectors for AnyCssRelativeSelector {
                         .unwrap_or("".to_string())
                         + &combinator.to_string()
                         + selector.to_string().trim(),
-                    specificity: Specificity::from_path(&path),
+
                     path,
                 }
             })
@@ -193,7 +97,7 @@ impl ToSelectors for AnyCssSelector {
                         .map(|p| p.string.clone())
                         .unwrap_or("".to_string())
                         + &path.iter().map(|s| s.to_string()).collect::<String>(),
-                    specificity: Specificity::from_path(&path),
+
                     path,
                 }
             })
@@ -927,116 +831,5 @@ impl DBPath for AnyCssSubSelector {
                 pseudo_element.element().unwrap().to_css_db_paths()
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::parse_utils::parse_selector;
-
-    use super::*;
-
-    fn selectors(str: &str) -> Vec<Selector> {
-        let selector_list = parse_selector(str).unwrap();
-
-        selector_list
-            .into_iter()
-            .flat_map(|s| s.unwrap().to_selectors(None))
-            .collect()
-    }
-
-    fn one_selector(str: &str) -> Selector {
-        let selectors = selectors(str);
-        assert!(selectors.len() == 1);
-        selectors.first().unwrap().clone()
-    }
-
-    #[test]
-    fn id_has_greater_specificity_than_class() {
-        let id_spec = Specificity::new(1, 0, 0); // #name
-        let class_spec = Specificity::new(0, 2, 0); // .name.active
-        assert!(id_spec > class_spec)
-    }
-
-    #[test]
-    fn or_to_selectors() {
-        let selectors = selectors("div, input");
-        assert_eq!(selectors.len(), 2);
-    }
-
-    #[test]
-    fn element_specificity() {
-        let selectors = selectors("div, input");
-
-        let div = selectors.iter().find(|s| s.string.contains("div")).unwrap();
-        let input = selectors
-            .iter()
-            .find(|s| s.string.contains("input"))
-            .unwrap();
-
-        assert_eq!(
-            Specificity::from_path(&div.path),
-            Specificity::from_path(&input.path)
-        );
-    }
-
-    #[test]
-    fn class_specificity() {
-        let selectors = selectors(".name, input");
-
-        let name = selectors
-            .iter()
-            .find(|s| s.string.contains(".name"))
-            .unwrap();
-        let input = selectors
-            .iter()
-            .find(|s| s.string.contains("input"))
-            .unwrap();
-
-        assert!(Specificity::from_path(&name.path) > Specificity::from_path(&input.path));
-    }
-
-    #[test]
-    fn id_specificity() {
-        let selectors = selectors("#name, .input");
-
-        let name = selectors
-            .iter()
-            .find(|s| s.string.contains("#name"))
-            .unwrap();
-        let input = selectors
-            .iter()
-            .find(|s| s.string.contains(".input"))
-            .unwrap();
-
-        assert!(Specificity::from_path(&name.path) > Specificity::from_path(&input.path));
-    }
-
-    #[test]
-    fn complex_compare() {
-        let selector = one_selector(".name:has(.you)"); // (0, 2, 0)
-
-        assert_eq!(
-            Specificity::from_path(&selector.path),
-            Specificity { a: 0, b: 2, c: 0 }
-        );
-    }
-
-    #[test]
-    fn complex_compare_with_id() {
-        let selector = one_selector("#name:has(.you)"); // (1, 1, 0)
-
-        assert_eq!(
-            Specificity::from_path(&selector.path),
-            Specificity { a: 1, b: 1, c: 0 }
-        );
-    }
-
-    #[test]
-    fn complex_compare_with_id_against_class() {
-        let s1 = one_selector("#name:has(.you)"); // (1, 1, 0)
-        let s2 = one_selector(".name:has(.you)"); // (0, 2, 0)
-
-        assert!(Specificity::from_path(&s1.path) > Specificity::from_path(&s2.path));
     }
 }
