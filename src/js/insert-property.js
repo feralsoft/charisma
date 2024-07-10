@@ -7,18 +7,16 @@ let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
 
 const { invoke } = window.__TAURI__.tauri;
 
-let search_item = ({ value, description }) =>
+let search_item = ({ value, description }) => [
+  h.div({ class: "search-item-value" }, value),
   h.div(
-    { class: "search-item" },
-    h.div({ class: "search-item-value" }, value),
-    h.div(
-      {
-        class: "search-item-description",
-        "data-is-empty": description.length === 0,
-      },
-      description,
-    ),
-  );
+    {
+      class: "search-item-description",
+      "data-is-empty": description.length === 0,
+    },
+    description,
+  ),
+];
 
 function search_options(options, has_description = false) {
   // hack
@@ -27,7 +25,10 @@ function search_options(options, has_description = false) {
   if (!has_description)
     options = options.map((name) => ({ value: name, description: "" }));
 
-  let elem = h.div({ class: "search-options" }, ...options.map(search_item));
+  let elem = h.div(
+    { class: "search-options" },
+    ...options.flatMap(search_item),
+  );
   elem.firstElementChild.classList.add("candidate");
   return elem;
 }
@@ -50,14 +51,11 @@ function accept_candidate(container, input_elem) {
     // we are accepting a value
     let [name, _] = input_elem.innerText.split(":");
     input_elem.innerText =
-      name.trim() +
-      ": " +
-      options.querySelector(".candidate .search-item-value").innerText.trim();
+      name.trim() + ": " + options.querySelector(".candidate").innerText.trim();
   } else {
     // we are accepting a name
     input_elem.innerText =
-      options.querySelector(".candidate .search-item-value").innerText.trim() +
-      ":";
+      options.querySelector(".candidate").innerText.trim() + ":";
   }
   options.remove();
 
@@ -93,8 +91,11 @@ let input = (editor) =>
         let options = container.querySelector(".search-options");
         let elem = options.querySelector(".candidate");
         if (elem.previousElementSibling) {
+          let prev_elem = elem.previousElementSibling;
+          if (!prev_elem.matches(".search-item-value"))
+            prev_elem = prev_elem.previousElementSibling;
           elem.classList.remove("candidate");
-          elem.previousElementSibling.classList.add("candidate");
+          prev_elem.classList.add("candidate");
         }
       } else if (e.key === "ArrowDown") {
         // go down in search options
@@ -102,8 +103,11 @@ let input = (editor) =>
         let options = container.querySelector(".search-options");
         let elem = options.querySelector(".candidate");
         if (elem.nextElementSibling) {
+          let next_elem = elem.nextElementSibling;
+          if (!next_elem.matches(".search-item-value"))
+            next_elem = next_elem.nextElementSibling;
           elem.classList.remove("candidate");
-          elem.nextElementSibling.classList.add("candidate");
+          next_elem.classList.add("candidate");
         }
       } else if (e.key === "Tab") {
         accept_candidate(container, this);

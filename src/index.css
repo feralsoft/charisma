@@ -431,15 +431,17 @@ body {
     z-index: 10;
     margin-left: 1em;
 
-    .search-item.candidate {
-        text-decoration: underline;
-    }
-    .search-item:has(.search-item-description[data-is-empty="false"]) {
+    &:has(.search-item-description[data-is-empty="false"]) {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: repeat(1fr, 10);
     }
-    .search-item .search-item-description {
+
+    .search-item-value.candidate,
+    .search-item-value.candidate + .search-item-description {
+        text-decoration: underline;
+    }
+    .search-item-description {
         font-size: 0.8em;
         opacity: 0.8;
         display: flex;
@@ -447,15 +449,21 @@ body {
         max-width: 200px;
     }
 
-    .search-item:not(.candidate)
-        .search-item-description[data-is-empty="false"] {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        &::after {
-            content: "...";
-            position: absolute;
-        }
+    .search-item-value {
+        grid-row-start: span 1;
+        grid-column: 1 / span 1;
+    }
+
+    .candidate + .search-item-description[data-is-empty="false"] {
+        grid-column: 2 / span 1;
+        grid-row: 1 / span 1;
+        /* fucking hacks lol */
+        height: 0;
+        display: grid;
+    }
+
+    .search-item-description {
+        display: none;
     }
 
     .search-item.candidate .search-item-description {
