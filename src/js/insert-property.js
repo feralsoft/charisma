@@ -50,9 +50,9 @@ function accept_candidate(container, input_elem) {
     // we are accepting a value
     let [name, _] = input_elem.innerText.split(":");
     input_elem.innerText =
-      name +
+      name.trim() +
       ": " +
-      options.querySelector(".candidate .search-item-value").innerText;
+      options.querySelector(".candidate .search-item-value").innerText.trim();
   } else {
     // we are accepting a name
     input_elem.innerText =
