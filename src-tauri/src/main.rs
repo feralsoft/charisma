@@ -7,12 +7,10 @@ use html::*;
 use parse_utils::{parse_property, parse_selector};
 use serde::Deserialize;
 use std::fs;
-use std::rc::Rc;
 
 mod db;
 mod html;
 mod parse_utils;
-mod properties;
 
 fn after_css_comment(string: String) -> String {
     if let Some(idx) = string.find("*/") {
@@ -81,29 +79,13 @@ fn render_rule(selector: &str) -> String {
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let mut rule_properties = rule.properties.clone();
-    let inherited_properties_map = db.inherited_properties_for(&path);
-    let mut inherited_properties = inherited_properties_map.values().collect::<Vec<_>>();
-    let inherited_vars_map = db.inherited_vars_for(&path, &inherited_properties_map);
-    let mut inherited_vars = inherited_vars_map.values().collect::<Vec<_>>();
     rule_properties.sort_by_key(|p| p.name());
-    inherited_properties.sort_by_key(|(_, p)| p.name());
-    inherited_vars.sort_by_key(|(_, p)| p.name());
 
-    fn link_for(selector_str: &String, property: &Rc<Property>) -> String {
-        assert!(!selector_str.contains('\''));
-        let selector = selector_str.trim();
-        format!(
-            "<a href='{}'>{}</a>",
-            selector,
-            property.render_html(&RenderOptions::default())
-        )
-    }
     format!(
         "
     <div data-kind=\"rule\">
         <div data-attr=\"selector\">{}</div>
         <div data-attr=\"properties\">{}</div>
-        <div data-attr=\"inherited-properties\">{}</div>
     </div>
     ",
         parse_selector(&rule.selector.string)
@@ -113,14 +95,6 @@ fn render_rule(selector: &str) -> String {
             .iter()
             .map(|p| p.render_html(&RenderOptions::default()))
             .collect::<String>(),
-        inherited_properties
-            .iter()
-            .map(|(selector, p)| link_for(&selector.string, p))
-            .collect::<String>()
-            + &inherited_vars
-                .iter()
-                .map(|(selector, p)| link_for(&selector.string, p))
-                .collect::<String>()
     )
 }
 
@@ -165,11 +139,6 @@ fn enable(selector: &str, name: &str, value: &str) {
         db.set_state(&selector.path, name, value, State::Valid);
     }
     fs::write("test.css", db.serialize()).unwrap()
-}
-
-#[tauri::command]
-fn get_all_properties() -> Vec<&'static str> {
-    return properties::ALL_PROPERTIES.to_vec();
 }
 
 #[tauri::command]
@@ -247,7 +216,6 @@ fn main() {
             delete,
             enable,
             disable,
-            get_all_properties,
             insert_property,
             replace_all_properties,
             update_value,

@@ -2,7 +2,7 @@ button {
     color: orange;
 }
 button.active {
-    /* color: black; */
+    color: black;
 }
 body has {
     
@@ -11,5 +11,5 @@ body main button.active {
     /* color: purple; */
 }
 body:has(button.active) {
-    /* color: red; */
+    color: red;
 }

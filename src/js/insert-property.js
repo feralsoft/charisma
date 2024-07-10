@@ -1,8 +1,6 @@
 import { h } from "./html.js";
-
+import { ALL_PROPERTIES } from "./all_properties.js";
 const { invoke } = window.__TAURI__.tauri;
-
-let all_properties;
 
 let search_item = (name) => h("div", { class: "search-item" }, name);
 
@@ -89,7 +87,7 @@ let input = (editor) =>
           container.querySelector(".search-options")?.remove();
           let text = this.innerText.trim();
           if (text === "") return;
-          let options = all_properties.filter((name) => name.includes(text));
+          let options = ALL_PROPERTIES.filter((name) => name.includes(text));
           options.sort((a, b) => {
             if (a.startsWith(text)) {
               if (b.startsWith(text)) {
@@ -141,8 +139,6 @@ window.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", async (_) => {
-  all_properties = await invoke("get_all_properties");
-
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);

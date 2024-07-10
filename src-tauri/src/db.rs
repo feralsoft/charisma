@@ -1,4 +1,4 @@
-use crate::{parse_utils::parse_property, properties};
+use crate::parse_utils::parse_property;
 use std::{collections::HashMap, fs, ops, rc::Rc};
 
 use biome_css_syntax::{
@@ -232,42 +232,6 @@ impl Property {
             .trim()
             .to_string()
     }
-
-    pub fn is_var(&self) -> bool {
-        self.name().starts_with("--")
-    }
-
-    // ughh this is soo ugly
-    pub fn var_ref(&self) -> Option<String> {
-        if self.state == State::Commented {
-            return None;
-        }
-        let decl = self.node.declaration().unwrap();
-        let property = decl.property().unwrap();
-        let property = property.as_css_generic_property().unwrap();
-        let value = property.value().into_iter().next().unwrap();
-        match value.as_any_css_value().unwrap() {
-            biome_css_syntax::AnyCssValue::AnyCssFunction(f) => {
-                let items = f.as_css_function().unwrap().items();
-                let item = items.into_iter().next().unwrap().unwrap();
-                match item.any_css_expression().unwrap() {
-                    biome_css_syntax::AnyCssExpression::CssListOfComponentValuesExpression(
-                        items,
-                    ) => {
-                        let item = items.css_component_value_list().into_iter().next().unwrap();
-                        match item {
-                            biome_css_syntax::AnyCssValue::CssDashedIdentifier(name) => {
-                                Some(name.to_string().trim().to_string())
-                            }
-                            _ => None,
-                        }
-                    }
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -397,7 +361,7 @@ impl CSSDB {
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
             let rule = rule.as_css_qualified_rule().unwrap();
-            for selector in rule.prelude().into_iter() {
+            for selector in rule.prelude() {
                 let block = rule.block().unwrap();
                 let block = block.as_css_declaration_or_rule_block().unwrap();
                 for selector in selector.unwrap().to_selectors(None) {
@@ -437,49 +401,6 @@ impl CSSDB {
         )
     }
 
-    fn super_paths_of_aux(
-        &self,
-        path: &[Part],
-        is_root: bool,
-        current_part: Option<&Part>,
-        super_paths: &mut Vec<Vec<Part>>,
-    ) {
-        if !is_root {
-            if let Some(path) = self
-                .get(path)
-                .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
-            {
-                super_paths.push(path)
-            } else if let Some(Part::Pattern(Pattern::PseudoClassWithSelectorList(name))) =
-                current_part
-            {
-                // body:has(button.active) is not getting detected as a superpath of
-                // button.active
-                // since given the path ["body", ":has(", "button", "active", ")"]
-                // when I'm at ["body", ":has"] & I get ["button", "active"]
-                // there is no rule there since we need to go to the ")"
-                if name == "has" {
-                    if let Some(path) = self
-                        .get(&[path, &[Part::Pattern(Pattern::CloseSelectorList)]].concat())
-                        .and_then(|n| n.rule.as_ref().map(|r| r.selector.path.clone()))
-                    {
-                        super_paths.push(path)
-                    }
-                }
-            }
-        }
-        for (part, t) in &self.children {
-            t.super_paths_of_aux(path, false, Some(&part), super_paths);
-        }
-    }
-
-    // a super path is a path which contains the searched path
-    pub fn super_paths_of(&self, path: &[Part]) -> Vec<Vec<Part>> {
-        let mut super_paths: Vec<Vec<Part>> = vec![];
-        self.super_paths_of_aux(path, true, None, &mut super_paths);
-        super_paths
-    }
-
     fn all_selectors_with_properties_aux(&self, selectors: &mut Vec<String>) {
         if let Some(rule) = self.rule.as_ref() {
             if !rule.properties.is_empty() {
@@ -501,225 +422,6 @@ impl CSSDB {
         if let Some(rule) = self.rule.as_mut() {
             rule.properties.drain(0..);
         }
-    }
-
-    fn inheritable_properties(&self) -> HashMap<String, (Selector, Rc<Property>)> {
-        if let Some(rule) = &self.rule {
-            rule.properties
-                .iter()
-                .filter(|p| p.state == State::Valid)
-                .filter(|p| properties::INHERITABLE_PROPERTIES.contains(&p.name().as_str()))
-                .map(|p| (p.name(), (rule.selector.clone(), p.clone())))
-                .collect::<HashMap<_, _>>()
-        } else {
-            HashMap::new()
-        }
-    }
-
-    fn inherited_properties_for_aux(
-        &self,
-        path: &[Part],
-        inhertied_properties: &mut HashMap<String, (Selector, Rc<Property>)>,
-    ) {
-        let inherited_properties_from_self = self.inheritable_properties();
-        match path {
-            [] => panic!("should never reach the end of path"),
-            [_part] => {
-                inhertied_properties.extend(inherited_properties_from_self);
-            }
-            [part, parts @ ..] => {
-                inhertied_properties.extend(inherited_properties_from_self);
-                self.children
-                    .get(part)
-                    .unwrap()
-                    .inherited_properties_for_aux(parts, inhertied_properties)
-            }
-        }
-    }
-
-    pub fn get_root(&self) -> Option<&Self> {
-        self.get(&[Part::Pattern(Pattern::PseudoClass("root".to_string()))])
-    }
-
-    pub fn is_root(&self) -> bool {
-        self.rule
-            .as_ref()
-            .map(|rule| rule.selector.string == ":root")
-            .unwrap_or(false)
-    }
-
-    pub fn inherited_properties_for(
-        &self,
-        path: &[Part],
-    ) -> HashMap<String, (Selector, Rc<Property>)> {
-        let tree = self.get(path).unwrap();
-        let mut inherited_properties: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
-        if !tree.is_root() {
-            self.get_root()
-                .inspect(|tree| inherited_properties.extend(tree.inheritable_properties()));
-        }
-        // this is all wrong
-        // what we need to do is the following
-        //
-        // say my path is `.card button.active`
-        //
-        // we need to get the parent selectors -> [".card", ".card button"]
-        //
-        // and then get all super paths
-        // lets say there's `details .card button.active`, and `article .card button.active`
-        //
-        // when we going directly up my heirarchy, I can be confident
-        // that the properties are going to be inherited
-        //
-        // but if if there's an inheritable property set say 'color' set at both
-        // `details` and `article`, I will not be able to understand
-        // which color will come down the heirarchy
-        //
-        // none of this matters if .card sets 'color', but if it doesn't
-        // we'll have to aggregate a list of warnings - inherited property 'color' is ambigious
-        //
-        // there will also have to be a set of steps to check for siblings
-        // for eg. say there's `.card.user` which sets the color property.
-        //
-        // we will not know for sure that `.card button.active` isn't inside a user card
-        // so if `.card button` doesn't set 'color', we'll also have to say
-        // color could be ambigious, either solidify it, or be explicit that
-        // `.card button.active` is not in a user card -> `.card:not(.user) button.active`
-        //
-        // holy shit, this is beautiful, but a lot more work than I was expecting
-        //
-        // ... ok ... lets just think about this for a little bit
-
-        // -- this is the old / current broken strategy --
-        // go directly do my current path
-        // eg. `body table td` ->
-        // 1 - go to `body` & get all inherited properties
-        // 2 - go to `body table` & get inherited properties (overwrite from `body`)
-        self.inherited_properties_for_aux(path, &mut inherited_properties);
-        // now we are going up super paths, in the case we are overwriting
-        // a property, we need to compare specifcity to understand which property will rule
-        for super_path in self.super_paths_of(path) {
-            for (property_name, (super_path_selector, super_path_property)) in
-                self.get(&super_path).unwrap().inheritable_properties()
-            {
-                if let Some((selector, _)) = inherited_properties.get(&property_name) {
-                    if selector.specificity < super_path_selector.specificity {
-                        inherited_properties
-                            .insert(property_name, (super_path_selector, super_path_property));
-                    }
-                } else {
-                    inherited_properties
-                        .insert(property_name, (super_path_selector, super_path_property));
-                }
-            }
-        }
-
-        for property in tree.valid_properties() {
-            // this just means if for example we have `color: inherit`
-            // then don't remove the inherited property if we have it
-            if property.value() != "inherit" {
-                inherited_properties.remove(&property.name());
-            }
-        }
-
-        inherited_properties
-    }
-
-    fn valid_vars_with_selector(&self) -> HashMap<String, (Selector, Rc<Property>)> {
-        if let Some(rule) = &self.rule {
-            rule.properties
-                .iter()
-                .filter(|p| p.is_var() && p.state == State::Valid)
-                .map(|p| (p.name(), (rule.selector.clone(), p.clone())))
-                .collect::<HashMap<_, _>>()
-        } else {
-            HashMap::new()
-        }
-    }
-
-    fn valid_var_lookup_ids(&self) -> Vec<String> {
-        if let Some(rule) = &self.rule {
-            // here lies the most beautiful code anyone has every seen /s
-            rule.properties.iter().filter_map(|p| p.var_ref()).collect()
-        } else {
-            vec![]
-        }
-    }
-
-    fn valid_properties(&self) -> Vec<Property> {
-        if let Some(rule) = &self.rule {
-            rule.properties
-                .iter()
-                .filter(|p| !p.is_var() && p.state == State::Valid)
-                .map(|p| p.as_ref().clone())
-                .collect()
-        } else {
-            vec![]
-        }
-    }
-
-    fn inherited_vars_for_aux(
-        &self,
-        path: &[Part],
-        inherited_vars: &mut HashMap<String, (Selector, Rc<Property>)>,
-    ) {
-        let inherited_vars_from_self = self.valid_vars_with_selector();
-        match path {
-            [] => panic!("should never reach the end of path"),
-            [_part] => {
-                inherited_vars.extend(inherited_vars_from_self);
-            }
-            [part, parts @ ..] => {
-                inherited_vars.extend(inherited_vars_from_self);
-                self.children
-                    .get(part)
-                    .unwrap()
-                    .inherited_vars_for_aux(parts, inherited_vars);
-            }
-        }
-    }
-
-    pub fn inherited_vars_for(
-        &self,
-        path: &[Part],
-        inherited_properties: &HashMap<String, (Selector, Rc<Property>)>,
-    ) -> HashMap<String, (Selector, Rc<Property>)> {
-        let tree = self.get(path).unwrap();
-        let mut inherited_vars: HashMap<String, (Selector, Rc<Property>)> = HashMap::new();
-        if !tree.is_root() {
-            self.get_root()
-                .inspect(|tree| inherited_vars.extend(tree.valid_vars_with_selector()));
-        }
-        self.inherited_vars_for_aux(path, &mut inherited_vars);
-        for super_path in self.super_paths_of(path) {
-            for (var_name, (super_path_selector, super_path_property)) in
-                self.get(&super_path).unwrap().valid_vars_with_selector()
-            {
-                if let Some((selector, _)) = inherited_vars.get(&var_name) {
-                    if selector.specificity < super_path_selector.specificity {
-                        inherited_vars.insert(var_name, (super_path_selector, super_path_property));
-                    }
-                } else {
-                    inherited_vars.insert(var_name, (super_path_selector, super_path_property));
-                }
-            }
-        }
-
-        for name in tree.valid_vars_with_selector().keys() {
-            inherited_vars.remove(name);
-        }
-
-        let var_references_in_rule = tree.valid_var_lookup_ids();
-        let var_references_in_inherited_properties: Vec<String> = inherited_properties
-            .iter()
-            .filter_map(|(_, (_, p))| p.var_ref())
-            .collect();
-
-        inherited_vars.retain(|key, _| {
-            var_references_in_rule.contains(key)
-                || var_references_in_inherited_properties.contains(key)
-        });
-        inherited_vars
     }
 
     pub fn set_state(
