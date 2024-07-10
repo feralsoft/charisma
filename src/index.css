@@ -434,6 +434,35 @@ body {
     .search-item.candidate {
         text-decoration: underline;
     }
+    .search-item:has(.search-item-description[data-is-empty="false"]) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(1fr, 10);
+    }
+    .search-item .search-item-description {
+        font-size: 0.8em;
+        opacity: 0.8;
+        display: flex;
+        align-items: center;
+        max-width: 200px;
+    }
+
+    .search-item:not(.candidate)
+        .search-item-description[data-is-empty="false"] {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        &::after {
+            content: "...";
+            position: absolute;
+        }
+    }
+
+    .search-item.candidate .search-item-description {
+        width: max-content;
+        max-width: 200px;
+        flex-wrap: wrap;
+    }
 }
 
 [data-kind="rule"] [data-attr="properties"] .input {

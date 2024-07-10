@@ -5,19 +5,31 @@ let ALL_PROPERTY_NAMES = Object.keys(ALL_PROPERTIES);
 
 const { invoke } = window.__TAURI__.tauri;
 
-let search_item = (name) => h("div", { class: "search-item" }, name);
-
-function search_options(names) {
-  // hack
-  if (names.length === 0) return document.createElement("div");
-
-  let options = h(
+let search_item = ({ value, description }) =>
+  h(
     "div",
-    { class: "search-options" },
-    ...names.map(search_item),
+    { class: "search-item" },
+    h("div", { class: "search-item-value" }, value),
+    h(
+      "div",
+      {
+        class: "search-item-description",
+        "data-is-empty": description.length === 0,
+      },
+      description,
+    ),
   );
-  options.firstElementChild.classList.add("candidate");
-  return options;
+
+function search_options(options, has_description = false) {
+  // hack
+  if (options.length === 0) return document.createElement("div");
+
+  if (!has_description)
+    options = options.map((name) => ({ value: name, description: "" }));
+
+  let elem = h("div", { class: "search-options" }, ...options.map(search_item));
+  elem.firstElementChild.classList.add("candidate");
+  return elem;
 }
 
 window.move_cursor_to_end_of_element = function (element) {
@@ -38,10 +50,14 @@ function accept_candidate(container, input_elem) {
     // we are accepting a value
     let [name, _] = input_elem.innerText.split(":");
     input_elem.innerText =
-      name + ": " + options.querySelector(".candidate").innerText;
+      name +
+      ": " +
+      options.querySelector(".candidate .search-item-value").innerText;
   } else {
     // we are accepting a name
-    input_elem.innerText = options.querySelector(".candidate").innerText + ":";
+    input_elem.innerText =
+      options.querySelector(".candidate .search-item-value").innerText.trim() +
+      ":";
   }
   options.remove();
 
@@ -99,36 +115,54 @@ let input = (editor) =>
           container.querySelector(".search-options")?.remove();
           let text = this.innerText.trim();
           if (text === "") return;
-          let search_text = text;
-          let search_list = ALL_PROPERTY_NAMES;
           // if the search contains a property name, let's search within it
           if (text.includes(":")) {
             let possible_property_name = text.split(":")[0];
             if (ALL_PROPERTIES[possible_property_name.trim()]) {
-              search_text = text.split(":")[1].trim();
-              search_list = ALL_PROPERTIES[possible_property_name.trim()];
+              let search_text = text.split(":")[1].trim();
+              let list = ALL_PROPERTIES[possible_property_name.trim()];
+              let options = list.filter(({ value }) =>
+                value.includes(search_text),
+              );
+
+              options.sort((a, b) => {
+                if (a.value.startsWith(text)) {
+                  if (b.value.startsWith(text)) {
+                    return a.value.length - b.value.length;
+                  } else {
+                    return -1;
+                  }
+                } else {
+                  return 1;
+                }
+              });
+              // for now we only get the first 10 results, and we don't allow you
+              // to arrow-down beyond 10.. it would be nice if this was added.
+              options = options.slice(0, 10);
+              container.append(search_options(options, true));
             }
-          }
+          } else {
+            let options = ALL_PROPERTY_NAMES.filter((name) =>
+              name.includes(text),
+            );
 
-          let options = search_list.filter((name) =>
-            name.includes(search_text),
-          );
-
-          options.sort((a, b) => {
-            if (a.startsWith(text)) {
-              if (b.startsWith(text)) {
-                return a.length - b.length;
+            options.sort((a, b) => {
+              if (a.startsWith(text)) {
+                if (b.startsWith(text)) {
+                  return a.length - b.length;
+                } else {
+                  return -1;
+                }
               } else {
-                return -1;
+                return 1;
               }
-            } else {
-              return 1;
-            }
-          });
-          // for now we only get the first 10 results, and we don't allow you
-          // to arrow-down beyond 10.. it would be nice if this was added.
-          options = options.slice(0, 10);
-          container.append(search_options(options));
+            });
+
+            // for now we only get the first 10 results, and we don't allow you
+            // to arrow-down beyond 10.. it would be nice if this was added.
+            options = options.slice(0, 10);
+            container.append(search_options(options));
+          }
         });
       }
     },
