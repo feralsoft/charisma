@@ -1,7 +1,7 @@
 import { h } from "./html.js";
 
 let close = (editor) =>
-  h("button", {
+  h.button({
     class: "close",
     "@click"(_) {
       let group = editor.closest(".--editor-group");
@@ -11,7 +11,7 @@ let close = (editor) =>
   });
 
 let minimize = (editor) =>
-  h("button", {
+  h.button({
     class: "minimize",
     "@click"(_) {
       this.dataset.selector = editor.querySelector(
@@ -22,7 +22,7 @@ let minimize = (editor) =>
   });
 
 let info = () =>
-  h("button", {
+  h.button({
     class: "info active",
     "@click"(_) {
       this.classList.toggle("active");
@@ -30,7 +30,7 @@ let info = () =>
   });
 
 let menu = (editor) =>
-  h("div", { class: "menu" }, close(editor), minimize(editor), info());
+  h.div({ class: "menu" }, close(editor), minimize(editor), info());
 
 function init(editor) {
   editor.prepend(menu(editor));

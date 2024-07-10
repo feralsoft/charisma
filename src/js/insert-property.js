@@ -8,12 +8,10 @@ let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
 const { invoke } = window.__TAURI__.tauri;
 
 let search_item = ({ value, description }) =>
-  h(
-    "div",
+  h.div(
     { class: "search-item" },
-    h("div", { class: "search-item-value" }, value),
-    h(
-      "div",
+    h.div({ class: "search-item-value" }, value),
+    h.div(
       {
         class: "search-item-description",
         "data-is-empty": description.length === 0,
@@ -29,7 +27,7 @@ function search_options(options, has_description = false) {
   if (!has_description)
     options = options.map((name) => ({ value: name, description: "" }));
 
-  let elem = h("div", { class: "search-options" }, ...options.map(search_item));
+  let elem = h.div({ class: "search-options" }, ...options.map(search_item));
   elem.firstElementChild.classList.add("candidate");
   return elem;
 }
@@ -67,7 +65,7 @@ function accept_candidate(container, input_elem) {
 }
 
 let input = (editor) =>
-  h("div", {
+  h.div({
     class: "input",
     contenteditable: true,
     placeholder: "insert property...",
@@ -179,7 +177,7 @@ let input = (editor) =>
   });
 
 let input_container = (editor) =>
-  h("div", { class: "insert-property-container" }, input(editor));
+  h.div({ class: "insert-property-container" }, input(editor));
 
 function init(editor) {
   editor

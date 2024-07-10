@@ -1,21 +1,22 @@
+button {
+    color: orange;
+    display: table-footer-group;
+}
+button.active {
+    color: black;
+}
 body:has(button.active) {
     color: red;
-}
-body main button.active {
-    /* color: purple; */
 }
 body has {
     
 }
-b {
-    
+body main button.active {
+    /* color: purple; */
 }
 bu {
     
 }
-button {
-    color: orange;
-}
-button.active {
-    color: black;
+b {
+    
 }

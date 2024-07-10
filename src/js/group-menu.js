@@ -1,20 +1,17 @@
 import { h } from "./html.js";
 
 let close = (group) =>
-  h("button", {
-    class: "close",
-    "@click": (_) => group.remove(),
-  });
+  h.button({ class: "close", "@click": (_) => group.remove() });
 
 let minimize = () =>
-  h("button", {
+  h.button({
     class: "minimize",
     "@click"() {
       this.classList.toggle("active");
     },
   });
 
-let menu = (group) => h("div", { class: "menu" }, close(group), minimize());
+let menu = (group) => h.div({ class: "menu" }, close(group), minimize());
 
 function init(group) {
   if (group.querySelector(":scope > .menu")) return;
