@@ -1,5 +1,8 @@
 import { h } from "./html.js";
 import { ALL_PROPERTIES } from "./all_properties.js";
+
+let ALL_PROPERTY_NAMES = Object.keys(ALL_PROPERTIES);
+
 const { invoke } = window.__TAURI__.tauri;
 
 let search_item = (name) => h("div", { class: "search-item" }, name);
@@ -30,7 +33,16 @@ window.move_cursor_to_end_of_element = function (element) {
 
 function accept_candidate(container, input_elem) {
   let options = container.querySelector(".search-options");
-  input_elem.innerText = options.querySelector(".candidate").innerText + ":";
+
+  if (input_elem.innerText.includes(":")) {
+    // we are accepting a value
+    let [name, _] = input_elem.innerText.split(":");
+    input_elem.innerText =
+      name + ": " + options.querySelector(".candidate").innerText;
+  } else {
+    // we are accepting a name
+    input_elem.innerText = options.querySelector(".candidate").innerText + ":";
+  }
   options.remove();
 
   move_cursor_to_end_of_element(input_elem);
@@ -87,7 +99,21 @@ let input = (editor) =>
           container.querySelector(".search-options")?.remove();
           let text = this.innerText.trim();
           if (text === "") return;
-          let options = ALL_PROPERTIES.filter((name) => name.includes(text));
+          let search_text = text;
+          let search_list = ALL_PROPERTY_NAMES;
+          // if the search contains a property name, let's search within it
+          if (text.includes(":")) {
+            let possible_property_name = text.split(":")[0];
+            if (ALL_PROPERTIES[possible_property_name.trim()]) {
+              search_text = text.split(":")[1].trim();
+              search_list = ALL_PROPERTIES[possible_property_name.trim()];
+            }
+          }
+
+          let options = search_list.filter((name) =>
+            name.includes(search_text),
+          );
+
           options.sort((a, b) => {
             if (a.startsWith(text)) {
               if (b.startsWith(text)) {

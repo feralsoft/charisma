@@ -1,15 +1,16 @@
 button {
     color: orange;
+    transform: translate(10px, 20px);
 }
 button.active {
     color: black;
 }
-body has {
-    
+body:has(button.active) {
+    color: red;
 }
 body main button.active {
     /* color: purple; */
 }
-body:has(button.active) {
-    color: red;
+body has {
+    
 }
