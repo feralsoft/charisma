@@ -1,7 +1,9 @@
 import { h } from "./html.js";
-import { ALL_PROPERTIES } from "./all_properties.js";
 
-let ALL_PROPERTY_NAMES = Object.keys(ALL_PROPERTIES);
+// top level await seems to break safari
+let ALL_PROPERTIES = fetch("./js/all_properties.json").then((r) => r.json());
+
+let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
 
 const { invoke } = window.__TAURI__.tauri;
 
@@ -111,16 +113,16 @@ let input = (editor) =>
       } else if (!e.shiftKey) {
         // populate auto complete list
         // setTimeout is needed so that `this.innerText` gets populated :facepalm:
-        setTimeout(() => {
+        setTimeout(async () => {
           container.querySelector(".search-options")?.remove();
           let text = this.innerText.trim();
           if (text === "") return;
           // if the search contains a property name, let's search within it
           if (text.includes(":")) {
             let possible_property_name = text.split(":")[0];
-            if (ALL_PROPERTIES[possible_property_name.trim()]) {
+            if ((await ALL_PROPERTIES)[possible_property_name.trim()]) {
               let search_text = text.split(":")[1].trim();
-              let list = ALL_PROPERTIES[possible_property_name.trim()];
+              let list = (await ALL_PROPERTIES)[possible_property_name.trim()];
               let options = list.filter(({ value }) =>
                 value.includes(search_text),
               );
@@ -142,7 +144,7 @@ let input = (editor) =>
               container.append(search_options(options, true));
             }
           } else {
-            let options = ALL_PROPERTY_NAMES.filter((name) =>
+            let options = (await ALL_PROPERTY_NAMES).filter((name) =>
               name.includes(text),
             );
 

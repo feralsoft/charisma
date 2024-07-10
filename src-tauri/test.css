@@ -1,22 +1,21 @@
-button {
-    color: orange;
-    display: grid;
+body:has(button.active) {
+    color: red;
 }
-button.active {
-    color: black;
+body main button.active {
+    /* color: purple; */
 }
-bu {
+body has {
     
 }
 b {
     
 }
-body has {
+bu {
     
 }
-body main button.active {
-    /* color: purple; */
+button {
+    color: orange;
 }
-body:has(button.active) {
-    color: red;
+button.active {
+    color: black;
 }
