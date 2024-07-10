@@ -1,30 +1,35 @@
+import { h } from "./html.js";
 const { invoke } = window.__TAURI__.tauri;
 
 function plain_text_node(editor, name, original_value) {
-  let node = document.createElement("div");
-  node.classList.add("plain-text-node");
-  node.innerText = original_value;
-  node.dataset.kind = "plain-text";
-  node.dataset.stringValue = original_value;
-  node.contentEditable = true;
+  let node = h.div(
+    {
+      class: "plain-text-node",
+      "data-kind": "plain-text",
+      "data-string-value": original_value,
+      contenteditable: true,
+      async "@keydown"(e) {
+        if (e.key === "Escape") {
+          node.blur();
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          await invoke("update_value", {
+            selector: editor.dataset.selector,
+            name,
+            original_value,
+            value: node.innerText,
+          });
+          node.blur();
+        }
+      },
+      async "@blur"(_) {
+        node.dispatchEvent(new Event("reload", { bubbles: true }));
+      },
+    },
+    original_value,
+  );
+  // setTimeout to select it after its been mounted
   setTimeout(() => window.getSelection().selectAllChildren(node));
-  node.addEventListener("keydown", async (e) => {
-    if (e.key === "Escape") {
-      node.blur();
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      await invoke("update_value", {
-        selector: editor.dataset.selector,
-        name,
-        original_value,
-        value: node.innerText,
-      });
-      node.blur();
-    }
-  });
-  node.addEventListener("blur", (_) => {
-    node.dispatchEvent(new Event("reload", { bubbles: true }));
-  });
   return node;
 }
 

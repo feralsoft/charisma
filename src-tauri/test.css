@@ -1,7 +1,13 @@
 b {
     
 }
-bu {
+body:has(button.active) {
+    color: red;
+}
+body main button.active {
+    /* color: purple; */
+}
+body has {
     
 }
 button {
@@ -9,14 +15,8 @@ button {
 }
 button.active {
     color: black;
-    display: flex;
+    display: grid;
 }
-body has {
+bu {
     
-}
-body main button.active {
-    /* color: purple; */
-}
-body:has(button.active) {
-    color: red;
 }
