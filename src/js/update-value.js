@@ -1,8 +1,8 @@
-import { h } from "./html.js";
+import { h, modifiers } from "./html.js";
 const { invoke } = window.__TAURI__.tauri;
 
 function plain_text_node(editor, name, original_value) {
-  let node = h.div(
+  return h.div(
     {
       class: "plain-text-node",
       "data-kind": "plain-text",
@@ -10,27 +10,28 @@ function plain_text_node(editor, name, original_value) {
       contenteditable: true,
       async "@keydown"(e) {
         if (e.key === "Escape") {
-          node.blur();
+          this.blur();
         } else if (e.key === "Enter") {
           e.preventDefault();
           await invoke("update_value", {
             selector: editor.dataset.selector,
             name,
             original_value,
-            value: node.innerText,
+            value: this.innerText,
           });
-          node.blur();
+          this.blur();
         }
+        [];
       },
       async "@blur"(_) {
-        node.dispatchEvent(new Event("reload", { bubbles: true }));
+        this.dispatchEvent(new Event("reload", { bubbles: true }));
+      },
+      [modifiers.on_mount]() {
+        window.getSelection().selectAllChildren(this);
       },
     },
     original_value,
   );
-  // setTimeout to select it after its been mounted
-  setTimeout(() => window.getSelection().selectAllChildren(node));
-  return node;
 }
 
 const VALUE_SELECTOR =
