@@ -26,6 +26,7 @@ window.addEventListener("keydown", async (e) => {
     ).dataset.stringValue;
 
     await invoke("insert_property", {
+      path: localStorage.getItem("current-path"),
       selector: focused_editor.dataset.selector,
       property: `${property_name}: ${property_value};`,
     });

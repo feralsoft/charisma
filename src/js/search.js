@@ -2,7 +2,10 @@ const { invoke } = window.__TAURI__.tauri;
 import { focus_editor } from "./focus.js";
 
 window.add_editor = async function add_editor(selector) {
-  let html = await invoke("render_rule", { selector });
+  let html = await invoke("render_rule", {
+    path: localStorage.getItem("current-path"),
+    selector,
+  });
 
   let editor = document.createElement("div");
   editor.classList.add("--editor");
@@ -66,7 +69,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (existing_rule) {
           focus_editor(existing_rule);
         } else {
-          await invoke("insert_empty_rule", { selector });
+          await invoke("insert_empty_rule", {
+            path: localStorage.getItem("current-path"),
+            selector,
+          });
           await add_editor(selector);
         }
       } else {
@@ -119,7 +125,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
       move_cursor_to_end_of_element(input);
       setTimeout(async () => {
         // setTimeout so that innerText gets populated
-        let results = await invoke("search", { q: input.innerText });
+        let results = await invoke("search", {
+          path: localStorage.getItem("current-path"),
+          q: input.innerText,
+        });
         options.innerHTML = results.join("");
       });
     } else {
@@ -129,7 +138,10 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (input.innerText.trim() === "") {
           options.innerHTML = "";
         } else if (old_text !== input.innerText) {
-          let results = await invoke("search", { q: input.innerText });
+          let results = await invoke("search", {
+            path: localStorage.getItem("current-path"),
+            q: input.innerText,
+          });
 
           options.innerHTML = results.join("");
         }

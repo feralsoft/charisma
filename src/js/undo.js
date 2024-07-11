@@ -62,7 +62,11 @@ window.addEventListener("keydown", async (e) => {
       `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
     );
     undo_stack.push(editor);
-    await invoke("replace_all_properties", { selector, properties });
+    await invoke("replace_all_properties", {
+      path: localStorage.getItem("current-path"),
+      selector,
+      properties,
+    });
     editor.dispatchEvent(
       new CustomEvent("reload", { detail: { src: "undo" } }),
     );
@@ -73,7 +77,11 @@ window.addEventListener("keydown", async (e) => {
       `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
     );
     redo_stack.push(editor);
-    await invoke("replace_all_properties", { selector, properties });
+    await invoke("replace_all_properties", {
+      path: localStorage.getItem("current-path"),
+      selector,
+      properties,
+    });
     editor.dispatchEvent(
       new CustomEvent("reload", { detail: { src: "undo" } }),
     );

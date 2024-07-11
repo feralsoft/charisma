@@ -12,6 +12,8 @@ window.addEventListener("keydown", async (e) => {
     '[data-attr="value"] > [data-kind][data-string-value]',
   ).dataset.stringValue;
   let editor = property.closest(".--editor");
-  await invoke("delete", { selector: editor.dataset.selector, name, value });
+  await invoke("delete", {
+      path: localStorage.getItem("current-path"),
+      selector: editor.dataset.selector, name, value });
   editor.dispatchEvent(new Event("reload"));
 });

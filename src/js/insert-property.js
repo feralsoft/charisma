@@ -78,6 +78,7 @@ let input = (editor) =>
         } else {
           // otherwise submit & reload
           await invoke("insert_property", {
+            path: localStorage.getItem("current-path"),
             selector: editor.dataset.selector,
             property: e.target.innerText,
           });

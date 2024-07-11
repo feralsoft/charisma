@@ -8,7 +8,12 @@ async function toggle() {
   let is_commented = property.dataset.commented === "true";
   let action = is_commented ? "enable" : "disable";
   let editor = property.closest(".--editor");
-  await invoke(action, { selector: editor.dataset.selector, name, value });
+  await invoke(action, {
+    path: localStorage.getItem("current-path"),
+    selector: editor.dataset.selector,
+    name,
+    value,
+  });
   property.dispatchEvent(new Event("reload", { bubbles: true }));
 }
 

@@ -14,6 +14,7 @@ function plain_text_node(editor, name, original_value) {
         } else if (e.key === "Enter") {
           e.preventDefault();
           await invoke("update_value", {
+            path: localStorage.getItem("current-path"),
             selector: editor.dataset.selector,
             name,
             original_value,

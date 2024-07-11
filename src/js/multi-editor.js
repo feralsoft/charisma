@@ -15,6 +15,7 @@ async function reload(editor) {
   }
 
   let new_rule = await invoke("render_rule", {
+    path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
   });
 

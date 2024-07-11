@@ -64,6 +64,7 @@ window.addEventListener("mousemove", async (e) => {
     let current_number_value = Number(value);
 
     await invoke("update_value", {
+      path: localStorage.getItem("current-path"),
       selector: editor.dataset.selector,
       name,
       original_value: `${current_number_value.toFixed(fix_percision)}${type}`,

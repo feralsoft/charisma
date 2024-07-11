@@ -58,7 +58,10 @@ window.addEventListener("keydown", async (e) => {
     currently_selected.classList.remove("selected");
     copied = false;
     let selector = currently_selected.dataset.stringValue;
-    await invoke("insert_empty_rule", { selector });
+    await invoke("insert_empty_rule", {
+      path: localStorage.getItem("current-path"),
+      selector,
+    });
     await add_editor(selector);
   }
 });
