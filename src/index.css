@@ -536,7 +536,7 @@ body {
     gap: 0.25em;
     padding-left: 1em;
 
-    & > [data-attr="name"]::after {
+    > [data-attr="name"]::after {
         content: ":";
         color: var(--foreground-color);
     }
@@ -551,6 +551,10 @@ body {
 [data-unit-type]::after {
     color: var(--function-color);
     content: attr(data-unit-type);
+}
+
+[data-unit-type="percentage"]::after {
+    content: "%";
 }
 
 [data-kind="class"] {

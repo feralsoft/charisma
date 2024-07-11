@@ -1,22 +1,11 @@
-body has {
-    
-}
-body main button.active {
-    /* color: purple; */
-}
-body:has(button.active) {
-    color: red;
+button.active {
+    color: black;
+    display: flex;
+    font-size: 2.0em;
 }
 b {
     
 }
 bu {
     
-}
-button {
-    
-}
-button.active {
-    color: black;
-    display: flex;
 }

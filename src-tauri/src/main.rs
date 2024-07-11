@@ -201,6 +201,13 @@ fn update_value(selector: &str, name: &str, original_value: &str, value: &str) {
         .into_iter()
         .flat_map(|s| s.unwrap().to_selectors(None))
     {
+        let tree = db.get(&selector.path).unwrap();
+        let rule = tree.rule.as_ref().unwrap();
+        assert!(rule
+            .properties
+            .iter()
+            .find(|p| p.name() == name.trim() && p.value() == original_value)
+            .is_some());
         db.delete(&selector.path, name.trim(), original_value);
         db.insert(&selector, &property);
     }

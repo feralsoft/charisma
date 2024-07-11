@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
     input.innerText = "";
     options.innerHTML = "";
   }
-  console.log("here");
 
   window.addEventListener("keydown", async (e) => {
     if (e.key === "p" && e.metaKey) {
