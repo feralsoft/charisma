@@ -21,16 +21,8 @@ let minimize = (editor) =>
     },
   });
 
-let info = () =>
-  h.button({
-    class: "info active",
-    "@click"(_) {
-      this.classList.toggle("active");
-    },
-  });
-
 let menu = (editor) =>
-  h.div({ class: "menu" }, close(editor), minimize(editor), info());
+  h.div({ class: "menu" }, close(editor), minimize(editor));
 
 function init(editor) {
   editor.prepend(menu(editor));

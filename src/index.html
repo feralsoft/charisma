@@ -15,7 +15,7 @@
         <script type="module" src="/main.js" defer></script>
     </head>
 
-    <body>
+    <body data-zoom="1.0">
         <div data-tauri-drag-region class="titlebar">
             <!-- idea - put the search here -->
             <div class="titlebar-button" id="titlebar-close">
@@ -36,7 +36,9 @@
                     alt="maximize"
                 />
             </div>
-            <div class="titlebar-info">charisma | ~/test.css</div>
+            <div class="titlebar-info">
+                charisma | <button class="file-picker">open a file</button>
+            </div>
         </div>
         <div class="search-box">
             <div class="search" contenteditable spellcheck="false"></div>

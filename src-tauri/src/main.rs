@@ -20,10 +20,17 @@ fn after_css_comment(string: String) -> String {
     }
 }
 
+fn current_path() -> String {
+    fs::read_to_string("current_path")
+        .unwrap()
+        .trim()
+        .to_owned()
+}
+
 #[tauri::command]
 fn search(q: &str) -> Vec<String> {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
 
     let parts: Vec<&str> = q.trim().split(" ").collect();
 
@@ -54,7 +61,7 @@ fn search(q: &str) -> Vec<String> {
 #[tauri::command]
 fn insert_empty_rule(selector: &str) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     let selector_list = parse_selector(selector).unwrap();
     for selector in selector_list
         .into_iter()
@@ -62,13 +69,13 @@ fn insert_empty_rule(selector: &str) {
     {
         db.insert_empty(&selector);
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[tauri::command]
 fn render_rule(selector: &str) -> String {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     let selector = parse_selector(selector).unwrap();
     let paths: Vec<Vec<Part>> = selector
         .into_iter()
@@ -101,7 +108,7 @@ fn render_rule(selector: &str) -> String {
 #[tauri::command]
 fn delete(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     let selector_list = parse_selector(selector).unwrap();
 
     for path in selector_list
@@ -110,13 +117,13 @@ fn delete(selector: &str, name: &str, value: &str) {
     {
         db.delete(&path, name, value);
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[tauri::command]
 fn disable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -124,13 +131,13 @@ fn disable(selector: &str, name: &str, value: &str) {
     {
         db.set_state(&selector.path, name, value, State::Commented);
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[tauri::command]
 fn enable(selector: &str, name: &str, value: &str) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -138,14 +145,14 @@ fn enable(selector: &str, name: &str, value: &str) {
     {
         db.set_state(&selector.path, name, value, State::Valid);
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[tauri::command]
 fn insert_property(selector: &str, property: &str) {
     let property = parse_property(property).unwrap();
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -153,7 +160,7 @@ fn insert_property(selector: &str, property: &str) {
     {
         db.insert(&selector, &property);
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[derive(Deserialize)]
@@ -166,7 +173,7 @@ struct JsonProperty {
 #[tauri::command]
 fn replace_all_properties(selector: &str, properties: Vec<JsonProperty>) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -188,13 +195,13 @@ fn replace_all_properties(selector: &str, properties: Vec<JsonProperty>) {
             }
         }
     }
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
 }
 
 #[tauri::command(rename_all = "snake_case")]
 fn update_value(selector: &str, name: &str, original_value: &str, value: &str) {
     let mut db = CSSDB::new();
-    db.load("test.css");
+    db.load(&current_path());
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
     for selector in parse_selector(selector)
         .unwrap()
@@ -212,10 +219,17 @@ fn update_value(selector: &str, name: &str, original_value: &str, value: &str) {
         db.insert(&selector, &property);
     }
 
-    fs::write("test.css", db.serialize()).unwrap()
+    fs::write(current_path(), db.serialize()).unwrap()
+}
+
+#[tauri::command(rename_all = "snake_case")]
+fn open_path(path: &str) {
+    fs::write("current_path", path).unwrap()
 }
 
 fn main() {
+    fs::write("current_path", "").unwrap();
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             render_rule,
@@ -226,7 +240,8 @@ fn main() {
             insert_property,
             replace_all_properties,
             update_value,
-            insert_empty_rule
+            insert_empty_rule,
+            open_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

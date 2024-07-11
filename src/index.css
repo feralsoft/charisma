@@ -122,6 +122,28 @@ body:has(> button.open-help.active) article.help-modal {
     right: 0;
     font-size: 0.75em;
     color: rgb(40, 40, 40);
+    padding-left: 0.1em;
+
+    .file-picker {
+        cursor: pointer;
+        padding: 0;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        border: none;
+        margin: 0;
+        background: none;
+        color: inherit;
+
+        &:hover {
+            background: #00000030;
+        }
+
+        &:active {
+            background: #000000aa;
+            color: var(--foreground-color);
+            text-decoration: underline;
+        }
+    }
 }
 
 .titlebar-info {
@@ -445,6 +467,7 @@ body {
     .search-item-value.candidate + .search-item-description {
         text-decoration: underline;
     }
+
     .search-item-description {
         font-size: 0.8em;
         opacity: 0.8;
@@ -757,7 +780,7 @@ body {
     border-radius: 3px;
     cursor: pointer;
 
-    .text {
+    .icon {
         display: flex;
         justify-content: center;
         height: 0.75em;

@@ -14,7 +14,7 @@ async function toggle() {
 
 function insert_comment_button(src) {
   let button = document.createElement("button");
-  button.innerHTML = "<div class='text'></div>";
+  button.innerHTML = "<div class='icon'></div>";
   button.classList.add("toggle-comment");
   button.addEventListener("mousedown", toggle);
   src.prepend(button);

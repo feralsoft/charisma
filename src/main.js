@@ -16,6 +16,7 @@ import "./js/group-menu.js";
 import "./js/drag-board.js";
 import "./js/copy-property.js";
 import "./js/select-selector-part.js";
+import "./js/choose-file.js";
 
 import { appWindow } from "@tauri-apps/api/window.js";
 
