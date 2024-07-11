@@ -8,12 +8,15 @@ function finish(_) {
   current_value = null;
   editor = null;
   start_y = null;
+  document.body.classList.remove("dragging-unit");
 }
 
 window.addEventListener("mousedown", (e) => {
   let unit = e.target.closest('[data-kind="unit"]');
   if (!unit) return;
   is_dragging = true;
+
+  document.body.classList.add("dragging-unit");
   e.stopImmediatePropagation();
   editor = unit.closest(".--editor");
   current_value = unit.dataset.stringValue;

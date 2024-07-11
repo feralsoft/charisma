@@ -189,6 +189,10 @@ body {
         }
     }
 
+    &.dragging-unit {
+        cursor: ns-resize;
+    }
+
     &.panning .canvas,
     .canvas:has(> .dragging) {
         pointer-events: none;

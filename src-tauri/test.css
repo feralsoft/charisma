@@ -1,11 +1,14 @@
-button.active {
-    color: black;
-    display: flex;
-    font-size: 11px;
-}
 b {
     
 }
 bu {
     
+}
+body {
+    --var: 20px;
+}
+button.active {
+    color: black;
+    display: flex;
+    font-size: 20px;
 }
