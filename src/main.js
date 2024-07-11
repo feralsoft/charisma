@@ -26,10 +26,12 @@ appWindow.onResized(async (_) => {
 document
   .getElementById("titlebar-minimize")
   .addEventListener("click", () => appWindow.minimize());
+
 document.getElementById("titlebar-maximize").addEventListener("click", () => {
   document.body.dataset.isFullscreen = true;
   appWindow.setFullscreen(true);
 });
+
 document
   .getElementById("titlebar-close")
   .addEventListener("click", () => appWindow.close());
