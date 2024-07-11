@@ -4,7 +4,8 @@ let close = () =>
   h.button({
     class: "close",
     "@click"(_) {
-      let group = this.closest(".--editor-group");
+      let editor = this.closest(".--editor");
+      let group = editor.closest(".--editor-group");
       editor.remove();
       if (!group.querySelector(".--editor")) group.remove();
     },

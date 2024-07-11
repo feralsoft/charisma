@@ -1,7 +1,12 @@
 import { h } from "./html.js";
 
-let close = (group) =>
-  h.button({ class: "close", "@click": (_) => group.remove() });
+let close = () =>
+  h.button({
+    class: "close",
+    "@click"(_) {
+      this.closest(".--editor-group").remove();
+    },
+  });
 
 let minimize = () =>
   h.button({
@@ -11,11 +16,12 @@ let minimize = () =>
     },
   });
 
-let menu = (group) => h.menu({}, close(group), minimize());
+let menu = () =>
+  h.menu({}, ...[close(), minimize()].map((btn) => h.li({}, btn)));
 
 function init(group) {
   if (group.querySelector(":scope > menu")) return;
-  group.prepend(menu(group));
+  group.prepend(menu());
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
