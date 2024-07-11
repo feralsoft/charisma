@@ -1,10 +1,10 @@
+bu {
+    
+}
 button.active {
     color: black;
     display: flex;
     font-size: 20px;
-}
-bu {
-    
 }
 body {
     --var: 20px;
