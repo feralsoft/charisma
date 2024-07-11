@@ -11,10 +11,10 @@ let minimize = () =>
     },
   });
 
-let menu = (group) => h.div({ class: "menu" }, close(group), minimize());
+let menu = (group) => h.menu({}, close(group), minimize());
 
 function init(group) {
-  if (group.querySelector(":scope > .menu")) return;
+  if (group.querySelector(":scope > menu")) return;
   group.prepend(menu(group));
 }
 

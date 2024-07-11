@@ -1,20 +1,20 @@
 buj {
     
 }
+bu {
+    
+}
+b {
+    
+}
 button {
     
 }
 button.active {
     color: black;
     display: flex;
-    font-size: 10px;
-}
-bu {
-    
+    font-size: -135px;
 }
 body {
     --var: -30px;
-}
-b {
-    
 }
