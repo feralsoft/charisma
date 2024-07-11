@@ -35,19 +35,9 @@ function rep_for_type(type) {
   }
 }
 
-function factor_for_type(type) {
-  switch (type) {
-    case "px":
-      return 1;
-    case "em":
-      return 0.1;
-    case "rem":
-      return 0.1;
-    case "percentage":
-      return 0.5;
-    default:
-      throw new Error("unknown unit type [" + type + "]");
-  }
+function factor_for_value(value) {
+  let factor = value.split(".")[1]?.length ?? 0;
+  return 1 / 10 ** factor;
 }
 
 window.addEventListener("mousemove", async (e) => {
@@ -58,17 +48,17 @@ window.addEventListener("mousemove", async (e) => {
     let unit = editor.querySelector(
       '[data-string-value="' + current_value + '"]',
     );
+    let value = unit.querySelector("[data-value]").dataset.value;
     let type = rep_for_type(unit.dataset.unitType);
-    let factor = factor_for_type(unit.dataset.unitType);
+    let factor = factor_for_value(value);
+    console.log(current_value, factor);
     let diff = (start_y - e.clientY) * factor;
     let fix_percision = String(factor).split(".")[1]?.length ?? 0; // to fucking deal with floating point issues :(
     start_y = e.clientY;
     let name = unit
       .closest('[data-kind="property"]')
       .querySelector('[data-attr="name"] [data-value]').dataset.value;
-    let current_number_value = Number(
-      unit.querySelector("[data-value]").dataset.value,
-    );
+    let current_number_value = Number(value);
 
     await invoke("update_value", {
       selector: editor.dataset.selector,
