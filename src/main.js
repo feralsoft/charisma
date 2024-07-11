@@ -17,7 +17,7 @@ import "./js/drag-board.js";
 import "./js/copy-property.js";
 import "./js/select-selector-part.js";
 
-import { appWindow } from "https://unpkg.com/@tauri-apps/api/window";
+import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 
 appWindow.onResized(async (_) => {
   document.body.dataset.isFullscreen = await appWindow.isFullscreen();

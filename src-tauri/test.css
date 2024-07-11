@@ -1,5 +1,7 @@
-b {
-    
+button.active {
+    color: black;
+    display: flex;
+    font-size: 20px;
 }
 bu {
     
@@ -7,8 +9,6 @@ bu {
 body {
     --var: 20px;
 }
-button.active {
-    color: black;
-    display: flex;
-    font-size: 20px;
+b {
+    
 }
