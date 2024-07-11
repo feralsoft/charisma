@@ -1,21 +1,22 @@
 import { h } from "./html.js";
 
-let close = (editor) =>
+let close = () =>
   h.button({
     class: "close",
     "@click"(_) {
-      let group = editor.closest(".--editor-group");
+      let group = this.closest(".--editor-group");
       editor.remove();
       if (!group.querySelector(".--editor")) group.remove();
     },
   });
 
-let minimize = (editor) =>
+let minimize = () =>
   h.button({
     class: "minimize",
     "@click"(_) {
       this.classList.toggle("active");
       if (this.classList.contains("active")) {
+        let editor = this.closest(".--editor");
         let selector = editor.querySelector(
           '[data-attr="selector"] > [data-kind]',
         ).dataset.stringValue;
@@ -30,10 +31,10 @@ let minimize = (editor) =>
     },
   });
 
-let menu = (editor) => h.menu({}, close(editor), minimize(editor));
-
 function init(editor) {
-  editor.prepend(menu(editor));
+  editor.prepend(
+    h.menu({}, ...[close(), minimize()].map((btn) => h.li({}, btn))),
+  );
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {

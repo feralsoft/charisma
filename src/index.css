@@ -634,25 +634,6 @@ body {
     color: var(--variable-color);
 }
 
-[data-kind="property"]:not([data-commented="true"]) .cant-deref {
-    text-decoration: underline;
-    text-decoration-style: wavy;
-    text-decoration-color: #f5deb3ee;
-
-    &:hover::after {
-        position: absolute;
-        text-decoration: none;
-        color: var(--foreground-color);
-        content: "`" attr(data-string-value) "` undefined";
-        width: max-content;
-        margin-top: -2em;
-        font-size: 0.75em;
-        padding: 0.25em;
-        background-color: black;
-        right: 0;
-    }
-}
-
 .--editor * {
     user-select: none;
     -webkit-user-select: none;
@@ -863,6 +844,10 @@ menu {
     position: absolute;
     display: flex;
     background-color: rgb(20, 20, 20);
+    li {
+        list-style: none;
+        display: flex;
+    }
 
     /* basic menu item styling */
     button {
@@ -925,9 +910,11 @@ menu {
 .--editor:has(> menu .minimize.active) {
     outline: none;
     menu {
-        position: relative;
+        position: initial;
+        margin-top: 0;
         .selector-preview {
             display: flex;
+            text-wrap: nowrap;
             align-items: center;
             font-size: 0.75rem;
             line-height: 0.9;
