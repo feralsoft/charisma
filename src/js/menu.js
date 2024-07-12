@@ -42,6 +42,5 @@ document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
   });
 });

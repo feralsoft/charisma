@@ -1,29 +1,28 @@
 buj {
     
 }
-buttonm {
-    
-}
 body {
     --var: -30px;
-}
-body:has(.active) buttonm {
-    
 }
 body:has(.active) button {
     
 }
+body:has(.active) buttonm {
+    
+}
+bu {
+    
+}
 b {
+    
+}
+buttonm {
     
 }
 button {
     
 }
 button.active {
-    color: black;
     display: flex;
-    font-size: 23px;
-}
-bu {
-    
+    font-size: 20px;
 }

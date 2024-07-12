@@ -190,6 +190,11 @@ function init(editor) {
     .append(input_container(editor));
 }
 
+function reload(editor) {
+  editor.querySelector(".insert-property-container").remove();
+  init(editor);
+}
+
 window.addEventListener("keydown", (e) => {
   if (document.activeElement?.closest(".insert-property-container")) return;
   if (!document.querySelector(".--editor.focused")) return;
@@ -207,6 +212,6 @@ document.addEventListener("DOMContentLoaded", async (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: editor }) => {
     init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
+    editor.addEventListener("loaded", (_) => reload(editor));
   });
 });

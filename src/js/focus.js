@@ -1,4 +1,4 @@
-import { find_map } from "./helpers.js";
+import { find_map } from "./iter.js";
 
 function unfocus_all() {
   for (let focused_elem of document.querySelectorAll(".focused")) {

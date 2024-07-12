@@ -25,7 +25,8 @@ function insert_comment_button(src) {
   src.prepend(button);
 }
 
-const PROPERTY_SELECTOR = "[data-attr=properties] > [data-kind=property]";
+const PROPERTY_SELECTOR =
+  "[data-attr=properties] > [data-kind=property]:not(:has(.toggle-comment))";
 
 function init(editor) {
   for (let property of editor.querySelectorAll(PROPERTY_SELECTOR))
