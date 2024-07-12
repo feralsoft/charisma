@@ -1,4 +1,4 @@
-import "./js/drag-unit.js";
+import "./js/manipulate-numbers.js";
 import "./js/delete-property.js";
 import "./js/drag-editor.js";
 import "./js/drag-group.js";

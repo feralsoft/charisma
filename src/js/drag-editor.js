@@ -31,8 +31,12 @@ let drag_candidate;
 let mousedown_position;
 
 window.addEventListener("mousedown", (e) => {
-  // shift is useful for selecting text
+  // shift is used for selecting text
   if (e.shiftKey) return;
+  // we might be dragging a unit number up & down
+  // like a px value.. fuck I hate the term "unit"
+  if (document.body.classList.contains("dragging-unit")) return;
+
   let editor = e.target.closest(".--editor");
   if (!editor) return;
 
