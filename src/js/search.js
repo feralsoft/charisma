@@ -1,5 +1,5 @@
 const { invoke } = window.__TAURI__.tauri;
-import { focus_editor } from "./focus.js";
+import { focus } from "./focus.js";
 
 window.add_editor = async function add_editor(selector) {
   let html = await invoke("render_rule", {
@@ -15,7 +15,7 @@ window.add_editor = async function add_editor(selector) {
 
   let canvas = document.querySelector(".canvas");
   canvas.append(editor);
-  focus_editor(editor);
+  focus(editor);
   canvas.dispatchEvent(new CustomEvent("new-editor", { detail: editor }));
 };
 
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         );
 
         if (existing_rule) {
-          focus_editor(existing_rule);
+          focus(existing_rule);
         } else {
           await invoke("insert_empty_rule", {
             path: localStorage.getItem("current-path"),
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         );
 
         if (existing_rule) {
-          focus_editor(existing_rule);
+          focus(existing_rule);
         } else {
           await add_editor(selector);
         }

@@ -2,7 +2,16 @@ const { invoke } = window.__TAURI__.tauri;
 
 let currently_selected,
   originally_selected,
-  is_selecting = false;
+  is_selecting = false,
+  is_pressing_shift_key = false;
+
+window.addEventListener("keydown", (e) => {
+  is_pressing_shift_key = e.shiftKey;
+});
+
+window.addEventListener("keyup", (_) => {
+  is_pressing_shift_key = false;
+});
 
 window.addEventListener("mousedown", (e) => {
   currently_selected = null;
@@ -11,6 +20,7 @@ window.addEventListener("mousedown", (e) => {
     .querySelector("[data-kind][data-string-value].selected")
     ?.classList?.remove("selected");
 
+  if (!is_pressing_shift_key) return;
   if (!e.target.closest('[data-attr="selector"]')) return;
   select(e.target.closest("[data-kind][data-string-value]"));
   originally_selected = currently_selected;

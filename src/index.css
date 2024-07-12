@@ -274,7 +274,11 @@ body {
     color: var(--attribute-color);
 }
 
-[data-attr="properties"] > [data-kind="property"].focused {
+[data-kind="property"] > [data-attr="value"].focused {
+    background-color: rgba(0, 100, 0, 0.3);
+}
+
+[data-kind="property"].focused {
     background-color: rgba(0, 100, 0, 0.3);
 }
 

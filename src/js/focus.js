@@ -1,25 +1,21 @@
 import { find_map } from "./helpers.js";
 
-export function focus_editor(editor) {
-  // there should never be 2 focused editors
-  let previously_focused = document.querySelector(".--editor.focused");
+function unfocus_all() {
+  for (let focused_elem of document.querySelectorAll(".focused")) {
+    focused_elem.classList.remove("focused");
+    focused_elem.dispatchEvent(new Event("blur"));
+  }
+}
 
-  previously_focused?.classList?.remove("focused");
-  previously_focused?.dispatchEvent(new Event("blur"));
-  if (!editor) return;
-
-  editor.classList.add("focused");
-  editor.dispatchEvent(new Event("focus"));
+export function focus(elem) {
+  if (!elem) return;
+  elem.classList.add("focused");
+  elem.dispatchEvent(new Event("focus"));
 }
 
 // editor focus
 window.addEventListener("mousedown", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
-
-  // unfocus property
-  document
-    .querySelector('[data-kind="property"].focused')
-    ?.classList?.remove("focused");
 
   let found_editor;
 
@@ -33,39 +29,32 @@ window.addEventListener("mousedown", (e) => {
   //
   // TODO: Just a thought... since we are snapping..
   //       maybe we don't need to be as aggro with this anymore?
+  //       ^ I don't wanna risk it lmao
   if (document.querySelector(".--editor.focused")) {
     found_editor = find_map(
       document.elementsFromPoint(e.clientX, e.clientY),
       (elem) => elem.closest(".--editor.focused"),
     );
+  } else {
+    found_editor = document
+      .elementFromPoint(e.clientX, e.clientY)
+      .closest(".--editor");
   }
 
-  found_editor ??= document
-    .elementFromPoint(e.clientX, e.clientY)
-    .closest(".--editor");
-
-  focus_editor(found_editor);
+  unfocus_all();
+  focus(found_editor);
 });
 
-// property focus
-function focus_property(property) {
-  // should only be 1 focused property at any given time.
-  document
-    .querySelector('[data-kind="property"].focused')
-    ?.classList?.remove("focused");
-
-  // we may get nothing
-  property?.classList?.add("focused");
-}
-
-window.addEventListener("click", (e) => {
+window.addEventListener("mousedown", (e) => {
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
 
-  focus_property(
-    document
-      .elementFromPoint(e.clientX, e.clientY)
-      .closest('[data-kind="property"]'),
-  );
+  let property = document
+    .elementFromPoint(e.clientX, e.clientY)
+    .closest('[data-kind="property"]');
+  if (property) {
+    unfocus_all();
+    focus(property);
+  }
 });
 
 // go up and down properties with arrow keys when a property is focused
@@ -86,7 +75,7 @@ window.addEventListener("keydown", (e) => {
       ].at(-1);
     }
 
-    focus_property(previous_property);
+    focus(previous_property);
   } else if (e.key === "ArrowDown") {
     let next_property = focused_property.nextElementSibling;
 
@@ -95,14 +84,21 @@ window.addEventListener("keydown", (e) => {
         .closest('[data-attr="properties"]')
         .querySelector('[data-kind="property"]');
 
-    focus_property(next_property);
+    focus(next_property);
   }
 });
 
-window.addEventListener("tab-into", (e) => {
-  document.querySelector(".--editor.focused")?.classList?.remove("focused");
+// focus value
+window.addEventListener("mousedown", (e) => {
+  // me & the homies don't trust simulated mouse clicks
+  if (!e.isTrusted) return;
 
-  let editor = e.target.closest(".--editor");
-  document.querySelector(":focus")?.blur();
-  editor.classList.add("focused");
+  let value = document
+    .elementFromPoint(e.clientX, e.clientY)
+    .closest('[data-kind="property"] > [data-attr="value"]');
+
+  if (value) {
+    unfocus_all();
+    focus(value);
+  }
 });

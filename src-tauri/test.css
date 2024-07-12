@@ -1,13 +1,16 @@
+buttonm {
+    
+}
 body {
     --var: -30px;
-}
-body:has(.active) buttonm {
-    
 }
 body:has(.active) button {
     
 }
-buttonm {
+body:has(.active) buttonm {
+    
+}
+b {
     
 }
 button {
@@ -22,8 +25,5 @@ bu {
     
 }
 buj {
-    
-}
-b {
     
 }
