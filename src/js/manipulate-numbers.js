@@ -61,28 +61,31 @@ window.addEventListener("mousemove", async (e) => {
   if (!is_dragging) return;
   if (lock) return;
   lock = true;
-  try {
-    let unit = editor.querySelector(
-      '[data-string-value="' + current_value + '"]',
-    );
-    let { value, type, precision, factor, name } = parse_unit(unit);
-    let diff = (start_y - e.clientY) * factor;
-    start_y = e.clientY;
+  let unit = editor.querySelector(
+    '[data-string-value="' + current_value + '"]',
+  );
+  let { value, type, precision, factor, name } = parse_unit(unit);
+  let diff = (start_y - e.clientY) * factor;
+  start_y = e.clientY;
 
-    await invoke("update_value", {
-      path: localStorage.getItem("current-path"),
-      selector: editor.dataset.selector,
-      name,
-      original_value: `${value.toFixed(precision)}${type}`,
-      value: `${(value + diff).toFixed(precision)}${type}`,
+  await invoke("update_value", {
+    path: localStorage.getItem("current-path"),
+    selector: editor.dataset.selector,
+    name,
+    original_value: `${value.toFixed(precision)}${type}`,
+    value: `${(value + diff).toFixed(precision)}${type}`,
+  });
+  let loaded = new Promise((r) => {
+    editor.addEventListener("loaded", function self() {
+      r();
+      editor.removeEventListener("loaded", self);
     });
-    unit.dispatchEvent(new Event("reload", { bubbles: true }));
-    current_value = `${(value + diff).toFixed(precision)}${type}`;
-  } catch (_) {
-    finish();
-  } finally {
-    lock = false;
-  }
+  });
+  unit.dispatchEvent(new Event("reload", { bubbles: true }));
+  await loaded;
+  current_value = `${(value + diff).toFixed(precision)}${type}`;
+
+  lock = false;
 });
 
 window.addEventListener("mouseup", finish);
