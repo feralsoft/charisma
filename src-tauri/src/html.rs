@@ -17,7 +17,11 @@ use biome_css_syntax::{
 use crate::{get_combinator_type, Property, State};
 
 pub fn render_value(value: &str) -> String {
-    format!("<div data-value=\"{}\">{}</div>", value, value)
+    format!(
+        "<div data-value=\"{}\">{}</div>",
+        value.trim(),
+        value.trim()
+    )
 }
 
 pub struct RenderOptions {
@@ -71,8 +75,9 @@ impl Render for CssComplexSelector {
             match get_combinator_type(combinator.kind()) {
                 crate::Combinator::Descendant => "descendant",
                 crate::Combinator::DirectDescendant => "direct-descendant",
+                crate::Combinator::And => panic!(""),
             },
-            self.to_string(),
+            self.to_string().trim(),
             left.render_html(options),
             right.render_html(options)
         )
@@ -108,8 +113,9 @@ impl Render for CssRelativeSelector {
                 format!(
                     "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" data-string-value=\"{}\">{}</div>",
                     match get_combinator_type(combinator.kind()) {
-                        crate::Combinator::Descendant => "descendant",
-                        crate::Combinator::DirectDescendant => "direct-descendant",
+                        crate::Combinator::Descendant=>"descendant",
+                        crate::Combinator::DirectDescendant=>"direct-descendant",
+                        crate::Combinator::And => todo!(),
                     },
                     self.to_string(),
                     self.selector().unwrap().render_html(options)

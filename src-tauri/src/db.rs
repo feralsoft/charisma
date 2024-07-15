@@ -73,6 +73,16 @@ fn path_to_string(path: &Vec<Part>) -> String {
 impl ToSelectors for AnyCssRelativeSelector {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
         let selector = self.as_css_relative_selector().unwrap();
+        // this fucking sucks.. I would assume `.combinator` would do this, but it doesn't
+
+        let combinator = if selector.to_string().trim().starts_with("&") {
+            Combinator::And
+        } else {
+            selector
+                .combinator()
+                .map(|c| get_combinator_type(c.kind()))
+                .unwrap_or(Combinator::Descendant)
+        };
         let selector = selector.selector().unwrap();
 
         selector
@@ -81,17 +91,13 @@ impl ToSelectors for AnyCssRelativeSelector {
             .map(|path| {
                 let path = [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                    vec![Part::Combinator(combinator.clone())],
                     path.clone(),
                 ]
                 .concat();
 
                 Selector {
-                    string: parent
-                        .as_ref()
-                        .map(|p| p.string.clone())
-                        .unwrap_or("".to_string())
-                        + &path_to_string(&path),
-
+                    string: path_to_string(&path),
                     path,
                 }
             })
@@ -110,12 +116,7 @@ impl ToSelectors for AnyCssSelector {
                 ]
                 .concat();
                 Selector {
-                    string: parent
-                        .as_ref()
-                        .map(|p| p.string.clone())
-                        .unwrap_or("".to_string())
-                        + &path_to_string(&path),
-
+                    string: path_to_string(&path),
                     path,
                 }
             })
@@ -472,6 +473,8 @@ pub enum Combinator {
     Descendant,
     // ">"
     DirectDescendant,
+    // "&"
+    And,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -515,7 +518,8 @@ impl ToString for Combinator {
     fn to_string(&self) -> String {
         match self {
             Combinator::Descendant => String::from(" "),
-            Combinator::DirectDescendant => String::from(">"),
+            Combinator::DirectDescendant => String::from(" > "),
+            Combinator::And => String::from(""),
         }
     }
 }
@@ -551,21 +555,17 @@ impl DBPath for biome_css_syntax::AnyCssSelector {
         match self {
             CssBogusSelector(_) => panic!(),
             CssComplexSelector(s) => {
-                let fields = s.as_fields();
-                let left = fields.left.unwrap();
-                let right = fields.right.unwrap();
+                let left = s.left().unwrap();
+                let right = s.right().unwrap();
                 let rhs_paths = right.to_css_db_paths();
+                let combinator =
+                    Part::Combinator(get_combinator_type(s.combinator().unwrap().kind()));
 
                 left.to_css_db_paths()
                     .iter()
                     .flat_map(|lhs| {
                         rhs_paths.iter().map(|rhs| {
-                            [
-                                lhs.clone(),
-                                vec![Part::Combinator(Combinator::Descendant)],
-                                rhs.clone(),
-                            ]
-                            .concat()
+                            [lhs.clone(), vec![combinator.clone()], rhs.clone()].concat()
                         })
                     })
                     .collect()
