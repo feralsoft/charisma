@@ -1,6 +1,7 @@
 const { invoke } = window.__TAURI__.tauri;
 
-async function toggle() {
+async function toggle(e) {
+  e.stopPropagation();
   let property = this.closest('[data-kind="property"]');
   let name = property.querySelector('[data-attr="name"]').textContent;
   let value = property.querySelector('[data-attr="value"] > [data-kind]')

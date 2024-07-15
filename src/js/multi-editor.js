@@ -113,6 +113,16 @@ function update_property_values(editor, new_properties) {
   }
 }
 
+function update_commented_properties(existing_properties, new_properties) {
+  for (let property of existing_properties) {
+    let name = ast.property.name(property);
+    let new_property = new_properties.find(
+      (p) => ast.property.name(p) === name,
+    );
+    property.dataset.commented = new_property.dataset.commented;
+  }
+}
+
 function rejuvenate_editor(existing_editor, new_rule_html) {
   let updated_rule = document.createElement("div");
   updated_rule.innerHTML = new_rule_html;
@@ -126,6 +136,7 @@ function rejuvenate_editor(existing_editor, new_rule_html) {
     existing_editor.querySelector('[data-attr="properties"]'),
     new_properties,
   );
+  update_commented_properties(existing_properties, new_properties);
 }
 
 async function reload(editor) {
