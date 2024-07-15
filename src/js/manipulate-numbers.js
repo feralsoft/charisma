@@ -2,24 +2,24 @@ const { invoke } = window.__TAURI__.tauri;
 
 // make number go up & down (unit)
 
-let is_dragging, current_value, editor, start_y, lock;
+let is_dragging, unit, editor, start_y, lock;
 
 function finish(_) {
   is_dragging = false;
-  current_value = null;
+  unit = null;
   editor = null;
   start_y = null;
   document.body.classList.remove("dragging-unit");
 }
 
 window.addEventListener("mousedown", (e) => {
-  let unit = e.target.closest('[data-kind="unit"]');
-  if (!unit) return;
+  let candidate = e.target.closest('[data-kind="unit"]');
+  if (!candidate) return;
   is_dragging = true;
 
+  unit = candidate;
   document.body.classList.add("dragging-unit");
   editor = unit.closest(".--editor");
-  current_value = unit.dataset.stringValue;
   start_y = e.clientY;
 });
 
@@ -61,9 +61,6 @@ window.addEventListener("mousemove", async (e) => {
   if (!is_dragging) return;
   if (lock) return;
   lock = true;
-  let unit = editor.querySelector(
-    '[data-string-value="' + current_value + '"]',
-  );
   let { value, type, precision, factor, name } = parse_unit(unit);
   let diff = (start_y - e.clientY) * factor;
   start_y = e.clientY;
@@ -83,7 +80,6 @@ window.addEventListener("mousemove", async (e) => {
   });
   unit.dispatchEvent(new Event("reload", { bubbles: true }));
   await loaded;
-  current_value = `${(value + diff).toFixed(precision)}${type}`;
 
   lock = false;
 });

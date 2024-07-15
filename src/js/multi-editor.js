@@ -57,6 +57,45 @@ function no_duplicates(rule) {
     );
 }
 
+function morph_value(old_value, new_value) {
+  assert(new_value);
+  old_value.dataset.value = new_value.dataset.value;
+  old_value.innerHTML = new_value.innerHTML;
+}
+
+function morph_node(old_node, new_node) {
+  if (old_node.dataset.kind !== new_node.dataset.kind) {
+    old_node.replaceWith(new_node);
+  } else {
+    old_node.dataset.stringValue = new_node.dataset.stringValue;
+    let old_value = old_node.querySelector(":scope > [data-value]");
+    if (old_value) {
+      let new_value = new_node.querySelector(":scope > [data-value]");
+      assert(new_value);
+      morph_value(old_value, new_value);
+    } else {
+      for (let attr of old_node.querySelectorAll(":scope > [data-attr]")) {
+        let old_node = attr.querySelector(":scope > [data-kind]");
+        if (old_node) {
+          let new_node = new_node.querySelector(
+            `:scope > [data-attr="${attr.dataset.attr}"] > [data-kind]`,
+          );
+          assert(new_node);
+          morph_node(old_node, new_node);
+        } else {
+          let old_value = attr.querySelector(":scope > [data-value]");
+          assert(old_value);
+          let new_value = new_value.querySelector(
+            `:scope > [data-attr="${attr.dataset.attr}"] > [data-value]`,
+          );
+          assert(new_value);
+          morph(old_value, new_value);
+        }
+      }
+    }
+  }
+}
+
 function update_property_values(editor, new_properties) {
   for (let new_property of new_properties) {
     let name = ast.property.name(new_property);
@@ -66,10 +105,10 @@ function update_property_values(editor, new_properties) {
         '"]',
     );
     if (!existing_property) continue;
-    if (
-      ast.property.value(existing_property) !== ast.property.value(new_property)
-    ) {
-      existing_property.replaceWith(new_property);
+    let existing_value = ast.property.value(existing_property);
+    let new_value = ast.property.value(new_property);
+    if (existing_value.dataset.stringValue !== new_value.dataset.stringValue) {
+      morph_node(existing_value, new_value);
     }
   }
 }
