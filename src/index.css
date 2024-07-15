@@ -661,6 +661,12 @@ body {
     }
 }
 
+[data-kind="relative-selector"][data-combinator-type="direct-descendant"]
+    > [data-kind]::before {
+    content: ">";
+    margin-right: var(--spacing);
+}
+
 [data-kind="rule"]::after,
 [data-kind="rule"] > [data-attr="selector"]::after {
     color: var(--brace-color);

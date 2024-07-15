@@ -1,4 +1,10 @@
-body:has(>button.open-help.active) {
+button.close {
+    font-size: 20px;
+}
+button.open-help.active {
+    display: flex;
+}
+body:has(>button.open-help.active) article.help-modal {
     -webkit-user-select: none;
     display: flex;
     flex-direction: column;
@@ -10,14 +16,14 @@ body:has(>button.open-help.active) {
     justify-content: center;
     background-color: rgb(0, 0, 0, 0.5);
 }
-body:has(>button.open-help.active) h2 {
-    margin: 0;
-}
-body:has(>button.open-help.active) button.close {
+body:has(>button.open-help.active) article.help-modal button.close {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
 }
-b {
-    
+body:has(>button.open-help.active) article.help-modal h2 {
+    margin: 0;
+}
+article.help-modal {
+    display: none;
 }

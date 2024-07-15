@@ -49,11 +49,6 @@ impl ToSelectors for AnyCssRelativeSelector {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
         let selector = self.as_css_relative_selector().unwrap();
         let selector = selector.selector().unwrap();
-        let selector = selector.as_css_compound_selector().unwrap();
-        let combinator = match selector.nesting_selector_token() {
-            Some(combinator) => get_combinator_type(combinator.kind()),
-            None => Combinator::Descendant,
-        };
 
         selector
             .to_css_db_paths()
@@ -63,12 +58,10 @@ impl ToSelectors for AnyCssRelativeSelector {
                     .as_ref()
                     .map(|p| p.string.clone())
                     .unwrap_or("".to_string())
-                    + &combinator.to_string()
                     + selector.to_string().trim(),
 
                 path: [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
-                    vec![Part::Combinator(combinator.clone())],
                     path.clone(),
                 ]
                 .concat(),
