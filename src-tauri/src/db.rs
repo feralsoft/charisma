@@ -50,7 +50,6 @@ impl ToSelectors for AnyCssRelativeSelector {
         let selector = self.as_css_relative_selector().unwrap();
         let selector = selector.selector().unwrap();
         let selector = selector.as_css_compound_selector().unwrap();
-        assert!(selector.simple_selector().is_none());
         let combinator = match selector.nesting_selector_token() {
             Some(combinator) => get_combinator_type(combinator.kind()),
             None => Combinator::Descendant,
@@ -59,23 +58,20 @@ impl ToSelectors for AnyCssRelativeSelector {
         selector
             .to_css_db_paths()
             .iter()
-            .map(|path| {
-                let path = [
+            .map(|path| Selector {
+                string: parent
+                    .as_ref()
+                    .map(|p| p.string.clone())
+                    .unwrap_or("".to_string())
+                    + &combinator.to_string()
+                    + selector.to_string().trim(),
+
+                path: [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                     vec![Part::Combinator(combinator.clone())],
                     path.clone(),
                 ]
-                .concat();
-                Selector {
-                    string: parent
-                        .as_ref()
-                        .map(|p| p.string.clone())
-                        .unwrap_or("".to_string())
-                        + &combinator.to_string()
-                        + selector.to_string().trim(),
-
-                    path,
-                }
+                .concat(),
             })
             .collect()
     }
@@ -591,20 +587,24 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                     return lhs_paths;
                 }
 
-                self.sub_selectors()
+                // sub selectors are like ".btn.help" -> ".btn", ".help"
+                let rhs_path = self
+                    .sub_selectors()
                     .into_iter()
                     .flat_map(|selector| {
-                        selector
-                            .to_css_db_paths()
-                            .iter()
-                            .flat_map(|path| {
-                                lhs_paths
-                                    .iter()
-                                    .map(|lhs| [lhs.clone(), path.clone()].concat())
-                            })
-                            .collect::<Vec<_>>()
+                        let paths = selector.to_css_db_paths();
+                        assert!(paths.len() == 1);
+                        paths
                     })
-                    .collect()
+                    .reduce(|acc, path| [acc, path].concat())
+                    .unwrap();
+
+                let out = lhs_paths
+                    .iter()
+                    .map(|lhs_path| [lhs_path.clone(), rhs_path.clone()].concat())
+                    .collect();
+
+                out
             }
             None => {
                 let paths: Vec<_> = self
@@ -797,8 +797,22 @@ impl DBPath for AnyCssPseudoElement {
 
 impl DBPath for CssRelativeSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
-        assert!(self.combinator().is_none());
-        self.selector().unwrap().to_css_db_paths()
+        let paths = self.selector().unwrap().to_css_db_paths();
+        if let Some(combinator) = self.combinator() {
+            // prepend combinator to all the paths
+            paths
+                .iter()
+                .map(|path| {
+                    [
+                        vec![Part::Combinator(get_combinator_type(combinator.kind()))],
+                        path.clone(),
+                    ]
+                    .concat()
+                })
+                .collect()
+        } else {
+            paths
+        }
     }
 }
 

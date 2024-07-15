@@ -363,7 +363,6 @@ impl Render for CssCompoundSelector {
         } else if sub_selectors.is_empty() && self.simple_selector().is_some() {
             simple_selector_html
         } else {
-            assert!(sub_selectors.len() == 1);
             format!(
                 "<div data-kind=\"compound-selector\" {}>{}{}</div>",
                 options.to_string(),

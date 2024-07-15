@@ -1,38 +1,23 @@
-article.help-modal {
-    display: none;
-}
-button {
-    cursor: pointer;
-    color: var(--foreground-color);
-    font-family: inherit;
-    border: 0.1em solid rgb(40, 40, 40);
+body:has(>button.open-help.active) {
     -webkit-user-select: none;
-    background: black;
-}
-button.open-help {
-    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
     position: absolute;
     top: 1.5rem;
+    z-index: 10;
+    margin: auto;
+    padding: 1rem;
+    justify-content: center;
+    background-color: rgb(0, 0, 0, 0.5);
+}
+body:has(>button.open-help.active) h2 {
+    margin: 0;
+}
+body:has(>button.open-help.active) button.close {
+    position: absolute;
+    top: 0.5rem;
     right: 0.5rem;
 }
-:root {
-    background-color: rgb(31, 31, 31);
-    padding: 0;
-    margin: 0;
-    --spacing: 0.25em;
-    --outline-color: #ffffff17;
-    --number-color: #b5cea8;
-    --class-color: #d7ba7d;
-    --function-color: #dcdcaa;
-    --property-name-color: #9cdcfe;
-    --variable-color: #bac6ff;
-    --string-color: #ce9178;
-    --attribute-color: var(--property-name-color);
-    color: var(--foreground-color);
-    font-size: 18px;
-    --font-family: Berkeley Mono;
-    font-family: var(--font-family), menlo;
-    --brace-color: #d8a90c;
-    --foreground-color: #ccc;
-    --at-rule-color: #c586c0;
+b {
+    
 }
