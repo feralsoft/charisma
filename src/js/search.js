@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         let selector = input.innerText;
         // do we already have this rule? (remember that empty rules get filtered out from search)
         let existing_rule = document.querySelector(
-          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector}"]`,
+          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector.replaceAll('"', '\\"')}"]`,
         );
 
         if (existing_rule) {

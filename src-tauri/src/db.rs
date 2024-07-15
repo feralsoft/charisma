@@ -45,6 +45,31 @@ pub trait ToSelectors {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector>;
 }
 
+fn path_to_string(path: &Vec<Part>) -> String {
+    let condensed_path = path
+        .iter()
+        .fold::<Vec<Part>, _>(vec![], |new_path, part| match part {
+            Part::Pattern(Pattern::AttributeMatch(name, _, _)) => {
+                if let Some(Part::Pattern(Pattern::Attribute(new_name))) = new_path.last() {
+                    assert!(new_name == name);
+                } else {
+                    panic!();
+                };
+                let mut new_path: Vec<Part> =
+                    new_path.iter().take(new_path.len() - 1).cloned().collect();
+                new_path.push(part.clone());
+                new_path
+            }
+            _ => [new_path, vec![part.clone()]].concat(),
+        });
+
+    return condensed_path
+        .iter()
+        .map(|p| p.to_string())
+        .collect::<Vec<_>>()
+        .join("");
+}
+
 impl ToSelectors for AnyCssRelativeSelector {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
         let selector = self.as_css_relative_selector().unwrap();
@@ -53,18 +78,22 @@ impl ToSelectors for AnyCssRelativeSelector {
         selector
             .to_css_db_paths()
             .iter()
-            .map(|path| Selector {
-                string: parent
-                    .as_ref()
-                    .map(|p| p.string.clone())
-                    .unwrap_or("".to_string())
-                    + selector.to_string().trim(),
-
-                path: [
+            .map(|path| {
+                let path = [
                     parent.map(|p| p.path.clone()).unwrap_or(vec![]),
                     path.clone(),
                 ]
-                .concat(),
+                .concat();
+
+                Selector {
+                    string: parent
+                        .as_ref()
+                        .map(|p| p.string.clone())
+                        .unwrap_or("".to_string())
+                        + &path_to_string(&path),
+
+                    path,
+                }
             })
             .collect()
     }
@@ -85,7 +114,7 @@ impl ToSelectors for AnyCssSelector {
                         .as_ref()
                         .map(|p| p.string.clone())
                         .unwrap_or("".to_string())
-                        + &path.iter().map(|s| s.to_string()).collect::<String>(),
+                        + &path_to_string(&path),
 
                     path,
                 }
