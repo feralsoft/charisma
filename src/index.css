@@ -705,11 +705,22 @@ body {
         content: ">";
         margin-left: var(--spacing);
     }
+
+    &[data-combinator-type="next-sibling"] > [data-attr="left"]::after {
+        content: "+";
+        margin-left: var(--spacing);
+    }
 }
 
 [data-kind="relative-selector"][data-combinator-type="direct-descendant"]
     > [data-kind]::before {
     content: ">";
+    margin-right: var(--spacing);
+}
+
+[data-kind="relative-selector"][data-combinator-type="next-sibling"]
+    > [data-kind]::before {
+    content: "+";
     margin-right: var(--spacing);
 }
 

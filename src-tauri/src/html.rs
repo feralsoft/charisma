@@ -15,7 +15,7 @@ use biome_css_syntax::{
     CssUniversalSelector, CssUrlFunction,
 };
 
-use crate::{get_combinator_type, Property, State};
+use crate::{get_combinator_type, Combinator, Property, State};
 
 pub fn render_value(value: &str) -> String {
     format!(
@@ -74,9 +74,10 @@ impl Render for CssComplexSelector {
                 <div data-attr=\"right\">{}</div>
             </div>",
             match get_combinator_type(combinator.kind()) {
-                crate::Combinator::Descendant => "descendant",
-                crate::Combinator::DirectDescendant => "direct-descendant",
-                crate::Combinator::And => panic!(""),
+                Combinator::Descendant => "descendant",
+                Combinator::DirectDescendant => "direct-descendant",
+                Combinator::Plus => "next-sibling",
+                Combinator::And => panic!(""),
             },
             self.to_string().trim(),
             left.render_html(options),
@@ -114,9 +115,10 @@ impl Render for CssRelativeSelector {
                 format!(
                     "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" data-string-value=\"{}\">{}</div>",
                     match get_combinator_type(combinator.kind()) {
-                        crate::Combinator::Descendant=>"descendant",
-                        crate::Combinator::DirectDescendant=>"direct-descendant",
-                        crate::Combinator::And => todo!(),
+                        Combinator::Descendant => "descendant",
+                        Combinator::DirectDescendant => "direct-descendant",
+                        Combinator::Plus => "next-sibling",
+                        Combinator::And => todo!(),
                     },
                     self.to_string(),
                     self.selector().unwrap().render_html(options)

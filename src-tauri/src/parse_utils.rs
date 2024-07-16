@@ -1,10 +1,6 @@
 use biome_css_syntax::{CssDeclarationWithSemicolon, CssSelectorList};
 
 pub fn parse_selector(str: &str) -> Option<CssSelectorList> {
-    // eh heck, `url::form_urlencoded::byte_serialize` encodes ' ' as '+'
-    // this is gonna get real fucked when we get sibling selectors..
-    assert!(!str.contains("+"));
-
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),

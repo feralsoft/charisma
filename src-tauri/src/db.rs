@@ -284,6 +284,9 @@ impl CSSDB {
         let css = fs::read_to_string(css_path).unwrap();
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
+            if rule.as_css_qualified_rule().is_none() {
+                panic!("broke rule = {:?}", rule.to_string());
+            }
             let rule = rule.as_css_qualified_rule().unwrap();
             for selector in rule.prelude() {
                 let block = rule.block().unwrap();
@@ -476,6 +479,8 @@ pub enum Combinator {
     DirectDescendant,
     // "&"
     And,
+    // +
+    Plus,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -525,6 +530,7 @@ impl ToString for Combinator {
             Combinator::Descendant => String::from(" "),
             Combinator::DirectDescendant => String::from(" > "),
             Combinator::And => String::from(""),
+            Combinator::Plus => String::from(" + "),
         }
     }
 }
@@ -553,7 +559,8 @@ pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Combinator {
     match token_kind {
         CssSyntaxKind::CSS_SPACE_LITERAL => Combinator::Descendant,
         CssSyntaxKind::R_ANGLE => Combinator::DirectDescendant,
-        _ => todo!(),
+        CssSyntaxKind::PLUS => Combinator::Plus,
+        _ => panic!("unexpected token = {:?}", token_kind),
     }
 }
 

@@ -1,6 +1,0 @@
-.--editor menu .minimize.active {
-    
-}
-.--editor-group:has(.--editor menu .minimize.active):not(:has(.--editor:nth-of-type(2))) {
-    padding: 0.2em;
-}
