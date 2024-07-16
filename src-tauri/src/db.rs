@@ -496,6 +496,8 @@ pub enum Pattern {
     PseudoClassWithSelectorList(String),
     // )
     CloseSelectorList,
+    // *
+    Star,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -537,6 +539,7 @@ impl ToString for Pattern {
             Pattern::PseudoClass(name) => format!(":{}", name),
             Pattern::PseudoClassWithSelectorList(name) => format!(":{}(", name),
             Pattern::CloseSelectorList => String::from(")"),
+            Pattern::Star => String::from("*"),
         }
     }
 }
@@ -576,7 +579,7 @@ impl DBPath for biome_css_syntax::AnyCssSelector {
 
 impl DBPath for CssUniversalSelector {
     fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
-        todo!()
+        vec![vec![Part::Pattern(Pattern::Star)]]
     }
 }
 
