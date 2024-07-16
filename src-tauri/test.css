@@ -1,18 +1,3 @@
-[data-kind="pseudo-class-function"] {
-    display: flex;
-}
-[data-kind="pseudo-class-function"] > [data-attr="args"]::before {
-    color: var(--foreground-color);
-    content: "(";
-}
-[data-kind="pseudo-class-function"] > [data-attr="args"]::after {
-    content: ")";
-    color: var(--foreground-color);
-}
-[data-kind="pseudo-class-function"] > [data-attr="function-name"] [data-value] {
-    color: var(--function-color);
-}
-[data-kind="pseudo-class-function"] > [data-attr="function-name"] [data-value]::before {
-    content: ":";
-    color: var(--foreground-color);
+input[type="number"] {
+    font-size: 20px;
 }
