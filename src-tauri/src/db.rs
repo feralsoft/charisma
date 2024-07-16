@@ -624,30 +624,11 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                 }
 
                 // sub selectors are like ".btn.help" -> ".btn", ".help"
-                let rhs_path = self
+                let rhs_paths = self
                     .sub_selectors()
-                    .into_iter()
-                    .flat_map(|selector| {
-                        let paths = selector.to_css_db_paths();
-                        assert!(paths.len() == 1);
-                        paths
-                    })
-                    .reduce(|acc, path| [acc, path].concat())
-                    .unwrap();
-
-                let out = lhs_paths
-                    .iter()
-                    .map(|lhs_path| [lhs_path.clone(), rhs_path.clone()].concat())
-                    .collect();
-
-                out
-            }
-            None => {
-                self.sub_selectors()
                     .into_iter()
                     .map(|selector| selector.to_css_db_paths())
                     .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_paths| {
-                        // this breaks my mind, but it is appearing to work :sweat_smile:
                         if acc_paths.is_empty() {
                             cur_paths
                         } else {
@@ -660,8 +641,35 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                                 })
                                 .collect()
                         }
+                    });
+
+                lhs_paths
+                    .iter()
+                    .flat_map(|lhs_path| {
+                        rhs_paths
+                            .iter()
+                            .map(|rhs_path| [lhs_path.clone(), rhs_path.clone()].concat())
                     })
+                    .collect()
             }
+            None => self
+                .sub_selectors()
+                .into_iter()
+                .map(|selector| selector.to_css_db_paths())
+                .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_paths| {
+                    if acc_paths.is_empty() {
+                        cur_paths
+                    } else {
+                        acc_paths
+                            .iter()
+                            .flat_map(|lhs| {
+                                cur_paths
+                                    .iter()
+                                    .map(|rhs| [lhs.clone(), rhs.clone()].concat())
+                            })
+                            .collect()
+                    }
+                }),
         }
     }
 }
