@@ -814,29 +814,26 @@ impl DBPath for CssPseudoClassFunctionSelectorList {
     fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         let name = self.name().unwrap().text_trimmed().to_string();
 
-        let paths: Vec<_> = self
+        let list_of_paths: Vec<Vec<Vec<Part>>> = self
             .selectors()
             .into_iter()
             .map(|result| result.unwrap())
-            .map(|list| {
-                // let's restrict this so that my brain can function
-                let paths = list.to_css_db_paths();
-                assert!(paths.len() == 1);
-                paths.first().unwrap().clone()
-            })
+            .map(|list| list.to_css_db_paths())
             .collect();
 
-        paths
+        list_of_paths
             .iter()
-            .map(|path| {
-                [
-                    vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(
-                        name.clone(),
-                    ))],
-                    path.clone(),
-                    vec![Part::Pattern(Pattern::CloseSelectorList)],
-                ]
-                .concat()
+            .flat_map(|paths| {
+                paths.iter().map(|path| {
+                    [
+                        vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(
+                            name.clone(),
+                        ))],
+                        path.clone(),
+                        vec![Part::Pattern(Pattern::CloseSelectorList)],
+                    ]
+                    .concat()
+                })
             })
             .collect()
     }
