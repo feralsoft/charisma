@@ -1,7 +1,7 @@
 use biome_css_syntax::{
     AnyCssDimension, AnyCssExpression, AnyCssFunction, AnyCssGenericComponentValue,
-    AnyCssPseudoClass, AnyCssPseudoClassNthSelector, AnyCssRelativeSelector, AnyCssSelector,
-    AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
+    AnyCssPseudoClass, AnyCssPseudoClassNth, AnyCssPseudoClassNthSelector, AnyCssRelativeSelector,
+    AnyCssSelector, AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
     CssBinaryExpression, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
     CssCompoundSelector, CssCustomIdentifier, CssDashedIdentifier, CssFunction, CssIdSelector,
     CssIdentifier, CssNumber, CssParameter, CssParenthesizedExpression, CssPercentage,
@@ -9,6 +9,7 @@ use biome_css_syntax::{
     CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
     CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassIdentifier,
+    CssPseudoClassNth, CssPseudoClassNthIdentifier, CssPseudoClassNthNumber,
     CssPseudoClassNthSelector, CssPseudoClassSelector, CssPseudoElementSelector, CssRatio,
     CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector,
     CssUniversalSelector, CssUrlFunction,
@@ -159,11 +160,50 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 
-impl Render for CssPseudoClassNthSelector {
+impl Render for CssPseudoClassNth {
     fn render_html(&self, _options: &RenderOptions) -> String {
-        let _nth = self.nth().unwrap();
-        let _selector_of = self.of_selector().unwrap();
         todo!()
+    }
+}
+
+impl Render for CssPseudoClassNthIdentifier {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        todo!()
+    }
+}
+
+impl Render for CssPseudoClassNthNumber {
+    fn render_html(&self, _options: &RenderOptions) -> String {
+        assert!(self.sign().is_none());
+        let number = self.value().unwrap();
+        format!(
+            "
+            <div data-kind=\"pseudo-class-nth-number\" data-string-value=\"{}\">
+                {}
+            </div>
+            ",
+            self.to_string(),
+            render_value(&number.to_string())
+        )
+    }
+}
+
+impl Render for AnyCssPseudoClassNth {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        match self {
+            AnyCssPseudoClassNth::CssPseudoClassNth(s) => s.render_html(options),
+            AnyCssPseudoClassNth::CssPseudoClassNthIdentifier(s) => s.render_html(options),
+            AnyCssPseudoClassNth::CssPseudoClassNthNumber(s) => s.render_html(options),
+        }
+    }
+}
+
+impl Render for CssPseudoClassNthSelector {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        assert!(self.of_selector().is_none());
+        let nth = self.nth().unwrap();
+
+        nth.render_html(options)
     }
 }
 

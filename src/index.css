@@ -20,6 +20,24 @@
     font-family: var(--font-family), menlo;
 }
 
+[data-kind="pseudo-class-function-nth"] {
+    > [data-attr="name"] {
+        &::before {
+            content: ":";
+            color: var(--foreground-color);
+        }
+        color: var(--function-color);
+    }
+    > [data-attr="selector"] {
+        &::before {
+            content: "(";
+        }
+        &::after {
+            content: ")";
+        }
+    }
+}
+
 button {
     -webkit-user-select: none;
     cursor: pointer;

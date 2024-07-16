@@ -2,14 +2,16 @@ use crate::parse_utils::parse_property;
 use std::{collections::HashMap, fs, rc::Rc};
 
 use biome_css_syntax::{
-    AnyCssPseudoClass, AnyCssPseudoElement, AnyCssRelativeSelector,
+    AnyCssPseudoClass, AnyCssPseudoClassNth, AnyCssPseudoClassNthSelector, AnyCssPseudoElement,
+    AnyCssRelativeSelector,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
     CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
     CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
-    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList,
+    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassNth,
+    CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
     CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
     CssSyntaxKind, CssUniversalSelector,
 };
@@ -498,6 +500,8 @@ pub enum Pattern {
     CloseSelectorList,
     // *
     Star,
+    // 2 -- part of nth selectors
+    Number(i32),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -540,6 +544,7 @@ impl ToString for Pattern {
             Pattern::PseudoClassWithSelectorList(name) => format!(":{}(", name),
             Pattern::CloseSelectorList => String::from(")"),
             Pattern::Star => String::from("*"),
+            Pattern::Number(num) => num.to_string(),
         }
     }
 }
@@ -694,9 +699,69 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 
-impl DBPath for CssPseudoClassFunctionNth {
+impl DBPath for CssPseudoClassNth {
     fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
         todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassNthIdentifier {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        todo!()
+    }
+}
+
+impl DBPath for CssPseudoClassNthNumber {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        assert!(self.sign().is_none());
+        let number = self.value().unwrap();
+        let number = number.value_token().unwrap();
+        let number = number.text_trimmed();
+        let number: i32 = number.parse().unwrap();
+
+        vec![vec![Part::Pattern(Pattern::Number(number))]]
+    }
+}
+
+impl DBPath for AnyCssPseudoClassNth {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        match self {
+            AnyCssPseudoClassNth::CssPseudoClassNth(s) => s.to_css_db_paths(),
+            AnyCssPseudoClassNth::CssPseudoClassNthIdentifier(s) => s.to_css_db_paths(),
+            AnyCssPseudoClassNth::CssPseudoClassNthNumber(s) => s.to_css_db_paths(),
+        }
+    }
+}
+
+impl DBPath for CssPseudoClassNthSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        assert!(self.of_selector().is_none());
+        self.nth().unwrap().to_css_db_paths()
+    }
+}
+
+impl DBPath for AnyCssPseudoClassNthSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        match self {
+            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => todo!(),
+            AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.to_css_db_paths(),
+        }
+    }
+}
+
+impl DBPath for CssPseudoClassFunctionNth {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        let name = self.name().unwrap().text_trimmed().to_string();
+        let paths = self.selector().unwrap().to_css_db_paths();
+        assert!(paths.len() == 1);
+        let path = paths.first().unwrap().clone();
+
+        vec![[
+            vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(name))],
+            path,
+            vec![Part::Pattern(Pattern::CloseSelectorList)],
+        ]
+        .concat()]
     }
 }
 
