@@ -31,7 +31,10 @@ fn search(path: &str, q: &str) -> Vec<String> {
         .all_selectors_with_properties()
         .iter()
         // .unwrap() since, it should never crash
-        .flat_map(|s| parse_selector(s).unwrap())
+        .flat_map(|s| {
+            println!("selector = {:?}", s);
+            parse_selector(s).unwrap()
+        })
         .map(|s| s.unwrap())
         .filter(|selector| {
             let str = after_css_comment(selector.to_string());

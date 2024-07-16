@@ -220,8 +220,7 @@ pub struct CSSDB {
 fn get_comments(str: &str) -> Vec<String> {
     let mut idx = 0;
     let mut comments: Vec<String> = vec![];
-    while str[idx..].contains('*') {
-        assert!(str.chars().skip(idx).filter(|c| c == &'*').count() >= 2);
+    while str[idx..].contains("/*") {
         match (str[idx..].find("/*"), str[idx..].find("*/")) {
             (Some(start), Some(end)) => {
                 comments.push(str[(idx + start + 2)..(idx + end)].to_string());
@@ -629,23 +628,24 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                 out
             }
             None => {
-                let paths: Vec<_> = self
-                    .sub_selectors()
+                self.sub_selectors()
                     .into_iter()
-                    .flat_map(|selector| selector.to_css_db_paths())
-                    .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_path| {
+                    .map(|selector| selector.to_css_db_paths())
+                    .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_paths| {
                         // this breaks my mind, but it is appearing to work :sweat_smile:
                         if acc_paths.is_empty() {
-                            vec![cur_path]
+                            cur_paths
                         } else {
                             acc_paths
                                 .iter()
-                                .map(|lhs| [lhs.clone(), cur_path.clone()].concat())
+                                .flat_map(|lhs| {
+                                    cur_paths
+                                        .iter()
+                                        .map(|rhs| [lhs.clone(), rhs.clone()].concat())
+                                })
                                 .collect()
                         }
-                    });
-
-                paths
+                    })
             }
         }
     }
@@ -729,7 +729,33 @@ impl DBPath for CssPseudoClassFunctionSelector {
 
 impl DBPath for CssPseudoClassFunctionSelectorList {
     fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
-        todo!()
+        let name = self.name().unwrap().text_trimmed().to_string();
+
+        let paths: Vec<_> = self
+            .selectors()
+            .into_iter()
+            .map(|result| result.unwrap())
+            .map(|list| {
+                // let's restrict this so that my brain can function
+                let paths = list.to_css_db_paths();
+                assert!(paths.len() == 1);
+                paths.first().unwrap().clone()
+            })
+            .collect();
+
+        paths
+            .iter()
+            .map(|path| {
+                [
+                    vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(
+                        name.clone(),
+                    ))],
+                    path.clone(),
+                    vec![Part::Pattern(Pattern::CloseSelectorList)],
+                ]
+                .concat()
+            })
+            .collect()
     }
 }
 

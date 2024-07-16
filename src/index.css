@@ -87,6 +87,30 @@ body:has(> button.open-help.active) article.help-modal {
         }
     }
 }
+[data-kind="pseudo-class-function-selector"] {
+    display: flex;
+
+    > [data-attr="name"] [data-value] {
+        &::before {
+            content: ":";
+            color: var(--foreground-color);
+        }
+
+        color: var(--function-color);
+    }
+
+    > [data-attr="selectors"] {
+        &::before {
+            content: "(";
+            color: var(--foreground-color);
+        }
+
+        &::after {
+            content: ")";
+            color: var(--foreground-color);
+        }
+    }
+}
 
 /* editor not in a group */
 .canvas > .--editor {

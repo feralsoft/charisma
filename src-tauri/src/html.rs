@@ -214,7 +214,21 @@ impl Render for CssPseudoClassFunctionSelector {
 }
 impl Render for CssPseudoClassFunctionSelectorList {
     fn render_html(&self, _options: &RenderOptions) -> String {
-        todo!()
+        let name = self.name().unwrap();
+        format!(
+            "
+        <div data-kind=\"pseudo-class-function-selector\" data-string-value=\"{}\">
+            <div data-attr=\"name\">{}</div>
+            <div data-attr=\"selectors\">{}</div>
+        </div>
+            ",
+            self.to_string(),
+            render_value(name.text_trimmed()),
+            self.selectors()
+                .into_iter()
+                .map(|s| s.unwrap().render_html(&RenderOptions::default()))
+                .collect::<String>()
+        )
     }
 }
 impl Render for CssPseudoClassFunctionValueList {
@@ -226,7 +240,9 @@ impl Render for CssPseudoClassFunctionValueList {
 impl Render for CssPseudoClassSelector {
     fn render_html(&self, options: &RenderOptions) -> String {
         match self.class().unwrap() {
-            AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
+            AnyCssPseudoClass::CssBogusPseudoClass(s) => {
+                panic!("bogus pseudo class = {:?}", s.items())
+            }
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.render_html(options),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => {
                 s.render_html(options)

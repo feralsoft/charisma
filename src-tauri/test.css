@@ -1,3 +1,6 @@
-input[type="number"] {
-    font-size: 20px;
+.--editor:is(:not(.focused)) .input {
+    caret-color: rgb(0, 0, 0, 0);
+}
+.--editor:is(.dragging) .input {
+    caret-color: rgb(0, 0, 0, 0);
 }
