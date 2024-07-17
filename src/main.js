@@ -16,7 +16,7 @@ import "./js/copy-property.js";
 import "./js/select-selector-part.js";
 import "./js/choose-file.js";
 
-import { appWindow } from "@tauri-apps/api/window.js";
+import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 
 appWindow.onResized(async (_) => {
   document.body.dataset.isFullscreen = await appWindow.isFullscreen();

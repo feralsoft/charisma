@@ -349,7 +349,7 @@ impl CSSDB {
                                     .value()
                                     .into_iter()
                                     .map(|value| value.to_string())
-                                    .reduce(|acc, cur| format!("{} {}", acc, cur))
+                                    .reduce(|acc, cur| format!("{} {}", acc.trim(), cur.trim()))
                                     .unwrap();
                                 properties.push(Property {
                                     state: State::Valid,

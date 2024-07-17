@@ -1,5 +1,5 @@
-import { open } from "@tauri-apps/api/dialog.js";
-import { homeDir } from "@tauri-apps/api/path.js";
+import { open } from "../node_modules/@tauri-apps/api/dialog.js";
+import { homeDir } from "../node_modules/@tauri-apps/api/path.js";
 
 async function set_path_text(path, file_picker) {
   let home_dir = await homeDir();

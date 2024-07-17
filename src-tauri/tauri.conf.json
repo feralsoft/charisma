@@ -1,6 +1,6 @@
 {
   "build": {
-    "devPath": "../src",
+    "devPath": "http://localhost:5173",
     "distDir": "../src",
     "withGlobalTauri": true
   },
