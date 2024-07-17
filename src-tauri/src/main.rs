@@ -51,7 +51,7 @@ fn insert_empty_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &s
         .into_iter()
         .flat_map(|s| s.unwrap().to_selectors(None))
     {
-        db.insert_empty(&selector);
+        db.insert_empty_regular_rule(&selector);
     }
     fs::write(path, db.serialize()).unwrap()
 }
@@ -68,7 +68,7 @@ fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) ->
     assert!(paths.len() == 1);
     let path = paths.first().unwrap();
     let tree = db.get(&path).unwrap();
-    let rule = tree.rule.as_ref().unwrap();
+    let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
     let mut rule_properties = rule.properties.clone();
     rule_properties.sort_by_key(|p| p.name.clone());
 
@@ -145,7 +145,7 @@ fn insert_property(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str
         .into_iter()
         .flat_map(|s| s.unwrap().to_selectors(None))
     {
-        db.insert(&selector, &property);
+        db.insert_regular_rule(&selector, &property);
     }
     fs::write(path, db.serialize()).unwrap()
 }
@@ -175,13 +175,13 @@ fn replace_all_properties(
 
         for property in properties.iter() {
             if property.is_commented {
-                db.insert_commented(
+                db.insert_regular_rule_commented(
                     &selector,
                     // at this point we are just parsing to validate
                     parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
                 );
             } else {
-                db.insert(
+                db.insert_regular_rule(
                     &selector,
                     &parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
                 );
@@ -210,14 +210,14 @@ fn update_value(
         .flat_map(|s| s.unwrap().to_selectors(None))
     {
         let tree = db.get(&selector.path).unwrap();
-        let rule = tree.rule.as_ref().unwrap();
+        let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
         assert!(rule
             .properties
             .iter()
             .find(|p| p.name == name.trim() && p.value == original_value)
             .is_some());
         db.delete(&selector.path, name.trim(), original_value);
-        db.insert(&selector, &property);
+        db.insert_regular_rule(&selector, &property);
     }
 
     fs::write(path, db.serialize()).unwrap()

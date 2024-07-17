@@ -2,11 +2,12 @@ use crate::parse_utils::parse_property;
 use std::{collections::HashMap, fs, sync::Arc};
 
 use biome_css_syntax::{
-    AnyCssPseudoClass, AnyCssPseudoClassNth, AnyCssPseudoClassNthSelector, AnyCssPseudoElement,
-    AnyCssRelativeSelector,
+    AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
+    AnyCssPseudoClassNthSelector, AnyCssPseudoElement, AnyCssRelativeSelector, AnyCssRule,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
+    CssKeyframesAtRule, CssKeyframesPercentageSelector, CssKeyframesSelectorList,
     CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
     CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
@@ -162,14 +163,14 @@ impl Property {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Rule {
+pub struct RegularRule {
     pub selector: Selector,
     pub properties: Vec<Arc<Property>>,
 }
 
-impl Rule {
+impl RegularRule {
     pub fn new(selector: Selector) -> Self {
-        Rule {
+        RegularRule {
             selector,
             properties: vec![],
         }
@@ -216,9 +217,36 @@ impl Rule {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Frame {
+    path: Vec<Part>,
+    properties: Vec<Property>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Keyframes {
+    name: String,
+    frames: Vec<Frame>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Rule {
+    RegularRule(RegularRule),
+    AtRule(Keyframes),
+}
+
+impl Rule {
+    pub fn as_regular_rule(&self) -> Option<RegularRule> {
+        match self {
+            Rule::RegularRule(rule) => Some(rule.clone()),
+            Rule::AtRule(_) => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct CSSDB {
     children: HashMap<Part, CSSDB>,
-    pub current_path: Option<String>,
+    current_path: Option<String>,
     pub rule: Option<Rule>,
 }
 
@@ -282,13 +310,85 @@ impl CSSDB {
                     property,
                 ) => {
                     comments.extend(get_comments(&property.to_string()));
-                    self.insert(&selector, &property);
+                    self.insert_regular_rule(&selector, &property);
                 }
             }
         }
 
         for property in comments.iter().filter_map(|str| parse_property(&str)) {
-            self.insert_commented(&selector, property);
+            self.insert_regular_rule_commented(&selector, property);
+        }
+    }
+
+    fn load_at_rule(&mut self, at_rule: AnyCssAtRule) {
+        let at_rule_paths = at_rule.to_css_db_paths();
+        assert!(at_rule_paths.len() == 1);
+        let at_rule_path = at_rule_paths.first().unwrap();
+        match at_rule {
+            AnyCssAtRule::CssKeyframesAtRule(rule) => {
+                let name = rule.name().unwrap();
+                let block = rule.block().unwrap();
+                let block = block.as_css_keyframes_block().unwrap();
+                let mut frames: Vec<Frame> = vec![];
+                for item in block.items() {
+                    let frame = match item {
+                        biome_css_syntax::AnyCssKeyframesItem::CssBogusKeyframesItem(_) => todo!(),
+                        biome_css_syntax::AnyCssKeyframesItem::CssKeyframesItem(item) => {
+                            let paths = item.selectors().to_css_db_paths();
+                            assert!(paths.len() == 1);
+                            let path = paths.first().unwrap().to_owned();
+
+                            let block = item.block().unwrap();
+                            let block = block.as_css_declaration_list_block().unwrap();
+                            let mut properties: Vec<Property> = vec![];
+                            for property in block.declarations() {
+                                let property = property.declaration().unwrap().property().unwrap();
+                                let property = property.as_css_generic_property().unwrap();
+                                let name = property.name().unwrap().to_string().trim().to_string();
+                                let value = property
+                                    .value()
+                                    .into_iter()
+                                    .map(|value| value.to_string())
+                                    .reduce(|acc, cur| format!("{} {}", acc, cur))
+                                    .unwrap();
+                                properties.push(Property {
+                                    state: State::Valid,
+                                    name,
+                                    value,
+                                })
+                            }
+                            Frame { path, properties }
+                        }
+                    };
+                    frames.push(frame)
+                }
+
+                self.insert_raw(
+                    at_rule_path,
+                    Rule::AtRule(Keyframes {
+                        name: name.to_string().trim().to_string(),
+                        frames,
+                    }),
+                )
+            }
+            AnyCssAtRule::CssBogusAtRule(_) => todo!(),
+            AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
+            AnyCssAtRule::CssColorProfileAtRule(_) => todo!(),
+            AnyCssAtRule::CssContainerAtRule(_) => todo!(),
+            AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
+            AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
+            AnyCssAtRule::CssImportAtRule(_) => panic!(),
+            AnyCssAtRule::CssLayerAtRule(_) => todo!(),
+            AnyCssAtRule::CssMediaAtRule(_) => todo!(),
+            AnyCssAtRule::CssNamespaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssPageAtRule(_) => todo!(),
+            AnyCssAtRule::CssPropertyAtRule(_) => todo!(),
+            AnyCssAtRule::CssScopeAtRule(_) => todo!(),
+            AnyCssAtRule::CssStartingStyleAtRule(_) => todo!(),
+            AnyCssAtRule::CssSupportsAtRule(_) => todo!(),
         }
     }
 
@@ -296,34 +396,57 @@ impl CSSDB {
         let css = fs::read_to_string(css_path).unwrap();
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
-            if rule.as_css_qualified_rule().is_none() {
-                panic!("broke rule = {:?}", rule.to_string());
-            }
-            let rule = rule.as_css_qualified_rule().unwrap();
-            for selector in rule.prelude() {
-                let block = rule.block().unwrap();
-                let block = block.as_css_declaration_or_rule_block().unwrap();
-                for selector in selector.unwrap().to_selectors(None) {
-                    self.insert_empty(&selector);
-                    self.load_rule(selector, block);
+            match rule {
+                AnyCssRule::CssQualifiedRule(rule) => {
+                    for selector in rule.prelude() {
+                        let block = rule.block().unwrap();
+                        let block = block.as_css_declaration_or_rule_block().unwrap();
+                        for selector in selector.unwrap().to_selectors(None) {
+                            self.insert_empty_regular_rule(&selector);
+                            self.load_rule(selector, block);
+                        }
+                    }
                 }
-            }
+                AnyCssRule::CssAtRule(at_rule) => self.load_at_rule(at_rule.rule().unwrap()),
+                AnyCssRule::CssBogusRule(_) => todo!(),
+                AnyCssRule::CssNestedQualifiedRule(_) => todo!(),
+            };
         }
         self.current_path = Some(css_path.to_string());
     }
 
     pub fn serialize(&self) -> String {
         let rule = match &self.rule {
-            Some(Rule {
+            Some(Rule::RegularRule(RegularRule {
                 properties,
                 selector,
-            }) => {
+            })) => {
                 format!(
                     "{} {{\n    {}\n}}\n",
                     selector.string,
                     properties
                         .iter()
                         .map(|p| p.to_string() + "\n    ")
+                        .collect::<String>()
+                        .trim()
+                )
+            }
+            Some(Rule::AtRule(Keyframes { name, frames })) => {
+                format!(
+                    "@keyframes {} {{\n    {}\n}}",
+                    name,
+                    frames
+                        .iter()
+                        .map(|p| format!(
+                            "{} {{\n        {}\n}}\n    ",
+                            // ugh this is so bad
+                            p.path.last().unwrap().to_string(),
+                            p.properties
+                                .iter()
+                                .map(|p| p.to_string() + "\n        ")
+                                .collect::<String>()
+                                .trim()
+                        ))
                         .collect::<String>()
                         .trim()
                 )
@@ -342,7 +465,7 @@ impl CSSDB {
     }
 
     fn all_selectors_with_properties_aux(&self, selectors: &mut Vec<String>) {
-        if let Some(rule) = self.rule.as_ref() {
+        if let Some(Rule::RegularRule(rule)) = self.rule.as_ref() {
             if !rule.properties.is_empty() {
                 selectors.push(rule.selector.string.to_owned())
             }
@@ -359,9 +482,11 @@ impl CSSDB {
     }
 
     pub fn drain(&mut self) {
-        if let Some(rule) = self.rule.as_mut() {
-            rule.properties.drain(0..);
-        }
+        match &mut self.rule {
+            Some(Rule::RegularRule(rule)) => rule.properties.drain(0..),
+            Some(Rule::AtRule(_)) => panic!("sdfwfjl"),
+            None => todo!(),
+        };
     }
 
     pub fn set_state(
@@ -376,14 +501,20 @@ impl CSSDB {
             tree.rule.is_some(),
             "can't delete property from rule that doesn't exist"
         );
+
         let rule = tree.rule.as_mut().unwrap();
-        rule.comment_all_with_name(property_name);
-        if state == State::Valid {
-            rule.insert(Property {
-                name: property_name.to_string(),
-                value: property_value.to_string(),
-                state,
-            });
+        match rule {
+            Rule::RegularRule(rule) => {
+                rule.comment_all_with_name(property_name);
+                if state == State::Valid {
+                    rule.insert(Property {
+                        name: property_name.to_string(),
+                        value: property_value.to_string(),
+                        state,
+                    });
+                }
+            }
+            Rule::AtRule(_) => panic!(),
         }
     }
 
@@ -394,35 +525,62 @@ impl CSSDB {
             "can't delete property from rule that doesn't exist"
         );
         let rule = tree.rule.as_mut().unwrap();
-        rule.properties
-            .retain(|p| !(&p.name == property_name && &p.value == property_value));
+        match rule {
+            Rule::RegularRule(rule) => {
+                rule.properties
+                    .retain(|p| !(&p.name == property_name && &p.value == property_value));
+            }
+            Rule::AtRule(_) => panic!(),
+        }
     }
 
-    fn insert_raw(&mut self, selector: Selector, path: &[Part], property: Property) {
+    fn insert_raw(&mut self, path: &[Part], rule: Rule) {
         match path {
-            [] => {
-                match &mut self.rule {
-                    Some(rule) => rule.insert(property),
-                    None => {
-                        let mut rule = Rule::new(selector);
-                        rule.insert(property);
-                        self.rule = Some(rule)
-                    }
-                };
-            }
+            [] => match &mut self.rule {
+                Some(_) => panic!(),
+                None => self.rule = Some(rule),
+            },
             [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(tree) => tree.insert_raw(selector, parts, property),
+                Some(tree) => tree.insert_raw(parts, rule),
                 None => {
                     let mut new_tree = CSSDB::new();
-                    new_tree.insert_raw(selector, parts, property);
+                    new_tree.insert_raw(parts, rule);
                     self.children.insert(part.to_owned(), new_tree);
                 }
             },
         }
     }
 
-    pub fn insert_commented(&mut self, selector: &Selector, property: CssDeclarationWithSemicolon) {
-        self.insert_raw(
+    fn insert_raw_regular_rule(&mut self, selector: Selector, path: &[Part], property: Property) {
+        match path {
+            [] => {
+                match &mut self.rule {
+                    Some(Rule::RegularRule(rule)) => rule.insert(property),
+                    Some(Rule::AtRule(_)) => panic!(),
+                    None => {
+                        let mut rule = RegularRule::new(selector);
+                        rule.insert(property);
+                        self.rule = Some(Rule::RegularRule(rule))
+                    }
+                };
+            }
+            [part, parts @ ..] => match self.children.get_mut(part) {
+                Some(tree) => tree.insert_raw_regular_rule(selector, parts, property),
+                None => {
+                    let mut new_tree = CSSDB::new();
+                    new_tree.insert_raw_regular_rule(selector, parts, property);
+                    self.children.insert(part.to_owned(), new_tree);
+                }
+            },
+        }
+    }
+
+    pub fn insert_regular_rule_commented(
+        &mut self,
+        selector: &Selector,
+        property: CssDeclarationWithSemicolon,
+    ) {
+        self.insert_raw_regular_rule(
             selector.clone(),
             &selector.path,
             Property {
@@ -433,31 +591,35 @@ impl CSSDB {
         )
     }
 
-    fn insert_empty_aux(&mut self, selector: Selector, path: &[Part]) {
+    fn insert_empty_regular_rule_aux(&mut self, selector: Selector, path: &[Part]) {
         match path {
             [] => {
                 match &mut self.rule {
                     Some(_) => {} // already exists
-                    None => self.rule = Some(Rule::new(selector)),
+                    None => self.rule = Some(Rule::RegularRule(RegularRule::new(selector))),
                 };
             }
             [part, parts @ ..] => match self.children.get_mut(part) {
-                Some(tree) => tree.insert_empty_aux(selector, parts),
+                Some(tree) => tree.insert_empty_regular_rule_aux(selector, parts),
                 None => {
                     let mut new_tree = CSSDB::new();
-                    new_tree.insert_empty_aux(selector, parts);
+                    new_tree.insert_empty_regular_rule_aux(selector, parts);
                     self.children.insert(part.to_owned(), new_tree);
                 }
             },
         }
     }
 
-    pub fn insert_empty(&mut self, selector: &Selector) {
-        self.insert_empty_aux(selector.clone(), &selector.path);
+    pub fn insert_empty_regular_rule(&mut self, selector: &Selector) {
+        self.insert_empty_regular_rule_aux(selector.clone(), &selector.path);
     }
 
-    pub fn insert(&mut self, selector: &Selector, property: &CssDeclarationWithSemicolon) {
-        self.insert_raw(
+    pub fn insert_regular_rule(
+        &mut self,
+        selector: &Selector,
+        property: &CssDeclarationWithSemicolon,
+    ) {
+        self.insert_raw_regular_rule(
             selector.clone(),
             &selector.path,
             Property {
@@ -526,9 +688,20 @@ pub enum Pattern {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum AtRulePart {
+    // @keyframes
+    Keyframes,
+    // keyframe-name
+    Name(String),
+    // 20%
+    Percentage(i32),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Part {
     Combinator(Combinator),
     Pattern(Pattern),
+    AtRule(AtRulePart),
 }
 
 impl ToString for Part {
@@ -536,6 +709,7 @@ impl ToString for Part {
         match self {
             Part::Combinator(c) => c.to_string(),
             Part::Pattern(p) => p.to_string(),
+            Part::AtRule(a) => a.to_string(),
         }
     }
 }
@@ -567,6 +741,16 @@ impl ToString for Pattern {
             Pattern::CloseSelectorList => String::from(")"),
             Pattern::Star => String::from("*"),
             Pattern::Number(num) => num.to_string(),
+        }
+    }
+}
+
+impl ToString for AtRulePart {
+    fn to_string(&self) -> String {
+        match self {
+            AtRulePart::Keyframes => String::from("@keyframes"),
+            AtRulePart::Name(name) => name.clone(),
+            AtRulePart::Percentage(num) => format!("{}%", num),
         }
     }
 }
@@ -906,6 +1090,78 @@ impl DBPath for CssAttributeSelector {
             None => {
                 vec![vec![Part::Pattern(Pattern::Attribute(name))]]
             }
+        }
+    }
+}
+
+impl DBPath for CssKeyframesAtRule {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        let name = self.name().unwrap();
+        let name = name.as_css_custom_identifier().unwrap();
+        let name = name.value_token().unwrap();
+
+        vec![vec![
+            Part::AtRule(AtRulePart::Keyframes),
+            Part::AtRule(AtRulePart::Name(name.text_trimmed().to_string())),
+        ]]
+    }
+}
+
+impl DBPath for CssKeyframesPercentageSelector {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        let selector = self.selector().unwrap();
+        let num: i32 = selector
+            .as_fields()
+            .value_token
+            .unwrap()
+            .text_trimmed()
+            .parse()
+            .unwrap();
+        vec![vec![Part::AtRule(AtRulePart::Percentage(num))]]
+    }
+}
+
+impl DBPath for CssKeyframesSelectorList {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        self.into_iter()
+            .map(|s| s.unwrap())
+            .map(|s| match s {
+                AnyCssKeyframesSelector::CssBogusSelector(_) => todo!(),
+                AnyCssKeyframesSelector::CssKeyframesIdentSelector(_) => todo!(),
+                AnyCssKeyframesSelector::CssKeyframesPercentageSelector(pct) => {
+                    pct.to_css_db_paths()
+                }
+            })
+            .map(|paths| {
+                assert!(paths.len() == 1);
+                paths.first().unwrap().clone()
+            })
+            .collect()
+    }
+}
+
+impl DBPath for AnyCssAtRule {
+    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+        match self {
+            AnyCssAtRule::CssBogusAtRule(_) => todo!(),
+            AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
+            AnyCssAtRule::CssColorProfileAtRule(_) => todo!(),
+            AnyCssAtRule::CssContainerAtRule(_) => todo!(),
+            AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
+            AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
+            AnyCssAtRule::CssImportAtRule(_) => todo!(),
+            AnyCssAtRule::CssKeyframesAtRule(r) => r.to_css_db_paths(),
+            AnyCssAtRule::CssLayerAtRule(_) => todo!(),
+            AnyCssAtRule::CssMediaAtRule(_) => todo!(),
+            AnyCssAtRule::CssNamespaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssPageAtRule(_) => todo!(),
+            AnyCssAtRule::CssPropertyAtRule(_) => todo!(),
+            AnyCssAtRule::CssScopeAtRule(_) => todo!(),
+            AnyCssAtRule::CssStartingStyleAtRule(_) => todo!(),
+            AnyCssAtRule::CssSupportsAtRule(_) => todo!(),
         }
     }
 }
