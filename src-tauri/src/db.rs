@@ -1,5 +1,5 @@
 use crate::parse_utils::parse_property;
-use std::{collections::HashMap, fs, rc::Rc};
+use std::{collections::HashMap, fs, sync::Arc};
 
 use biome_css_syntax::{
     AnyCssPseudoClass, AnyCssPseudoClassNth, AnyCssPseudoClassNthSelector, AnyCssPseudoElement,
@@ -25,14 +25,16 @@ pub enum State {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Property {
     pub state: State,
-    pub node: CssDeclarationWithSemicolon,
+    pub name: String,
+    pub value: String,
 }
 
 impl Property {
     fn to_commented(&self) -> Self {
         Property {
             state: State::Commented,
-            node: self.node.clone(),
+            name: self.name.clone(),
+            value: self.value.clone(),
         }
     }
 }
@@ -128,15 +130,15 @@ impl ToSelectors for AnyCssSelector {
 
 impl Property {
     pub fn to_string(&self) -> String {
-        let property_str = format!("{}: {};", self.name(), self.value());
+        let property_str = format!("{}: {};", self.name, self.value);
         match self.state {
             State::Valid => property_str,
             State::Commented => format!("/* {} */", property_str),
         }
     }
 
-    pub fn name(&self) -> String {
-        let decl = self.node.declaration().unwrap();
+    pub fn name(node: &CssDeclarationWithSemicolon) -> String {
+        let decl = node.declaration().unwrap();
         let property = decl.property().unwrap();
         let property = property.as_css_generic_property().unwrap();
         let name = property.name().unwrap();
@@ -145,8 +147,8 @@ impl Property {
         name.text_trimmed().to_string()
     }
 
-    pub fn value(&self) -> String {
-        let decl = self.node.declaration().unwrap();
+    pub fn value(node: &CssDeclarationWithSemicolon) -> String {
+        let decl = node.declaration().unwrap();
         let property = decl.property().unwrap();
         let property = property.as_css_generic_property().unwrap();
         property
@@ -162,7 +164,7 @@ impl Property {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rule {
     pub selector: Selector,
-    pub properties: Vec<Rc<Property>>,
+    pub properties: Vec<Arc<Property>>,
 }
 
 impl Rule {
@@ -178,8 +180,8 @@ impl Rule {
             .properties
             .iter()
             .map(|p| {
-                if &p.name() == name {
-                    Rc::new(p.to_commented())
+                if &p.name == name {
+                    Arc::new(p.to_commented())
                 } else {
                     p.clone()
                 }
@@ -195,13 +197,13 @@ impl Rule {
                 // if we are literally re-entering the same property, just ignore it
                 // ^ this is important if we are loading in a huge css file
                 .filter(|existing_property| {
-                    !(existing_property.name() == new_property.name()
-                        && existing_property.value() == new_property.value())
+                    !(existing_property.name == new_property.name
+                        && existing_property.value == new_property.value)
                 })
                 // if its the same name, but different value, comment out the other ones
                 .map(|p| {
-                    if p.name() == new_property.name() {
-                        Rc::new(p.to_commented())
+                    if p.name == new_property.name {
+                        Arc::new(p.to_commented())
                     } else {
                         p.clone()
                     }
@@ -209,13 +211,14 @@ impl Rule {
                 .collect();
         }
 
-        self.properties.push(Rc::new(new_property))
+        self.properties.push(Arc::new(new_property))
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CSSDB {
     children: HashMap<Part, CSSDB>,
+    pub current_path: Option<String>,
     pub rule: Option<Rule>,
 }
 
@@ -240,6 +243,7 @@ impl CSSDB {
         CSSDB {
             children: HashMap::new(),
             rule: None,
+            current_path: None,
         }
     }
 
@@ -297,6 +301,7 @@ impl CSSDB {
                 }
             }
         }
+        self.current_path = Some(css_path.to_string());
     }
 
     pub fn serialize(&self) -> String {
@@ -367,7 +372,8 @@ impl CSSDB {
         rule.comment_all_with_name(property_name);
         if state == State::Valid {
             rule.insert(Property {
-                node: parse_property(&format!("{}: {};", property_name, property_value)).unwrap(),
+                name: property_name.to_string(),
+                value: property_value.to_string(),
                 state,
             });
         }
@@ -381,7 +387,7 @@ impl CSSDB {
         );
         let rule = tree.rule.as_mut().unwrap();
         rule.properties
-            .retain(|p| !(&p.name() == property_name && &p.value() == property_value));
+            .retain(|p| !(&p.name == property_name && &p.value == property_value));
     }
 
     fn insert_raw(&mut self, selector: Selector, path: &[Part], property: Property) {
@@ -412,7 +418,8 @@ impl CSSDB {
             selector.clone(),
             &selector.path,
             Property {
-                node: property,
+                name: Property::name(&property),
+                value: Property::value(&property),
                 state: State::Commented,
             },
         )
@@ -446,7 +453,8 @@ impl CSSDB {
             selector.clone(),
             &selector.path,
             Property {
-                node: property.clone(),
+                name: Property::name(property),
+                value: Property::value(property),
                 state: State::Valid,
             },
         )

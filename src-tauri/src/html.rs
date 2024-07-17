@@ -15,7 +15,7 @@ use biome_css_syntax::{
     CssUniversalSelector, CssUrlFunction,
 };
 
-use crate::{get_combinator_type, Combinator, Property, State};
+use crate::{get_combinator_type, parse_utils::parse_property, Combinator, Property, State};
 
 pub fn render_value(value: &str) -> String {
     format!(
@@ -677,10 +677,11 @@ impl Render for CssSelectorList {
 
 impl Render for Property {
     fn render_html(&self, options: &RenderOptions) -> String {
-        let property = self.node.declaration().unwrap().property().unwrap();
+        let property = parse_property(&format!("{}: {};", self.name, self.value)).unwrap();
+        let property = property.declaration().unwrap().property().unwrap();
         let property = property.as_css_generic_property().unwrap();
 
-        let name = self.name();
+        let name = self.name.clone();
         let value = if property.value().into_iter().len() == 1 {
             let value = property.value().into_iter().next().unwrap();
             let value = value.as_any_css_value().unwrap();

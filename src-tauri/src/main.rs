@@ -1,52 +1,48 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use biome_css_syntax::AnyCssSelector;
 use db::*;
 use html::*;
 use parse_utils::{parse_property, parse_selector};
 use serde::Deserialize;
-use std::fs;
+use std::{fs, sync::Mutex};
 
 mod db;
 mod html;
 mod parse_utils;
 
-fn after_css_comment(string: String) -> String {
-    if let Some(idx) = string.find("*/") {
-        string.get((idx + 2)..).unwrap().to_string()
-    } else {
-        string
-    }
-}
-
 #[tauri::command]
-fn search(path: &str, q: &str) -> Vec<String> {
-    let mut db = CSSDB::new();
-    db.load(path);
-
+fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String> {
+    let mut db = state.lock().unwrap();
+    if db
+        .current_path
+        .as_ref()
+        .filter(|current_path| path == current_path.as_str())
+        .is_none()
+    {
+        db.load(path);
+    }
     let parts: Vec<&str> = q.trim().split(" ").collect();
 
-    let mut results: Vec<AnyCssSelector> = db
+    let mut results: Vec<String> = db
         .all_selectors_with_properties()
         .iter()
-        // .unwrap() since, it should never crash
-        .flat_map(|s| parse_selector(s).unwrap())
-        .map(|s| s.unwrap())
-        .filter(|selector| {
-            let str = after_css_comment(selector.to_string());
-            parts.iter().all(|q| str.contains(q))
-        })
+        .filter(|selector| parts.iter().all(|q| selector.contains(q)))
+        .cloned()
         .collect();
 
-    results.sort_by(|a, b| {
-        let a = after_css_comment(a.to_string());
-        let b = after_css_comment(b.to_string());
-        a.len().cmp(&b.len()).then_with(|| a.cmp(&b))
-    });
+    results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(&b)));
 
     results
         .iter()
+        .map(|s| {
+            parse_selector(s)
+                .unwrap()
+                .into_iter()
+                .next()
+                .unwrap()
+                .unwrap()
+        })
         .map(|s| s.render_html(&RenderOptions::default()))
         .collect()
 }
@@ -79,7 +75,7 @@ fn render_rule(path: &str, selector: &str) -> String {
     let tree = db.get(&path).unwrap();
     let rule = tree.rule.as_ref().unwrap();
     let mut rule_properties = rule.properties.clone();
-    rule_properties.sort_by_key(|p| p.name());
+    rule_properties.sort_by_key(|p| p.name.clone());
 
     format!(
         "
@@ -178,6 +174,7 @@ fn replace_all_properties(path: &str, selector: &str, properties: Vec<JsonProper
             if property.is_commented {
                 db.insert_commented(
                     &selector,
+                    // at this point we are just parsing to validate
                     parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
                 );
             } else {
@@ -206,7 +203,7 @@ fn update_value(path: &str, selector: &str, name: &str, original_value: &str, va
         assert!(rule
             .properties
             .iter()
-            .find(|p| p.name() == name.trim() && p.value() == original_value)
+            .find(|p| p.name == name.trim() && p.value == original_value)
             .is_some());
         db.delete(&selector.path, name.trim(), original_value);
         db.insert(&selector, &property);
@@ -216,7 +213,10 @@ fn update_value(path: &str, selector: &str, name: &str, original_value: &str, va
 }
 
 fn main() {
+    let db = Mutex::new(CSSDB::new());
+
     tauri::Builder::default()
+        .manage(db)
         .invoke_handler(tauri::generate_handler![
             render_rule,
             search,
