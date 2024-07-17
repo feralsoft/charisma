@@ -688,7 +688,8 @@ impl Render for Property {
             value.render_html(options)
         } else {
             format!(
-                "<div data-kind=\"multi-part-value\" data-string-value='{}'>{}</div>",
+                "<div data-kind=\"multi-part-value\" data-len=\"{}\" data-string-value='{}'>{}</div>",
+                property.value().into_iter().count(),
                 property
                     .value()
                     .into_iter()

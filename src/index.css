@@ -1006,3 +1006,21 @@ menu {
 .--editor.focused {
     z-index: 5;
 }
+
+[data-kind="property"]:has(> [data-attr="name"] [data-value="padding"])
+    [data-kind="multi-part-value"][data-len="2"] {
+    > [data-kind]::before {
+        display: flex;
+        align-items: center;
+        font-size: 0.8em;
+        opacity: 0.9;
+        color: var(--foreground-color);
+        margin-right: var(--spacing);
+    }
+    > [data-kind]:nth-child(1)::before {
+        content: "y: ";
+    }
+    > [data-kind]:nth-child(2)::before {
+        content: "x: ";
+    }
+}

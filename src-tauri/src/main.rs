@@ -14,12 +14,7 @@ mod parse_utils;
 #[tauri::command]
 fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String> {
     let mut db = state.lock().unwrap();
-    if db
-        .current_path
-        .as_ref()
-        .filter(|current_path| path == current_path.as_str())
-        .is_none()
-    {
+    if !db.is_loaded(path) {
         db.load(path);
     }
     let parts: Vec<&str> = q.trim().split(" ").collect();
@@ -48,9 +43,9 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
 }
 
 #[tauri::command]
-fn insert_empty_rule(path: &str, selector: &str) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn insert_empty_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
     let selector_list = parse_selector(selector).unwrap();
     for selector in selector_list
         .into_iter()
@@ -62,9 +57,9 @@ fn insert_empty_rule(path: &str, selector: &str) {
 }
 
 #[tauri::command]
-fn render_rule(path: &str, selector: &str) -> String {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) -> String {
+    let db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
     let selector = parse_selector(selector).unwrap();
     let paths: Vec<Vec<Part>> = selector
         .into_iter()
@@ -95,9 +90,10 @@ fn render_rule(path: &str, selector: &str) -> String {
 }
 
 #[tauri::command]
-fn delete(path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn delete(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
+
     let selector_list = parse_selector(selector).unwrap();
 
     for path in selector_list
@@ -110,9 +106,10 @@ fn delete(path: &str, selector: &str, name: &str, value: &str) {
 }
 
 #[tauri::command]
-fn disable(path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn disable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
+
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -124,9 +121,10 @@ fn disable(path: &str, selector: &str, name: &str, value: &str) {
 }
 
 #[tauri::command]
-fn enable(path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn enable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
+
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -138,10 +136,10 @@ fn enable(path: &str, selector: &str, name: &str, value: &str) {
 }
 
 #[tauri::command]
-fn insert_property(path: &str, selector: &str, property: &str) {
+fn insert_property(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, property: &str) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
     let property = parse_property(property).unwrap();
-    let mut db = CSSDB::new();
-    db.load(path);
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -160,9 +158,14 @@ struct JsonProperty {
 }
 
 #[tauri::command]
-fn replace_all_properties(path: &str, selector: &str, properties: Vec<JsonProperty>) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn replace_all_properties(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    properties: Vec<JsonProperty>,
+) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -189,9 +192,17 @@ fn replace_all_properties(path: &str, selector: &str, properties: Vec<JsonProper
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn update_value(path: &str, selector: &str, name: &str, original_value: &str, value: &str) {
-    let mut db = CSSDB::new();
-    db.load(path);
+fn update_value(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    name: &str,
+    original_value: &str,
+    value: &str,
+) {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
+
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
     for selector in parse_selector(selector)
         .unwrap()

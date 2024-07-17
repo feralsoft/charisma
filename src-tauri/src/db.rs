@@ -247,6 +247,14 @@ impl CSSDB {
         }
     }
 
+    pub fn is_loaded(&self, path: &str) -> bool {
+        return self
+            .current_path
+            .as_ref()
+            .map(|p| p.as_str() == path)
+            .is_some();
+    }
+
     fn load_rule(&mut self, selector: Selector, block: &CssDeclarationOrRuleBlock) {
         let mut comments: Vec<String> = vec![];
         comments.extend(get_comments(
