@@ -433,12 +433,12 @@ impl CSSDB {
             }
             Some(Rule::AtRule(Keyframes { name, frames })) => {
                 format!(
-                    "@keyframes {} {{\n    {}\n}}",
+                    "@keyframes {} {{\n    {}\n}}\n",
                     name,
                     frames
                         .iter()
                         .map(|p| format!(
-                            "{} {{\n        {}\n}}\n    ",
+                            "{} {{\n        {}\n    }}\n    ",
                             // ugh this is so bad
                             p.path.last().unwrap().to_string(),
                             p.properties
@@ -454,12 +454,15 @@ impl CSSDB {
             None => String::from(""),
         };
 
+        let mut children: Vec<(&Part, &CSSDB)> = self.children.iter().collect();
+        children.sort_by_key(|(p, _)| p.to_string());
+
         format!(
             "{}{}",
             rule,
-            self.children
-                .values()
-                .map(|node| node.serialize())
+            children
+                .iter()
+                .map(|(_, t)| t.serialize())
                 .collect::<String>()
         )
     }
