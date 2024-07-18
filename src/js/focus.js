@@ -57,11 +57,13 @@ window.addEventListener("mousedown", (e) => {
   }
 });
 
+// delete editor
 window.addEventListener("keydown", (e) => {
   let focused_editor = document.querySelector(".--editor.focused");
   if (!focused_editor) return;
 
   if (e.target.closest('[data-attr="properties"]')) return;
+  if (e.target.closest(".search-box")) return;
 
   if (e.key === "Backspace") {
     let group = focused_editor.closest(".--editor-group");
