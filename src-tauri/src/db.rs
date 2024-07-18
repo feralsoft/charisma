@@ -234,14 +234,14 @@ pub struct Keyframes {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
     RegularRule(RegularRule),
-    AtRule(Keyframes),
+    Keyframes(Keyframes),
 }
 
 impl Rule {
     pub fn as_regular_rule(&self) -> Option<RegularRule> {
         match self {
             Rule::RegularRule(rule) => Some(rule.clone()),
-            Rule::AtRule(_) => None,
+            Rule::Keyframes(_) => None,
         }
     }
 }
@@ -368,7 +368,7 @@ impl CSSDB {
 
                 self.insert_raw(
                     at_rule_path,
-                    Rule::AtRule(Keyframes {
+                    Rule::Keyframes(Keyframes {
                         name: name.to_string().trim().to_string(),
                         frames,
                     }),
@@ -434,7 +434,7 @@ impl CSSDB {
                         .trim()
                 )
             }
-            Some(Rule::AtRule(Keyframes { name, frames })) => {
+            Some(Rule::Keyframes(Keyframes { name, frames })) => {
                 format!(
                     "@keyframes {} {{\n    {}\n}}\n",
                     name,
@@ -475,11 +475,26 @@ impl CSSDB {
         )
     }
 
+    // listen here kid
+    // we are going to stretch the definition of "selector"
+    // a wee-lil-bit so that "@keyframes animation_name"
+    // is also a selector
+    //
+    // if that doesn't sit well with you, I can understand that
+    // but us men have to get some work done around here
     fn all_selectors_with_properties_aux(&self, selectors: &mut Vec<String>) {
-        if let Some(Rule::RegularRule(rule)) = self.rule.as_ref() {
-            if !rule.properties.is_empty() {
-                selectors.push(rule.selector.string.to_owned())
+        match self.rule.as_ref() {
+            Some(Rule::RegularRule(rule)) => {
+                if !rule.properties.is_empty() {
+                    selectors.push(rule.selector.string.to_owned());
+                }
             }
+            Some(Rule::Keyframes(rule)) => {
+                if !rule.frames.is_empty() {
+                    selectors.push(format!("@keyframes {}", rule.name));
+                }
+            }
+            None => {}
         }
         for tree in self.children.values() {
             tree.all_selectors_with_properties_aux(selectors);
@@ -495,7 +510,7 @@ impl CSSDB {
     pub fn drain(&mut self) {
         match &mut self.rule {
             Some(Rule::RegularRule(rule)) => rule.properties.drain(0..),
-            Some(Rule::AtRule(_)) => panic!("sdfwfjl"),
+            Some(Rule::Keyframes(_)) => panic!("sdfwfjl"),
             None => todo!(),
         };
     }
@@ -525,7 +540,7 @@ impl CSSDB {
                     });
                 }
             }
-            Rule::AtRule(_) => panic!(),
+            Rule::Keyframes(_) => panic!(),
         }
     }
 
@@ -541,7 +556,7 @@ impl CSSDB {
                 rule.properties
                     .retain(|p| !(p.name == property_name && p.value == property_value));
             }
-            Rule::AtRule(_) => panic!(),
+            Rule::Keyframes(_) => panic!(),
         }
     }
 
@@ -567,7 +582,7 @@ impl CSSDB {
             [] => {
                 match &mut self.rule {
                     Some(Rule::RegularRule(rule)) => rule.insert(property),
-                    Some(Rule::AtRule(_)) => panic!(),
+                    Some(Rule::Keyframes(_)) => panic!(),
                     None => {
                         let mut rule = RegularRule::new(selector);
                         rule.insert(property);

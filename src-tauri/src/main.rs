@@ -31,14 +31,25 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
     results
         .iter()
         .map(|s| {
-            parse_selector(s)
-                .unwrap()
-                .into_iter()
-                .next()
-                .unwrap()
-                .unwrap()
+            if s.starts_with('@') {
+                let name = s.split("@keyframes").skip(1).next().unwrap();
+
+                format!(
+                    "<div data-kind=\"keyframes-selector\">
+                        <div data-attr=\"name\">{}</div>
+                    </div>",
+                    render_value(name.trim())
+                )
+            } else {
+                parse_selector(s)
+                    .unwrap()
+                    .into_iter()
+                    .next()
+                    .unwrap()
+                    .unwrap()
+                    .render_html(&RenderOptions::default())
+            }
         })
-        .map(|s| s.render_html(&RenderOptions::default()))
         .collect()
 }
 
