@@ -1,5 +1,5 @@
 use crate::parse_utils::parse_property;
-use std::{collections::HashMap, fs, sync::Arc};
+use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
 
 use biome_css_syntax::{
     AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
@@ -16,6 +16,8 @@ use biome_css_syntax::{
     CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
     CssSyntaxKind, CssUniversalSelector,
 };
+
+use std::fmt::Write;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum State {
@@ -50,7 +52,7 @@ pub trait ToSelectors {
     fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector>;
 }
 
-fn path_to_string(path: &Vec<Part>) -> String {
+fn path_to_string(path: &[Part]) -> String {
     let condensed_path = path
         .iter()
         .fold::<Vec<Part>, _>(vec![], |new_path, part| match part {
@@ -80,7 +82,7 @@ impl ToSelectors for AnyCssRelativeSelector {
         let selector = self.as_css_relative_selector().unwrap();
         // this fucking sucks.. I would assume `.combinator` would do this, but it doesn't
 
-        let combinator = if selector.to_string().trim().starts_with("&") {
+        let combinator = if selector.to_string().trim().starts_with('&') {
             Combinator::And
         } else {
             selector
@@ -95,7 +97,7 @@ impl ToSelectors for AnyCssRelativeSelector {
             .iter()
             .map(|path| {
                 let path = [
-                    parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                    parent.map(|p| p.path.clone()).unwrap_or_default(),
                     vec![Part::Combinator(combinator.clone())],
                     path.clone(),
                 ]
@@ -116,7 +118,7 @@ impl ToSelectors for AnyCssSelector {
             .iter()
             .map(|path| {
                 let path = [
-                    parent.map(|p| p.path.clone()).unwrap_or(vec![]),
+                    parent.map(|p| p.path.clone()).unwrap_or_default(),
                     path.clone(),
                 ]
                 .concat();
@@ -129,15 +131,16 @@ impl ToSelectors for AnyCssSelector {
     }
 }
 
-impl Property {
-    pub fn to_string(&self) -> String {
-        let property_str = format!("{}: {};", self.name, self.value);
+impl Display for Property {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.state {
-            State::Valid => property_str,
-            State::Commented => format!("/* {} */", property_str),
+            State::Valid => write!(f, "{}: {};", self.name, self.value),
+            State::Commented => write!(f, "/* {}: {}; */", self.name, self.value),
         }
     }
+}
 
+impl Property {
     pub fn name(node: &CssDeclarationWithSemicolon) -> String {
         let decl = node.declaration().unwrap();
         let property = decl.property().unwrap();
@@ -181,7 +184,7 @@ impl RegularRule {
             .properties
             .iter()
             .map(|p| {
-                if &p.name == name {
+                if p.name == name {
                     Arc::new(p.to_commented())
                 } else {
                     p.clone()
@@ -315,7 +318,7 @@ impl CSSDB {
             }
         }
 
-        for property in comments.iter().filter_map(|str| parse_property(&str)) {
+        for property in comments.iter().filter_map(|str| parse_property(str)) {
             self.insert_regular_rule_commented(&selector, property);
         }
     }
@@ -437,17 +440,22 @@ impl CSSDB {
                     name,
                     frames
                         .iter()
-                        .map(|p| format!(
-                            "{} {{\n        {}\n    }}\n    ",
-                            // ugh this is so bad
-                            p.path.last().unwrap().to_string(),
-                            p.properties
-                                .iter()
-                                .map(|p| p.to_string() + "\n        ")
-                                .collect::<String>()
-                                .trim()
-                        ))
-                        .collect::<String>()
+                        .fold(String::new(), |mut out, p| {
+                            let _ = write!(
+                                out,
+                                "{} {{\n        {}\n    }}\n    ",
+                                // ugh this is so bad
+                                p.path.last().unwrap(),
+                                p.properties
+                                    .iter()
+                                    .fold(String::new(), |mut out, p| {
+                                        let _ = write!(out, "{}\n        ", p);
+                                        out
+                                    })
+                                    .trim()
+                            );
+                            out
+                        })
                         .trim()
                 )
             }
@@ -473,7 +481,7 @@ impl CSSDB {
                 selectors.push(rule.selector.string.to_owned())
             }
         }
-        for (_, tree) in &self.children {
+        for tree in self.children.values() {
             tree.all_selectors_with_properties_aux(selectors);
         }
     }
@@ -531,7 +539,7 @@ impl CSSDB {
         match rule {
             Rule::RegularRule(rule) => {
                 rule.properties
-                    .retain(|p| !(&p.name == property_name && &p.value == property_value));
+                    .retain(|p| !(p.name == property_name && p.value == property_value));
             }
             Rule::AtRule(_) => panic!(),
         }
@@ -707,54 +715,57 @@ pub enum Part {
     AtRule(AtRulePart),
 }
 
-impl ToString for Part {
-    fn to_string(&self) -> String {
+impl Display for Part {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Part::Combinator(c) => c.to_string(),
-            Part::Pattern(p) => p.to_string(),
-            Part::AtRule(a) => a.to_string(),
+            Part::Combinator(c) => c.fmt(f),
+            Part::Pattern(p) => p.fmt(f),
+            Part::AtRule(a) => a.fmt(f),
         }
     }
 }
 
-impl ToString for Combinator {
-    fn to_string(&self) -> String {
+impl Display for Combinator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Combinator::Descendant => String::from(" "),
-            Combinator::DirectDescendant => String::from(" > "),
-            Combinator::And => String::from(""),
-            Combinator::Plus => String::from(" + "),
-        }
+            Combinator::Descendant => write!(f, " ")?,
+            Combinator::DirectDescendant => write!(f, " > ")?,
+            Combinator::And => write!(f, "")?,
+            Combinator::Plus => write!(f, " + ")?,
+        };
+        Ok(())
     }
 }
 
-impl ToString for Pattern {
-    fn to_string(&self) -> String {
+impl Display for Pattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Pattern::Attribute(name) => format!("[{}]", name),
+            Pattern::Attribute(name) => write!(f, "[{}]", name)?,
             Pattern::AttributeMatch(name, matcher, value) => {
-                format!("[{}{}{}]", name, matcher, value)
+                write!(f, "[{}{}{}]", name, matcher, value)?
             }
-            Pattern::Class(name) => format!(".{}", name),
-            Pattern::Id(name) => format!("#{}", name),
-            Pattern::Element(name) => String::from(name),
-            Pattern::PseudoElement(name) => format!("::{}", name),
-            Pattern::PseudoClass(name) => format!(":{}", name),
-            Pattern::PseudoClassWithSelectorList(name) => format!(":{}(", name),
-            Pattern::CloseSelectorList => String::from(")"),
-            Pattern::Star => String::from("*"),
-            Pattern::Number(num) => num.to_string(),
-        }
+            Pattern::Class(name) => write!(f, ".{}", name)?,
+            Pattern::Id(name) => write!(f, "#{}", name)?,
+            Pattern::Element(name) => write!(f, "{}", name)?,
+            Pattern::PseudoElement(name) => write!(f, "::{}", name)?,
+            Pattern::PseudoClass(name) => write!(f, ":{}", name)?,
+            Pattern::PseudoClassWithSelectorList(name) => write!(f, ":{}(", name)?,
+            Pattern::CloseSelectorList => write!(f, ")")?,
+            Pattern::Star => write!(f, "*")?,
+            Pattern::Number(num) => write!(f, "{}", num)?,
+        };
+        Ok(())
     }
 }
 
-impl ToString for AtRulePart {
-    fn to_string(&self) -> String {
+impl Display for AtRulePart {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AtRulePart::Keyframes => String::from("@keyframes"),
-            AtRulePart::Name(name) => name.clone(),
-            AtRulePart::Percentage(num) => format!("{}%", num),
+            AtRulePart::Keyframes => write!(f, "@keyframes")?,
+            AtRulePart::Name(name) => write!(f, "{}", name)?,
+            AtRulePart::Percentage(num) => write!(f, "{}%", num)?,
         }
+        Ok(())
     }
 }
 

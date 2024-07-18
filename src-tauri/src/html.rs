@@ -14,6 +14,7 @@ use biome_css_syntax::{
     CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector,
     CssUniversalSelector, CssUrlFunction,
 };
+use std::fmt::Display;
 
 use crate::{get_combinator_type, parse_utils::parse_property, Combinator, Property, State};
 
@@ -35,12 +36,12 @@ impl RenderOptions {
     }
 }
 
-impl ToString for RenderOptions {
-    fn to_string(&self) -> String {
-        self.attrs
-            .iter()
-            .map(|(key, value)| format!("{}='{}'", key, value))
-            .collect()
+impl Display for RenderOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (key, value) in self.attrs.iter() {
+            write!(f, "{}='{}'", key, value)?;
+        }
+        Ok(())
     }
 }
 
@@ -91,7 +92,7 @@ impl Render for CssClassSelector {
         let name = self.name().unwrap();
         format!(
             "<div data-kind=\"class\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(name.to_string().trim())
         )
     }
@@ -102,7 +103,7 @@ impl Render for CssPseudoClassIdentifier {
         let name = self.name().unwrap();
         format!(
             "<div data-kind=\"pseudo-class-id\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(name.to_string().trim())
         )
     }
@@ -120,7 +121,7 @@ impl Render for CssRelativeSelector {
                         Combinator::Plus => "next-sibling",
                         Combinator::And => todo!(),
                     },
-                    self.to_string(),
+                    self,
                     self.selector().unwrap().render_html(options)
                 )
             }
@@ -155,7 +156,7 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
                 <div data-attr=\"function-name\">{}</div>
                 <div data-attr=\"args\">{}</div>
             </div>",
-            self.to_string(),
+            self,
             render_value(name.text_trimmed()),
             selector.render_html(options)
         )
@@ -184,7 +185,7 @@ impl Render for CssPseudoClassNthNumber {
                 {}
             </div>
             ",
-            self.to_string(),
+            self,
             render_value(&number.to_string())
         )
     }
@@ -227,7 +228,7 @@ impl Render for CssPseudoClassFunctionNth {
                     <div data-attr=\"name\">{}</div>
                     <div data-attr=\"selector\">{}</div>
                 </div>",
-            self.to_string(),
+            self,
             render_value(name.text_trimmed()),
             selector.render_html(options)
         )
@@ -264,7 +265,7 @@ impl Render for CssPseudoClassFunctionSelectorList {
             <div data-attr=\"selectors\">{}</div>
         </div>
             ",
-            self.to_string(),
+            self,
             render_value(name.text_trimmed()),
             self.selectors()
                 .into_iter()
@@ -318,7 +319,7 @@ impl Render for CssAttributeSelector {
                     <div data-attr=\"operator\">{}</div>
                     <div data-attr=\"value\">{}</div>
                 </div>",
-                    options.to_string(),
+                    options,
                     render_value(name.to_string().trim()),
                     render_value(operator.text_trimmed()),
                     render_value(value.unwrap().to_string().trim())
@@ -331,7 +332,7 @@ impl Render for CssAttributeSelector {
                 <div data-kind=\"attribute-selector\" {}>
                     <div data-attr=\"name\">{}</div>
                 </div>",
-                    options.to_string(),
+                    options,
                     render_value(name.to_string().trim())
                 )
             }
@@ -345,7 +346,7 @@ impl Render for CssPseudoElementSelector {
         let element = element.as_css_pseudo_element_identifier().unwrap();
         format!(
             "<div data-kind=\"pseudo-element-selector\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(element.name().unwrap().to_string().trim())
         )
     }
@@ -360,7 +361,7 @@ impl Render for CssIdSelector {
             "<div data-kind=\"id-selector\" data-string-value=\"{}\">
                 <div data-attr=\"name\">{}</div>
             </div>",
-            self.to_string(),
+            self,
             render_value(name.text_trimmed())
         )
     }
@@ -395,7 +396,7 @@ impl Render for CssTypeSelector {
 
 impl Render for CssUniversalSelector {
     fn render_html(&self, _options: &RenderOptions) -> String {
-        format!("<div data-kind=\"universal-selector\"></div>")
+        "<div data-kind=\"universal-selector\"></div>".to_string()
     }
 }
 
@@ -429,7 +430,7 @@ impl Render for CssCompoundSelector {
         } else {
             format!(
                 "<div data-kind=\"compound-selector\" {}>{}{}</div>",
-                options.to_string(),
+                options,
                 simple_selector_html,
                 sub_selectors
                     .iter()
@@ -447,7 +448,7 @@ impl Render for CssRegularDimension {
         format!(
             "<div data-kind=\"unit\" data-unit-type=\"{}\" {}>{}</div>",
             unit_type,
-            options.to_string(),
+            options,
             render_value(value.trim())
         )
     }
@@ -458,7 +459,7 @@ impl Render for CssPercentage {
         let value = self.value_token().unwrap().to_string();
         format!(
             "<div data-kind=\"unit\" data-unit-type=\"percentage\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(value.trim())
         )
     }
@@ -539,9 +540,7 @@ impl Render for CssFunction {
             <div data-attr=\"args\">{}</div>
         </div>
         ",
-            options.to_string(),
-            function_name,
-            args
+            options, function_name, args
         )
     }
 }
@@ -568,7 +567,7 @@ impl Render for CssNumber {
 
         format!(
             "<div data-kind=\"number\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(value)
         )
     }
@@ -580,7 +579,7 @@ impl Render for CssDashedIdentifier {
         let value = value.text_trimmed();
         format!(
             "<div data-kind=\"dashed-id\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(value)
         )
     }
@@ -596,7 +595,7 @@ impl Render for CssColor {
         format!(
             "<div data-kind=\"color\" data-hash=\"{}\" {}>{}</div>",
             hash,
-            options.to_string(),
+            options,
             render_value(value)
         )
     }
@@ -608,7 +607,7 @@ impl Render for CssString {
         let str = str.text();
         format!(
             "<div data-kind=\"string\" {}>{}</div>",
-            options.to_string(),
+            options,
             render_value(str)
         )
     }

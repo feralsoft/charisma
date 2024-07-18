@@ -1,5 +1,7 @@
 import { h } from "./html.js";
 
+let { div } = h;
+
 // top level await seems to break safari
 let ALL_PROPERTIES = fetch("./js/all_properties.json").then((r) => r.json());
 
@@ -8,8 +10,8 @@ let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
 const { invoke } = window.__TAURI__.tauri;
 
 let search_item = ({ value, description }) => [
-  h.div({ class: "search-item-value" }, value),
-  h.div(
+  div({ class: "search-item-value" }, value),
+  div(
     {
       class: "search-item-description",
       "data-is-empty": description.length === 0,
@@ -25,10 +27,7 @@ function search_options(options, has_description = false) {
   if (!has_description)
     options = options.map((name) => ({ value: name, description: "" }));
 
-  let elem = h.div(
-    { class: "search-options" },
-    ...options.flatMap(search_item),
-  );
+  let elem = div({ class: "search-options" }, ...options.flatMap(search_item));
   elem.firstElementChild.classList.add("candidate");
   return elem;
 }
@@ -63,7 +62,7 @@ function accept_candidate(container, input_elem) {
 }
 
 let input = (editor) =>
-  h.div({
+  div({
     class: "input",
     contenteditable: true,
     placeholder: "insert property...",
@@ -182,7 +181,7 @@ let input = (editor) =>
   });
 
 let input_container = (editor) =>
-  h.div({ class: "insert-property-container" }, input(editor));
+  div({ class: "insert-property-container" }, input(editor));
 
 function init(editor) {
   editor

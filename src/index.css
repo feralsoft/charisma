@@ -229,6 +229,9 @@
     
 }
 [data-attr="properties"] [data-kind]:hover:not(:has([data-kind]:hover)) {
+    /* outline: var(--outline-color) solid 0.1em; */
+}
+[data-attr="properties"] [data-kind]:hover:not(:has([data-kind]:hover)):not(:has([data-value]:hover)) {
     outline: var(--outline-color) solid 0.1em;
 }
 [data-attr="properties"] [data-kind]:hover:not(:has([data-value]:hover)) {
@@ -359,10 +362,10 @@
 }
 [data-kind="property"] {
     flex-wrap: wrap;
-    display: flex;
-    padding-left: 1em;
-    gap: var(--spacing);
     align-items: center;
+    padding-left: 1em;
+    display: flex;
+    gap: 0.25em;
 }
 [data-kind="property"] > [data-attr="name"] {
     color: var(--property-name-color);
@@ -378,9 +381,9 @@
     background-color: rgba(0, 100, 0, 0.3);
 }
 [data-kind="property"]::after {
-    margin-left: -0.25em;
-    content: ";";
     color: var(--foreground-color);
+    content: ";";
+    margin-left: -0.25em;
 }
 [data-kind="property"]:has( > [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] {
     

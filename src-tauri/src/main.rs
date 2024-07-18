@@ -17,7 +17,7 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
     if !db.is_loaded(path) {
         db.load(path);
     }
-    let parts: Vec<&str> = q.trim().split(" ").collect();
+    let parts: Vec<&str> = q.trim().split(' ').collect();
 
     let mut results: Vec<String> = db
         .all_selectors_with_properties()
@@ -26,7 +26,7 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
         .cloned()
         .collect();
 
-    results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(&b)));
+    results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 
     results
         .iter()
@@ -67,7 +67,7 @@ fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) ->
         .collect();
     assert!(paths.len() == 1);
     let path = paths.first().unwrap();
-    let tree = db.get(&path).unwrap();
+    let tree = db.get(path).unwrap();
     let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
     let mut rule_properties = rule.properties.clone();
     rule_properties.sort_by_key(|p| p.name.clone());
@@ -214,8 +214,7 @@ fn update_value(
         assert!(rule
             .properties
             .iter()
-            .find(|p| p.name == name.trim() && p.value == original_value)
-            .is_some());
+            .any(|p| p.name == name.trim() && p.value == original_value));
         db.delete(&selector.path, name.trim(), original_value);
         db.insert_regular_rule(&selector, &property);
     }
