@@ -263,5 +263,6 @@ window.assert = function (cond, msg) {
   if (!cond) {
     console.error(msg);
     debugger;
+    throw msg;
   }
 };
