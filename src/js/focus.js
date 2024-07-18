@@ -57,6 +57,19 @@ window.addEventListener("mousedown", (e) => {
   }
 });
 
+window.addEventListener("keydown", (e) => {
+  let focused_editor = document.querySelector(".--editor.focused");
+  if (!focused_editor) return;
+
+  if (e.target.closest('[data-attr="properties"]')) return;
+
+  if (e.key === "Backspace") {
+    let group = focused_editor.closest(".--editor-group");
+    focused_editor.remove();
+    if (!group.querySelector(".--editor")) group.remove();
+  }
+});
+
 // go up and down properties with arrow keys when a property is focused
 window.addEventListener("keydown", (e) => {
   let focused_property = document.querySelector(

@@ -1,3 +1,5 @@
+import { focus } from "./focus.js";
+
 const { invoke } = window.__TAURI__.tauri;
 
 window.addEventListener("keydown", async (e) => {
@@ -13,7 +15,11 @@ window.addEventListener("keydown", async (e) => {
   ).dataset.stringValue;
   let editor = property.closest(".--editor");
   await invoke("delete", {
-      path: localStorage.getItem("current-path"),
-      selector: editor.dataset.selector, name, value });
+    path: localStorage.getItem("current-path"),
+    selector: editor.dataset.selector,
+    name,
+    value,
+  });
   editor.dispatchEvent(new Event("reload"));
+  focus(editor);
 });

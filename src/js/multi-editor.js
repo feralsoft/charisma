@@ -1,5 +1,5 @@
 import { num_var } from "./helpers.js";
-import { find, zip } from "./iter.js";
+import { find } from "./iter.js";
 import * as ast from "./ast.js";
 
 const { invoke } = window.__TAURI__.tauri;
@@ -131,6 +131,8 @@ function rejuvenate_editor(existing_editor, new_rule_html) {
   let existing_properties = ast.rule.properties(existing_editor);
   let new_properties = ast.rule.properties(updated_rule);
   remove_deleted_properties(existing_properties, new_properties);
+  // update after delete
+  existing_properties = ast.rule.properties(existing_editor);
   update_property_values(existing_editor, new_properties);
   insert_new_properties(
     existing_editor.querySelector('[data-attr="properties"]'),
