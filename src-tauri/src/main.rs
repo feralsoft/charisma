@@ -11,6 +11,16 @@ mod db;
 mod html;
 mod parse_utils;
 
+fn render_keyframes_selector(name: &str) -> String {
+    format!(
+        "<div data-kind=\"keyframes-selector\" data-string-value=\"@keyframes {}\">
+                            <div data-attr=\"name\">{}</div>
+                        </div>",
+        name,
+        render_value(name)
+    )
+}
+
 #[tauri::command]
 fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String> {
     let mut db = state.lock().unwrap();
@@ -32,14 +42,8 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
         .iter()
         .map(|s| {
             if s.starts_with('@') {
-                let name = s.split("@keyframes").skip(1).next().unwrap();
-
-                format!(
-                    "<div data-kind=\"keyframes-selector\">
-                        <div data-attr=\"name\">{}</div>
-                    </div>",
-                    render_value(name.trim())
-                )
+                let name = s.split("@keyframes").skip(1).next().unwrap().trim();
+                render_keyframes_selector(name)
             } else {
                 parse_selector(s)
                     .unwrap()
@@ -57,12 +61,23 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
 fn insert_empty_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) {
     let mut db = state.lock().unwrap();
     assert!(db.is_loaded(path));
-    let selector_list = parse_selector(selector).unwrap();
-    for selector in selector_list
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
-        db.insert_empty_regular_rule(&selector);
+    if selector.starts_with("@keyframes") {
+        let name = selector
+            .split("@keyframes")
+            .skip(1)
+            .next()
+            .unwrap()
+            .trim()
+            .to_string();
+        db.insert_empty_keyframes_rule(name)
+    } else {
+        let selector_list = parse_selector(selector).unwrap();
+        for selector in selector_list
+            .into_iter()
+            .flat_map(|s| s.unwrap().to_selectors(None))
+        {
+            db.insert_empty_regular_rule(&selector);
+        }
     }
     fs::write(path, db.serialize()).unwrap()
 }
@@ -71,33 +86,59 @@ fn insert_empty_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &s
 fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) -> String {
     let db = state.lock().unwrap();
     assert!(db.is_loaded(path));
-    let selector = parse_selector(selector).unwrap();
-    let paths: Vec<Vec<Part>> = selector
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_css_db_paths())
-        .collect();
-    assert!(paths.len() == 1);
-    let path = paths.first().unwrap();
-    let tree = db.get(path).unwrap();
-    let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
-    let mut rule_properties = rule.properties.clone();
-    rule_properties.sort_by_key(|p| p.name.clone());
+    if selector.starts_with("@keyframes") {
+        let name = selector.split("@keyframes").skip(1).next().unwrap().trim();
+        let path = [
+            Part::AtRule(AtRulePart::Keyframes),
+            Part::AtRule(AtRulePart::Name(name.to_string())),
+        ];
 
-    format!(
-        "
+        let tree = db.get(&path).unwrap();
+        let keyframes_rule = tree.rule.as_ref().and_then(|r| r.as_keyframes()).unwrap();
+
+        format!(
+            "
+            <div data-kind=\"keyframes-rule\">
+                <div data-attr=\"selector\">{}</div>
+                <div data-attr=\"frames\">{}</div>
+            </div>
+            ",
+            render_keyframes_selector(name),
+            keyframes_rule
+                .frames
+                .iter()
+                .map(|frame| frame.render_html(&RenderOptions::default()))
+                .collect::<String>()
+        )
+    } else {
+        let selector = parse_selector(selector).unwrap();
+        let paths: Vec<Vec<Part>> = selector
+            .into_iter()
+            .flat_map(|s| s.unwrap().to_css_db_paths())
+            .collect();
+        assert!(paths.len() == 1);
+        let path = paths.first().unwrap();
+        let tree = db.get(path).unwrap();
+        let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
+        let mut rule_properties = rule.properties.clone();
+        rule_properties.sort_by_key(|p| p.name.clone());
+
+        format!(
+            "
     <div data-kind=\"rule\">
         <div data-attr=\"selector\">{}</div>
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-        parse_selector(&rule.selector.string)
-            .unwrap()
-            .render_html(&RenderOptions::default()),
-        rule_properties
-            .iter()
-            .map(|p| p.render_html(&RenderOptions::default()))
-            .collect::<String>(),
-    )
+            parse_selector(&rule.selector.string)
+                .unwrap()
+                .render_html(&RenderOptions::default()),
+            rule_properties
+                .iter()
+                .map(|p| p.render_html(&RenderOptions::default()))
+                .collect::<String>(),
+        )
+    }
 }
 
 #[tauri::command]

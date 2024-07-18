@@ -16,7 +16,10 @@ use biome_css_syntax::{
 };
 use std::fmt::Display;
 
-use crate::{get_combinator_type, parse_utils::parse_property, Combinator, Property, State};
+use crate::{
+    get_combinator_type, parse_utils::parse_property, AtRulePart, Combinator, Frame, Part,
+    Property, State,
+};
 
 pub fn render_value(value: &str) -> String {
     format!(
@@ -172,6 +175,35 @@ impl Render for CssPseudoClassNth {
 impl Render for CssPseudoClassNthIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> String {
         todo!()
+    }
+}
+
+impl Render for Frame {
+    fn render_html(&self, options: &RenderOptions) -> String {
+        let last_part = self.path.last().unwrap();
+        let selector = match last_part {
+            Part::AtRule(AtRulePart::Percentage(pct)) => {
+                format!(
+                    "<div data-kind=\"keyframes-percentage-selector\">
+                        <div data-attr=\"percentage\">{}</div>
+                    </div>",
+                    render_value(&pct.to_string())
+                )
+            }
+            _ => panic!(),
+        };
+
+        format!(
+            "<div data-kind=\"frame\">
+                <div data-attr=\"selector\">{}</div>
+                <div data-attr=\"properties\">{}</div>
+            </div>",
+            selector,
+            self.properties
+                .iter()
+                .map(|p| p.render_html(options))
+                .collect::<String>()
+        )
     }
 }
 
@@ -495,8 +527,20 @@ impl Render for CssComponentValueList {
 }
 
 impl Render for CssBinaryExpression {
-    fn render_html(&self, _options: &RenderOptions) -> String {
-        todo!()
+    fn render_html(&self, options: &RenderOptions) -> String {
+        let left = self.left().unwrap();
+        let right = self.right().unwrap();
+        let operator = self.operator_token().unwrap().to_string();
+        format!(
+            "<div data-kind=\"binary-expression\">
+                <div data-attr=\"left\">{}</div>
+                <div data-attr=\"operator\">{}</div>
+                <div data-attr=\"right\">{}</div>
+            </div>",
+            left.render_html(options),
+            render_value(&operator),
+            right.render_html(options)
+        )
     }
 }
 

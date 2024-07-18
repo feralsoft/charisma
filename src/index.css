@@ -312,6 +312,26 @@
 [data-kind="dashed-id"] {
     color: var(--variable-color);
 }
+[data-kind="frame"] {
+    display: flex;
+    flex-direction: column;
+}
+[data-kind="frame"] > [data-attr="properties"] {
+    display: flex;
+    flex-direction: column;
+}
+[data-kind="frame"] > [data-attr="selector"] {
+    
+}
+[data-kind="frame"] > [data-attr="selector"]::after {
+    content: "{";
+    color: var(--brace-color);
+    margin-left: 0.5em;
+}
+[data-kind="frame"]::after {
+    content: "}";
+    color: var(--brace-color);
+}
 [data-kind="function"] {
     display: flex;
 }
@@ -349,6 +369,37 @@
 [data-kind="keyframe"] {
     
 }
+[data-kind="keyframes"] {
+    display: flex;
+}
+[data-kind="keyframes"] > [data-attr="frames"] {
+    
+}
+[data-kind="keyframes-percentage-selector"] > [data-attr="percentage"] {
+    color: var(--number-color);
+}
+[data-kind="keyframes-percentage-selector"] > [data-attr="percentage"]::after {
+    content: "%";
+    color: var(--function-color);
+}
+[data-kind="keyframes-rule"] {
+    display: flex;
+    flex-direction: column;
+}
+[data-kind="keyframes-rule"] > [data-attr="frames"] {
+    display: flex;
+    flex-direction: column;
+    padding-left: 1em;
+}
+[data-kind="keyframes-rule"] > [data-attr="selector"]::after {
+    content: "{";
+    margin-left: 0.5em;
+    color: var(--brace-color);
+}
+[data-kind="keyframes-rule"]::after {
+    content: "}";
+    color: var(--brace-color);
+}
 [data-kind="keyframes-selector"] {
     display: flex;
     gap: var(--spacing);
@@ -372,6 +423,15 @@
 }
 [data-kind="number"] [data-value] {
     color: var(--number-color);
+}
+[data-kind="percentage-selector"] > [data-attr="percentage"]::after {
+    
+}
+[data-kind="percentage-selector"] > [data-attr="value"]::after {
+    
+}
+[data-kind="percentage-selector"] > [data-value]::after {
+    
 }
 [data-kind="property"] {
     flex-wrap: wrap;

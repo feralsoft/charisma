@@ -221,14 +221,14 @@ impl RegularRule {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Frame {
-    path: Vec<Part>,
-    properties: Vec<Property>,
+    pub path: Vec<Part>,
+    pub properties: Vec<Property>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Keyframes {
-    name: String,
-    frames: Vec<Frame>,
+    pub name: String,
+    pub frames: Vec<Frame>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -242,6 +242,13 @@ impl Rule {
         match self {
             Rule::RegularRule(rule) => Some(rule.clone()),
             Rule::Keyframes(_) => None,
+        }
+    }
+
+    pub fn as_keyframes(&self) -> Option<Keyframes> {
+        match self {
+            Rule::RegularRule(_) => None,
+            Rule::Keyframes(rule) => Some(rule.clone()),
         }
     }
 }
@@ -638,6 +645,29 @@ impl CSSDB {
 
     pub fn insert_empty_regular_rule(&mut self, selector: &Selector) {
         self.insert_empty_regular_rule_aux(selector.clone(), &selector.path);
+    }
+
+    pub fn insert_empty_keyframes_rule(&mut self, name: String) {
+        let keyframes_part = Part::AtRule(AtRulePart::Keyframes);
+        let name_part = Part::AtRule(AtRulePart::Name(name.clone()));
+        let tree = match self.children.get_mut(&keyframes_part) {
+            Some(tree) => tree,
+            None => {
+                self.children.insert(keyframes_part.clone(), CSSDB::new());
+                self.children.get_mut(&keyframes_part).unwrap()
+            }
+        };
+        match tree.children.get(&name_part) {
+            Some(_) => {} // already there
+            None => {
+                let mut dst = CSSDB::new();
+                dst.rule = Some(Rule::Keyframes(Keyframes {
+                    name,
+                    frames: vec![],
+                }));
+                tree.children.insert(name_part, dst);
+            }
+        }
     }
 
     pub fn insert_regular_rule(
