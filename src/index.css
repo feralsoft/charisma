@@ -100,6 +100,9 @@
 .canvas:has(.dragging) {
     cursor: grabbing;
 }
+.class::before {
+    
+}
 .plain-text-node {
     width: max-content;
     user-select: all;

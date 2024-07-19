@@ -426,36 +426,52 @@ fn update_value(
 }
 
 #[tauri::command(rename_all = "snake_case")]
-fn load_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, rule: &str) -> String {
-    let mut db = state.lock().unwrap();
+fn load_rule(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    rule: &str,
+) -> Result<String, InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
 
-    let rule = parse_one(rule).unwrap();
+    let rule = match parse_one(rule) {
+        Some(r) => r,
+        None => return Err(CharismaError::ParseError.into()),
+    };
 
     let selector = rule.prelude();
-    let block = rule.block().unwrap();
-    let block = block.as_css_declaration_or_rule_block().unwrap();
+    let block = rule.block().map_err(|_| CharismaError::ParseError)?;
+    let block = match block.as_css_declaration_or_rule_block() {
+        Some(b) => b,
+        None => return Err(CharismaError::ParseError.into()),
+    };
 
-    for selector in (&selector)
+    let selector_list: Vec<_> = selector
         .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
+        .map(|r| r.map_err(|_| CharismaError::ParseError))
+        .collect::<Result<_, _>>()?;
+
+    for selector in (&selector_list).iter().flat_map(|s| s.to_selectors(None)) {
         for item in block.items() {
-            let property = item.as_css_declaration_with_semicolon().unwrap();
+            // TODO: if this fails, we should revert everything
+            let property = match item.as_css_declaration_with_semicolon() {
+                Some(p) => p,
+                None => return Err(CharismaError::ParseError.into()),
+            };
             db.insert_regular_rule(&selector, &property);
         }
     }
 
-    fs::write(path, db.serialize()).unwrap();
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?;
 
-    selector
-        .into_iter()
-        .map(|s| s.unwrap().to_string())
+    Ok(selector_list
+        .iter()
+        .map(|s| s.to_string())
         .collect::<String>()
         .trim()
-        .to_string()
+        .to_string())
 }
 
 fn main() {
