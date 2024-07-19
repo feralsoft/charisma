@@ -239,7 +239,7 @@ impl Render for AnyCssPseudoClassNth {
 impl Render for CssPseudoClassNthSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
         assert!(self.of_selector().is_none());
-        let nth = self.nth().unwrap();
+        let nth = self.nth().map_err(|_| CharismaError::ParseError)?;
 
         nth.render_html(options)
     }
@@ -256,8 +256,8 @@ impl Render for AnyCssPseudoClassNthSelector {
 
 impl Render for CssPseudoClassFunctionNth {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let name = self.name().unwrap();
-        let selector = self.selector().unwrap();
+        let name = self.name().map_err(|_| CharismaError::ParseError)?;
+        let selector = self.selector().map_err(|_| CharismaError::ParseError)?;
         Ok(format!(
             "<div data-kind=\"pseudo-class-function-nth\" data-string-value='{}'>
                     <div data-attr=\"name\">{}</div>
@@ -292,7 +292,7 @@ impl Render for CssPseudoClassFunctionSelector {
 }
 impl Render for CssPseudoClassFunctionSelectorList {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
-        let name = self.name().unwrap();
+        let name = self.name().map_err(|_| CharismaError::ParseError)?;
 
         Ok(format!(
             "
@@ -305,7 +305,9 @@ impl Render for CssPseudoClassFunctionSelectorList {
             render_value(name.text_trimmed()),
             self.selectors()
                 .into_iter()
-                .map(|s| s.unwrap().render_html(&RenderOptions::default()))
+                .map(|s| s
+                    .map_err(|_| CharismaError::ParseError)
+                    .and_then(|s| s.render_html(&RenderOptions::default())))
                 .collect::<Result<String, _>>()?
         ))
     }
@@ -318,7 +320,7 @@ impl Render for CssPseudoClassFunctionValueList {
 
 impl Render for CssPseudoClassSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        match self.class().unwrap() {
+        match self.class().map_err(|_| CharismaError::ParseError)? {
             AnyCssPseudoClass::CssBogusPseudoClass(s) => {
                 panic!("bogus pseudo class = {:?}", s.items())
             }
@@ -343,10 +345,13 @@ impl Render for CssAttributeSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
         match self.matcher() {
             Some(matcher) => {
-                let name = self.name().unwrap();
+                let name = self.name().map_err(|_| CharismaError::ParseError)?;
                 assert!(matcher.modifier().is_none());
-                let operator = matcher.operator().unwrap();
-                let value = matcher.value().unwrap().name();
+                let operator = matcher.operator().map_err(|_| CharismaError::ParseError)?;
+                let value = matcher
+                    .value()
+                    .map_err(|_| CharismaError::ParseError)?
+                    .name();
 
                 Ok(format!(
                     "
@@ -358,11 +363,16 @@ impl Render for CssAttributeSelector {
                     options,
                     render_value(name.to_string().trim()),
                     render_value(operator.text_trimmed()),
-                    render_value(value.unwrap().to_string().trim())
+                    render_value(
+                        value
+                            .map_err(|_| CharismaError::ParseError)?
+                            .to_string()
+                            .trim()
+                    )
                 ))
             }
             None => {
-                let name = self.name().unwrap();
+                let name = self.name().map_err(|_| CharismaError::ParseError)?;
                 Ok(format!(
                     "
                 <div data-kind=\"attribute-selector\" {}>
@@ -378,20 +388,26 @@ impl Render for CssAttributeSelector {
 
 impl Render for CssPseudoElementSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let element = self.element().unwrap();
+        let element = self.element().map_err(|_| CharismaError::ParseError)?;
         let element = element.as_css_pseudo_element_identifier().unwrap();
         Ok(format!(
             "<div data-kind=\"pseudo-element-selector\" {}>{}</div>",
             options,
-            render_value(element.name().unwrap().to_string().trim())
+            render_value(
+                element
+                    .name()
+                    .map_err(|_| CharismaError::ParseError)?
+                    .to_string()
+                    .trim()
+            )
         ))
     }
 }
 
 impl Render for CssIdSelector {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
-        let name = self.name().unwrap();
-        let name = name.value_token().unwrap();
+        let name = self.name().map_err(|_| CharismaError::ParseError)?;
+        let name = name.value_token().map_err(|_| CharismaError::ParseError)?;
 
         Ok(format!(
             "<div data-kind=\"id-selector\" data-string-value=\"{}\">
@@ -425,7 +441,7 @@ impl Render for AnyCssSubSelector {
 impl Render for CssTypeSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
         assert!(self.namespace().is_none());
-        let name = self.ident().unwrap();
+        let name = self.ident().map_err(|_| CharismaError::ParseError)?;
         name.render_html(options)
     }
 }
@@ -479,8 +495,14 @@ impl Render for CssCompoundSelector {
 
 impl Render for CssRegularDimension {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let unit_type = self.unit_token().unwrap().to_string();
-        let value = self.value_token().unwrap().to_string();
+        let unit_type = self
+            .unit_token()
+            .map_err(|_| CharismaError::ParseError)?
+            .to_string();
+        let value = self
+            .value_token()
+            .map_err(|_| CharismaError::ParseError)?
+            .to_string();
         Ok(format!(
             "<div data-kind=\"unit\" data-unit-type=\"{}\" {}>{}</div>",
             unit_type,
@@ -492,7 +514,10 @@ impl Render for CssRegularDimension {
 
 impl Render for CssPercentage {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let value = self.value_token().unwrap().to_string();
+        let value = self
+            .value_token()
+            .map_err(|_| CharismaError::ParseError)?
+            .to_string();
         Ok(format!(
             "<div data-kind=\"unit\" data-unit-type=\"percentage\" {}>{}</div>",
             options,
@@ -513,7 +538,7 @@ impl Render for AnyCssDimension {
 
 impl Render for CssIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
-        let value = self.value_token().unwrap();
+        let value = self.value_token().map_err(|_| CharismaError::ParseError)?;
         Ok(format!(
             "<div data-kind=\"identifier\" data-string-value=\"{}\">{}</div>",
             value.text_trimmed(),
@@ -532,9 +557,12 @@ impl Render for CssComponentValueList {
 
 impl Render for CssBinaryExpression {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let left = self.left().unwrap();
-        let right = self.right().unwrap();
-        let operator = self.operator_token().unwrap().to_string();
+        let left = self.left().map_err(|_| CharismaError::ParseError)?;
+        let right = self.right().map_err(|_| CharismaError::ParseError)?;
+        let operator = self
+            .operator_token()
+            .map_err(|_| CharismaError::ParseError)?
+            .to_string();
         Ok(format!(
             "<div data-kind=\"binary-expression\">
                 <div data-attr=\"left\">{}</div>
@@ -574,7 +602,10 @@ impl Render for CssParameter {
 
 impl Render for CssFunction {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let function_name = self.name().unwrap().render_html(options)?;
+        let function_name = self
+            .name()
+            .map_err(|_| CharismaError::ParseError)?
+            .render_html(options)?;
         let args = self
             .items()
             .into_iter()
@@ -613,7 +644,7 @@ impl Render for AnyCssFunction {
 
 impl Render for CssNumber {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let value = self.value_token().unwrap();
+        let value = self.value_token().map_err(|_| CharismaError::ParseError)?;
         let value = value.text_trimmed();
 
         Ok(format!(
@@ -626,7 +657,7 @@ impl Render for CssNumber {
 
 impl Render for CssDashedIdentifier {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let value = self.value_token().unwrap();
+        let value = self.value_token().map_err(|_| CharismaError::ParseError)?;
         let value = value.text_trimmed();
         Ok(format!(
             "<div data-kind=\"dashed-id\" {}>{}</div>",
@@ -638,9 +669,9 @@ impl Render for CssDashedIdentifier {
 
 impl Render for CssColor {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let hash = self.as_fields().hash_token.unwrap();
+        let hash = self.hash_token().map_err(|_| CharismaError::ParseError)?;
         let hash = hash.text_trimmed();
-        let value = self.as_fields().value_token.unwrap();
+        let value = self.value_token().map_err(|_| CharismaError::ParseError)?;
         let value = value.text_trimmed();
         // todo: wtf is this hash?
         Ok(format!(
@@ -654,7 +685,7 @@ impl Render for CssColor {
 
 impl Render for CssString {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
-        let str = self.value_token().unwrap();
+        let str = self.value_token().map_err(|_| CharismaError::ParseError)?;
         let str = str.text();
         Ok(format!(
             "<div data-kind=\"string\" {}>{}</div>",
@@ -719,7 +750,9 @@ impl Render for CssSelectorList {
             </div>",
             string_value,
             self.into_iter()
-                .map(|s| s.unwrap().render_html(options))
+                .map(|s| s
+                    .map_err(|_| CharismaError::ParseError)
+                    .and_then(|s| s.render_html(options)))
                 .collect::<Result<String, _>>()?
         ))
     }
@@ -728,7 +761,11 @@ impl Render for CssSelectorList {
 impl Render for Property {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
         let property = parse_property(&format!("{}: {};", self.name, self.value)).unwrap();
-        let property = property.declaration().unwrap().property().unwrap();
+        let property = property
+            .declaration()
+            .map_err(|_| CharismaError::ParseError)?
+            .property()
+            .map_err(|_| CharismaError::ParseError)?;
         let property = property.as_css_generic_property().unwrap();
 
         let name = self.name.clone();

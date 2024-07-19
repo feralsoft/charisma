@@ -737,8 +737,8 @@ body {
     overscroll-behavior: none;
     overflow: hidden;
     align-items: center;
-    display: flex;
     height: 100%;
+    display: flex;
 }
 body .--editor.dragging {
     outline: rgba(255, 255, 0, 0.2) solid 0.1em;
