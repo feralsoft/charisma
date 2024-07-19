@@ -27,6 +27,8 @@ pub enum CharismaError {
     DbLocked,
     ParseError,
     FailedToSave,
+    RuleNotFound,
+    AssertionError(String),
 }
 
 #[tauri::command]
@@ -110,22 +112,36 @@ fn insert_empty_rule(
 }
 
 #[tauri::command]
-fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) -> String {
-    let mut db = state.lock().unwrap();
+fn render_rule(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+) -> Result<String, InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
     if selector.starts_with("@keyframes") {
-        let name = selector.split("@keyframes").skip(1).next().unwrap().trim();
+        let name = match selector.split("@keyframes").skip(1).next() {
+            Some(name) => name.trim(),
+            None => return Err(CharismaError::ParseError.into()),
+        };
+
         let path = [
             Part::AtRule(AtRulePart::Keyframes),
-            Part::AtRule(AtRulePart::Name(name.to_string())),
+            Part::AtRule(AtRulePart::Name(name.trim().to_string())),
         ];
 
-        let tree = db.get(&path).unwrap();
-        let keyframes_rule = tree.rule.as_ref().and_then(|r| r.as_keyframes()).unwrap();
+        let keyframes_rule = match db
+            .get(&path)
+            .and_then(|tree| tree.rule.as_ref())
+            .and_then(|r| r.as_keyframes())
+        {
+            Some(keyframes_rule) => keyframes_rule,
+            None => return Err(CharismaError::RuleNotFound.into()),
+        };
 
-        format!(
+        Ok(format!(
             "
             <div data-kind=\"keyframes-rule\">
                 <div data-attr=\"selector\">{}</div>
@@ -138,35 +154,56 @@ fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) ->
                 .iter()
                 .map(|frame| frame.render_html(&RenderOptions::default()))
                 .collect::<String>()
-        )
+        ))
     } else {
-        let selector = parse_selector(selector).unwrap();
-        let paths: Vec<Vec<Part>> = selector
-            .into_iter()
-            .flat_map(|s| s.unwrap().to_css_db_paths())
-            .collect();
-        assert!(paths.len() == 1);
-        let path = paths.first().unwrap();
-        let tree = db.get(path).unwrap();
-        let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
+        let selector_list = match parse_selector(selector) {
+            Some(selector) => selector,
+            None => return Err(CharismaError::ParseError.into()),
+        };
+        let selectors: Result<Vec<_>, _> = selector_list.into_iter().map(|s| s).collect();
+        let selectors = match selectors {
+            Ok(list) => list,
+            Err(_) => return Err(CharismaError::ParseError.into()),
+        };
+
+        let paths: Vec<Vec<Part>> = selectors.iter().flat_map(|s| s.to_css_db_paths()).collect();
+        if paths.len() != 1 {
+            return Err(CharismaError::AssertionError("expected_path".into()).into());
+        }
+
+        let path = match paths.first() {
+            Some(path) => path,
+            None => return Err(CharismaError::AssertionError("expected_one_path".into()).into()),
+        };
+        let rule = match db
+            .get(path)
+            .and_then(|tree| tree.rule.as_ref())
+            .and_then(|r| r.as_regular_rule())
+        {
+            Some(rule) => rule,
+            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+        };
+
         let mut rule_properties = rule.properties.clone();
         rule_properties.sort_by_key(|p| p.name.clone());
+        let selector = match parse_selector(&rule.selector.string) {
+            Some(s) => s,
+            None => return Err(CharismaError::ParseError.into()),
+        };
 
-        format!(
+        Ok(format!(
             "
     <div data-kind=\"rule\">
         <div data-attr=\"selector\">{}</div>
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            parse_selector(&rule.selector.string)
-                .unwrap()
-                .render_html(&RenderOptions::default()),
+            selector.render_html(&RenderOptions::default()),
             rule_properties
                 .iter()
                 .map(|p| p.render_html(&RenderOptions::default()))
                 .collect::<String>(),
-        )
+        ))
     }
 }
 
