@@ -56,7 +56,7 @@ fn search(
         .iter()
         .map(|s| -> Result<String, CharismaError> {
             if s.starts_with('@') {
-                match s.split("@keyframes").skip(1).next() {
+                match s.split("@keyframes").nth(1) {
                     Some(name) => Ok(render_keyframes_selector(name.trim())),
                     None => Err(CharismaError::ParseError),
                 }
@@ -85,7 +85,7 @@ fn insert_empty_rule(
         db.load(path)?;
     }
     if selector.starts_with("@keyframes") {
-        match selector.split("@keyframes").skip(1).next() {
+        match selector.split("@keyframes").nth(1) {
             Some(name) => db.insert_empty_keyframes_rule(name.trim().to_string()),
             None => return Err(CharismaError::ParseError.into()),
         }
@@ -122,7 +122,7 @@ fn render_rule(
         db.load(path)?;
     }
     if selector.starts_with("@keyframes") {
-        let name = match selector.split("@keyframes").skip(1).next() {
+        let name = match selector.split("@keyframes").nth(1) {
             Some(name) => name.trim(),
             None => return Err(CharismaError::ParseError.into()),
         };
@@ -160,7 +160,7 @@ fn render_rule(
             Some(selector) => selector,
             None => return Err(CharismaError::ParseError.into()),
         };
-        let selectors: Result<Vec<_>, _> = selector_list.into_iter().map(|s| s).collect();
+        let selectors: Result<Vec<_>, _> = selector_list.into_iter().collect();
         let selectors = match selectors {
             Ok(list) => list,
             Err(_) => return Err(CharismaError::ParseError.into()),
@@ -453,7 +453,7 @@ fn load_rule(
         .map(|r| r.map_err(|_| CharismaError::ParseError))
         .collect::<Result<_, _>>()?;
 
-    for selector in (&selector_list).iter().flat_map(|s| s.to_selectors(None)) {
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
         for item in block.items() {
             // TODO: if this fails, we should revert everything
             // what we need to is make a clone of the original db before making changes
@@ -462,7 +462,7 @@ fn load_rule(
                 Some(p) => p,
                 None => return Err(CharismaError::ParseError.into()),
             };
-            db.insert_regular_rule(&selector, &property)?;
+            db.insert_regular_rule(&selector, property)?;
         }
     }
 
