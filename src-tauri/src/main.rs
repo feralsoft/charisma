@@ -332,34 +332,42 @@ fn replace_all_properties(
     path: &str,
     selector: &str,
     properties: Vec<JsonProperty>,
-) {
-    let mut db = state.lock().unwrap();
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
-    for selector in parse_selector(selector)
-        .unwrap()
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
-        db.get_mut(&selector.path).unwrap().drain();
+
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
+    // TODO: if we fail, we should revert all the things .. ugh
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
+        match db.get_mut(&selector.path) {
+            Some(rule) => rule.drain(),
+            None => return Err(CharismaError::RuleNotFound.into()),
+        };
 
         for property in properties.iter() {
+            // at this point we are just parsing to validate
+
+            let parsed_property =
+                match parse_property(&format!("{}: {};", property.name, property.value)) {
+                    Some(p) => p,
+                    None => return Err(CharismaError::ParseError.into()),
+                };
             if property.is_commented {
-                db.insert_regular_rule_commented(
-                    &selector,
-                    // at this point we are just parsing to validate
-                    parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
-                );
+                db.insert_regular_rule_commented(&selector, parsed_property);
             } else {
-                db.insert_regular_rule(
-                    &selector,
-                    &parse_property(&format!("{}: {};", property.name, property.value)).unwrap(),
-                );
+                db.insert_regular_rule(&selector, &parsed_property);
             }
         }
     }
-    fs::write(path, db.serialize()).unwrap()
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -370,29 +378,51 @@ fn update_value(
     name: &str,
     original_value: &str,
     value: &str,
-) {
-    let mut db = state.lock().unwrap();
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
 
-    let property = parse_property(&format!("{}: {};", name, value)).unwrap();
-    for selector in parse_selector(selector)
-        .unwrap()
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
-        let tree = db.get(&selector.path).unwrap();
-        let rule = tree.rule.as_ref().unwrap().as_regular_rule().unwrap();
-        assert!(rule
+    let property = match parse_property(&format!("{}: {};", name, value)) {
+        Some(p) => p,
+        None => return Err(CharismaError::ParseError.into()),
+    };
+
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
+
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
+        let rule = match db
+            .get(&selector.path)
+            .and_then(|t| t.rule.as_ref())
+            .and_then(|r| r.as_regular_rule())
+        {
+            Some(rule) => rule,
+            None => return Err(CharismaError::RuleNotFound.into()),
+        };
+
+        if rule
             .properties
             .iter()
-            .any(|p| p.name == name.trim() && p.value == original_value));
-        db.delete(&selector.path, name.trim(), original_value);
-        db.insert_regular_rule(&selector, &property);
+            .any(|p| p.name == name.trim() && p.value == original_value)
+        {
+            db.delete(&selector.path, name.trim(), original_value);
+            db.insert_regular_rule(&selector, &property);
+        } else {
+            return Err(CharismaError::AssertionError(
+                "updating value without knowing previous value".into(),
+            )
+            .into());
+        }
     }
 
-    fs::write(path, db.serialize()).unwrap()
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
