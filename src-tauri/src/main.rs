@@ -208,55 +208,85 @@ fn render_rule(
 }
 
 #[tauri::command]
-fn delete(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = state.lock().unwrap();
+fn delete(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    name: &str,
+    value: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
 
-    let selector_list = parse_selector(selector).unwrap();
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
 
-    for path in selector_list
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_css_db_paths())
-    {
+    for path in selector_list.into_iter().flat_map(|s| s.to_css_db_paths()) {
         db.delete(&path, name, value);
     }
-    fs::write(path, db.serialize()).unwrap()
+
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]
-fn disable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = state.lock().unwrap();
+fn disable(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    name: &str,
+    value: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
 
-    for selector in parse_selector(selector)
-        .unwrap()
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
+
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
         db.set_state(&selector.path, name, value, State::Commented);
     }
-    fs::write(path, db.serialize()).unwrap()
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]
-fn enable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
-    let mut db = state.lock().unwrap();
+fn enable(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    name: &str,
+    value: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
 
-    for selector in parse_selector(selector)
-        .unwrap()
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
+
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
         db.set_state(&selector.path, name, value, State::Valid);
     }
-    fs::write(path, db.serialize()).unwrap()
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]

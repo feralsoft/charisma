@@ -730,12 +730,12 @@ article.help-modal {
     display: none;
 }
 body {
-    display: flex;
     flex-direction: column;
-    align-items: center;
     overscroll-behavior: none;
     overflow: hidden;
     height: 100%;
+    align-items: center;
+    display: flex;
 }
 body .--editor.dragging {
     outline: rgba(255, 255, 0, 0.2) solid 0.1em;
