@@ -1,5 +1,5 @@
 use crate::{parse_utils::parse_property, CharismaError};
-use std::{collections::HashMap, fmt::Display, fs, str::Chars, string::ParseError, sync::Arc};
+use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
 
 use biome_css_syntax::{
     AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
@@ -293,7 +293,11 @@ impl CSSDB {
             .is_some();
     }
 
-    fn load_rule(&mut self, selector: Selector, block: &CssDeclarationOrRuleBlock) {
+    fn load_rule(
+        &mut self,
+        selector: Selector,
+        block: &CssDeclarationOrRuleBlock,
+    ) -> Result<(), CharismaError> {
         let mut comments: Vec<String> = vec![];
         comments.extend(get_comments(
             block.l_curly_token().unwrap().token_text().text(),
@@ -311,7 +315,7 @@ impl CSSDB {
                     for child in rule.prelude() {
                         let child = child.unwrap();
                         for selector in child.to_selectors(Some(&selector)) {
-                            self.load_rule(selector, block);
+                            self.load_rule(selector, block)?;
                         }
                     }
                 }
@@ -320,14 +324,16 @@ impl CSSDB {
                     property,
                 ) => {
                     comments.extend(get_comments(&property.to_string()));
-                    self.insert_regular_rule(&selector, &property);
+                    self.insert_regular_rule(&selector, &property)?;
                 }
             }
         }
 
         for property in comments.iter().filter_map(|str| parse_property(str)) {
-            self.insert_regular_rule_commented(&selector, property);
+            self.insert_regular_rule_commented(&selector, property)?;
         }
+
+        Ok(())
     }
 
     fn load_at_rule(&mut self, at_rule: AnyCssAtRule) {
@@ -402,7 +408,7 @@ impl CSSDB {
         }
     }
 
-    pub fn load(&mut self, css_path: &str) {
+    pub fn load(&mut self, css_path: &str) -> Result<(), CharismaError> {
         let css = fs::read_to_string(css_path).unwrap();
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
@@ -413,7 +419,7 @@ impl CSSDB {
                         let block = block.as_css_declaration_or_rule_block().unwrap();
                         for selector in selector.unwrap().to_selectors(None) {
                             self.insert_empty_regular_rule(&selector);
-                            self.load_rule(selector, block);
+                            self.load_rule(selector, block)?;
                         }
                     }
                 }
@@ -423,6 +429,8 @@ impl CSSDB {
             };
         }
         self.current_path = Some(css_path.to_string());
+
+        Ok(())
     }
 
     pub fn serialize(&self) -> String {

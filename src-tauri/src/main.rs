@@ -39,7 +39,7 @@ fn search(
 ) -> Result<Vec<String>, InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
     let parts: Vec<&str> = q.trim().split(' ').collect();
 
@@ -82,7 +82,7 @@ fn insert_empty_rule(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
     if selector.starts_with("@keyframes") {
         match selector.split("@keyframes").skip(1).next() {
@@ -119,7 +119,7 @@ fn render_rule(
 ) -> Result<String, InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
     if selector.starts_with("@keyframes") {
         let name = match selector.split("@keyframes").skip(1).next() {
@@ -217,7 +217,7 @@ fn delete(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let selector_list: Vec<_> = match parse_selector(selector) {
@@ -245,7 +245,7 @@ fn disable(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let selector_list: Vec<_> = match parse_selector(selector) {
@@ -272,7 +272,7 @@ fn enable(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let selector_list: Vec<_> = match parse_selector(selector) {
@@ -298,7 +298,7 @@ fn insert_property(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
     let property = match parse_property(property) {
         Some(p) => p,
@@ -335,7 +335,7 @@ fn replace_all_properties(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let selector_list: Vec<_> = match parse_selector(selector) {
@@ -381,7 +381,7 @@ fn update_value(
 ) -> Result<(), InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let property = match parse_property(&format!("{}: {};", name, value)) {
@@ -433,7 +433,7 @@ fn load_rule(
 ) -> Result<String, InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
-        db.load(path);
+        db.load(path)?;
     }
 
     let rule = match parse_one(rule) {
@@ -456,6 +456,8 @@ fn load_rule(
     for selector in (&selector_list).iter().flat_map(|s| s.to_selectors(None)) {
         for item in block.items() {
             // TODO: if this fails, we should revert everything
+            // what we need to is make a clone of the original db before making changes
+            // and then, revert it back
             let property = match item.as_css_declaration_with_semicolon() {
                 Some(p) => p,
                 None => return Err(CharismaError::ParseError.into()),
