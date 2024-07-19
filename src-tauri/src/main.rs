@@ -95,7 +95,7 @@ fn insert_empty_rule(
                 .into_iter()
                 .map(|s| {
                     s.map_err(|_| CharismaError::ParseError)
-                        .map(|s| s.to_selectors(None))
+                        .and_then(|s| s.to_selectors(None))
                 })
                 .collect::<Result<Vec<Vec<Selector>>, _>>()
             {
@@ -166,7 +166,13 @@ fn render_rule(
             Err(_) => return Err(CharismaError::ParseError.into()),
         };
 
-        let paths: Vec<Vec<Part>> = selectors.iter().flat_map(|s| s.to_css_db_paths()).collect();
+        let list_of_paths: Vec<Vec<Vec<Part>>> = selectors
+            .iter()
+            .map(|s| s.to_css_db_paths())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let paths = list_of_paths.concat();
+
         if paths.len() != 1 {
             return Err(CharismaError::AssertionError("expected_path".into()).into());
         }
@@ -228,8 +234,10 @@ fn delete(
         None => return Err(CharismaError::ParseError.into()),
     }?;
 
-    for path in selector_list.into_iter().flat_map(|s| s.to_css_db_paths()) {
-        db.delete(&path, name, value);
+    for paths in selector_list.into_iter().map(|s| s.to_css_db_paths()) {
+        for path in paths? {
+            db.delete(&path, name, value);
+        }
     }
 
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
@@ -256,9 +264,12 @@ fn disable(
         None => return Err(CharismaError::ParseError.into()),
     }?;
 
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        db.set_state(&selector.path, name, value, State::Commented);
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            db.set_state(&selector.path, name, value, State::Commented);
+        }
     }
+
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
@@ -283,8 +294,10 @@ fn enable(
         None => return Err(CharismaError::ParseError.into()),
     }?;
 
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        db.set_state(&selector.path, name, value, State::Valid);
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            db.set_state(&selector.path, name, value, State::Valid);
+        }
     }
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -313,8 +326,10 @@ fn insert_property(
         None => return Err(CharismaError::ParseError.into()),
     }?;
 
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        db.insert_regular_rule(&selector, &property)?;
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            db.insert_regular_rule(&selector, &property)?;
+        }
     }
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -346,24 +361,26 @@ fn replace_all_properties(
         None => return Err(CharismaError::ParseError.into()),
     }?;
     // TODO: if we fail, we should revert all the things .. ugh
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        match db.get_mut(&selector.path) {
-            Some(rule) => rule.drain(),
-            None => return Err(CharismaError::RuleNotFound.into()),
-        };
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            match db.get_mut(&selector.path) {
+                Some(rule) => rule.drain(),
+                None => return Err(CharismaError::RuleNotFound.into()),
+            };
 
-        for property in properties.iter() {
-            // at this point we are just parsing to validate
+            for property in properties.iter() {
+                // at this point we are just parsing to validate
 
-            let parsed_property =
-                match parse_property(&format!("{}: {};", property.name, property.value)) {
-                    Some(p) => p,
-                    None => return Err(CharismaError::ParseError.into()),
-                };
-            if property.is_commented {
-                db.insert_regular_rule_commented(&selector, parsed_property)?;
-            } else {
-                db.insert_regular_rule(&selector, &parsed_property)?;
+                let parsed_property =
+                    match parse_property(&format!("{}: {};", property.name, property.value)) {
+                        Some(p) => p,
+                        None => return Err(CharismaError::ParseError.into()),
+                    };
+                if property.is_commented {
+                    db.insert_regular_rule_commented(&selector, parsed_property)?;
+                } else {
+                    db.insert_regular_rule(&selector, &parsed_property)?;
+                }
             }
         }
     }
@@ -397,28 +414,30 @@ fn update_value(
         None => return Err(CharismaError::ParseError.into()),
     }?;
 
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        let rule = match db
-            .get(&selector.path)
-            .and_then(|t| t.rule.as_ref())
-            .and_then(|r| r.as_regular_rule())
-        {
-            Some(rule) => rule,
-            None => return Err(CharismaError::RuleNotFound.into()),
-        };
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            let rule = match db
+                .get(&selector.path)
+                .and_then(|t| t.rule.as_ref())
+                .and_then(|r| r.as_regular_rule())
+            {
+                Some(rule) => rule,
+                None => return Err(CharismaError::RuleNotFound.into()),
+            };
 
-        if rule
-            .properties
-            .iter()
-            .any(|p| p.name == name.trim() && p.value == original_value)
-        {
-            db.delete(&selector.path, name.trim(), original_value);
-            db.insert_regular_rule(&selector, &property)?;
-        } else {
-            return Err(CharismaError::AssertionError(
-                "updating value without knowing previous value".into(),
-            )
-            .into());
+            if rule
+                .properties
+                .iter()
+                .any(|p| p.name == name.trim() && p.value == original_value)
+            {
+                db.delete(&selector.path, name.trim(), original_value);
+                db.insert_regular_rule(&selector, &property)?;
+            } else {
+                return Err(CharismaError::AssertionError(
+                    "updating value without knowing previous value".into(),
+                )
+                .into());
+            }
         }
     }
 
@@ -453,16 +472,18 @@ fn load_rule(
         .map(|r| r.map_err(|_| CharismaError::ParseError))
         .collect::<Result<_, _>>()?;
 
-    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        for item in block.items() {
-            // TODO: if this fails, we should revert everything
-            // what we need to is make a clone of the original db before making changes
-            // and then, revert it back
-            let property = match item.as_css_declaration_with_semicolon() {
-                Some(p) => p,
-                None => return Err(CharismaError::ParseError.into()),
-            };
-            db.insert_regular_rule(&selector, property)?;
+    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
+        for selector in selectors? {
+            for item in block.items() {
+                // TODO: if this fails, we should revert everything
+                // what we need to is make a clone of the original db before making changes
+                // and then, revert it back
+                let property = match item.as_css_declaration_with_semicolon() {
+                    Some(p) => p,
+                    None => return Err(CharismaError::ParseError.into()),
+                };
+                db.insert_regular_rule(&selector, property)?;
+            }
         }
     }
 

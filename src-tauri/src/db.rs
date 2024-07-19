@@ -49,7 +49,7 @@ pub struct Selector {
 }
 
 pub trait ToSelectors {
-    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector>;
+    fn to_selectors(&self, parent: Option<&Selector>) -> Result<Vec<Selector>, CharismaError>;
 }
 
 fn path_to_string(path: &[Part]) -> String {
@@ -78,7 +78,7 @@ fn path_to_string(path: &[Part]) -> String {
 }
 
 impl ToSelectors for AnyCssRelativeSelector {
-    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
+    fn to_selectors(&self, parent: Option<&Selector>) -> Result<Vec<Selector>, CharismaError> {
         let selector = self.as_css_relative_selector().unwrap();
         // this fucking sucks.. I would assume `.combinator` would do this, but it doesn't
 
@@ -92,8 +92,8 @@ impl ToSelectors for AnyCssRelativeSelector {
         };
         let selector = selector.selector().unwrap();
 
-        selector
-            .to_css_db_paths()
+        Ok(selector
+            .to_css_db_paths()?
             .iter()
             .map(|path| {
                 let path = [
@@ -108,13 +108,14 @@ impl ToSelectors for AnyCssRelativeSelector {
                     path,
                 }
             })
-            .collect()
+            .collect())
     }
 }
 
 impl ToSelectors for AnyCssSelector {
-    fn to_selectors(&self, parent: Option<&Selector>) -> Vec<Selector> {
-        self.to_css_db_paths()
+    fn to_selectors(&self, parent: Option<&Selector>) -> Result<Vec<Selector>, CharismaError> {
+        Ok(self
+            .to_css_db_paths()?
             .iter()
             .map(|path| {
                 let path = [
@@ -127,7 +128,7 @@ impl ToSelectors for AnyCssSelector {
                     path,
                 }
             })
-            .collect()
+            .collect())
     }
 }
 
@@ -322,7 +323,7 @@ impl CSSDB {
                     let block = block.as_css_declaration_or_rule_block().unwrap();
                     for child in rule.prelude() {
                         let child = child.map_err(|_| CharismaError::ParseError)?;
-                        for selector in child.to_selectors(Some(&selector)) {
+                        for selector in child.to_selectors(Some(&selector))? {
                             self.load_rule(selector, block)?;
                         }
                     }
@@ -345,7 +346,7 @@ impl CSSDB {
     }
 
     fn load_at_rule(&mut self, at_rule: AnyCssAtRule) -> Result<(), CharismaError> {
-        let at_rule_paths = at_rule.to_css_db_paths();
+        let at_rule_paths = at_rule.to_css_db_paths()?;
         assert!(at_rule_paths.len() == 1);
         let at_rule_path = at_rule_paths.first().unwrap();
         match at_rule {
@@ -358,7 +359,7 @@ impl CSSDB {
                     let frame = match item {
                         biome_css_syntax::AnyCssKeyframesItem::CssBogusKeyframesItem(_) => todo!(),
                         biome_css_syntax::AnyCssKeyframesItem::CssKeyframesItem(item) => {
-                            let paths = item.selectors().to_css_db_paths();
+                            let paths = item.selectors().to_css_db_paths()?;
                             assert!(paths.len() == 1);
                             let path = paths.first().unwrap().to_owned();
 
@@ -436,7 +437,7 @@ impl CSSDB {
                     for selector in rule.prelude() {
                         let block = rule.block().unwrap();
                         let block = block.as_css_declaration_or_rule_block().unwrap();
-                        for selector in selector.unwrap().to_selectors(None) {
+                        for selector in selector.unwrap().to_selectors(None)? {
                             self.insert_empty_regular_rule(&selector);
                             self.load_rule(selector, block)?;
                         }
@@ -723,7 +724,7 @@ impl CSSDB {
 }
 
 pub trait DBPath {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>>;
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -845,24 +846,25 @@ pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Combinator {
 }
 
 impl DBPath for biome_css_syntax::AnyCssSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             CssBogusSelector(_) => panic!(),
             CssComplexSelector(s) => {
                 let left = s.left().unwrap();
                 let right = s.right().unwrap();
-                let rhs_paths = right.to_css_db_paths();
+                let rhs_paths = right.to_css_db_paths()?;
                 let combinator =
                     Part::Combinator(get_combinator_type(s.combinator().unwrap().kind()));
 
-                left.to_css_db_paths()
+                Ok(left
+                    .to_css_db_paths()?
                     .iter()
                     .flat_map(|lhs| {
                         rhs_paths.iter().map(|rhs| {
                             [lhs.clone(), vec![combinator.clone()], rhs.clone()].concat()
                         })
                     })
-                    .collect()
+                    .collect())
             }
             CssCompoundSelector(selector) => selector.to_css_db_paths(),
         }
@@ -870,23 +872,23 @@ impl DBPath for biome_css_syntax::AnyCssSelector {
 }
 
 impl DBPath for CssUniversalSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
-        vec![vec![Part::Pattern(Pattern::Star)]]
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
+        Ok(vec![vec![Part::Pattern(Pattern::Star)]])
     }
 }
 
 impl DBPath for biome_css_syntax::AnyCssSimpleSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             biome_css_syntax::AnyCssSimpleSelector::CssTypeSelector(t) => {
-                vec![vec![Part::Pattern(Pattern::Element(
+                Ok(vec![vec![Part::Pattern(Pattern::Element(
                     t.ident()
                         .unwrap()
                         .value_token()
                         .unwrap()
                         .text_trimmed()
                         .to_string(),
-                ))]]
+                ))]])
             }
             biome_css_syntax::AnyCssSimpleSelector::CssUniversalSelector(s) => s.to_css_db_paths(),
         }
@@ -894,23 +896,27 @@ impl DBPath for biome_css_syntax::AnyCssSimpleSelector {
 }
 
 impl DBPath for biome_css_syntax::CssCompoundSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self.simple_selector() {
             Some(lhs) => {
-                let lhs_paths = lhs.to_css_db_paths();
+                let lhs_paths = lhs.to_css_db_paths()?;
 
                 if self.sub_selectors().into_iter().count() == 0 {
-                    return lhs_paths;
+                    return Ok(lhs_paths);
                 }
 
-                // sub selectors are like ".btn.help" -> ".btn", ".help"
-                let rhs_paths = self
+                let sub_selector_paths = self
                     .sub_selectors()
                     .into_iter()
                     .map(|selector| selector.to_css_db_paths())
-                    .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_paths| {
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                // sub selectors are like ".btn.help" -> ".btn", ".help"
+                let rhs_paths = sub_selector_paths.iter().fold::<Vec<Vec<Part>>, _>(
+                    vec![],
+                    |acc_paths, cur_paths| {
                         if acc_paths.is_empty() {
-                            cur_paths
+                            cur_paths.clone()
                         } else {
                             acc_paths
                                 .iter()
@@ -921,41 +927,48 @@ impl DBPath for biome_css_syntax::CssCompoundSelector {
                                 })
                                 .collect()
                         }
-                    });
+                    },
+                );
 
-                lhs_paths
+                Ok(lhs_paths
                     .iter()
                     .flat_map(|lhs_path| {
                         rhs_paths
                             .iter()
                             .map(|rhs_path| [lhs_path.clone(), rhs_path.clone()].concat())
                     })
-                    .collect()
+                    .collect())
             }
-            None => self
-                .sub_selectors()
-                .into_iter()
-                .map(|selector| selector.to_css_db_paths())
-                .fold::<Vec<Vec<Part>>, _>(vec![], |acc_paths, cur_paths| {
-                    if acc_paths.is_empty() {
-                        cur_paths
-                    } else {
-                        acc_paths
-                            .iter()
-                            .flat_map(|lhs| {
-                                cur_paths
-                                    .iter()
-                                    .map(|rhs| [lhs.clone(), rhs.clone()].concat())
-                            })
-                            .collect()
-                    }
-                }),
+            None => {
+                let sub_selector_paths = self
+                    .sub_selectors()
+                    .into_iter()
+                    .map(|selector| selector.to_css_db_paths())
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(sub_selector_paths.iter().fold::<Vec<Vec<Part>>, _>(
+                    vec![],
+                    |acc_paths, cur_paths| {
+                        if acc_paths.is_empty() {
+                            cur_paths.clone()
+                        } else {
+                            acc_paths
+                                .iter()
+                                .flat_map(|lhs| {
+                                    cur_paths
+                                        .iter()
+                                        .map(|rhs| [lhs.clone(), rhs.clone()].concat())
+                                })
+                                .collect()
+                        }
+                    },
+                ))
+            }
         }
     }
 }
 
 impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let name = self.name_token().unwrap();
         let relative_selectors = self.relative_selectors();
 
@@ -964,7 +977,7 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
             .into_iter()
             .map(|s| s.unwrap())
             .map(|s| s.to_css_db_paths())
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         // eg. body:has(button.active) -> ["body", ":has(", "button.active", ")"]
         // this encoding allows us to navigate siblings of "button.active"
@@ -974,7 +987,7 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
         // ... what would be the consequence of this?
         // idfk, let's try it :)
 
-        list_of_paths
+        Ok(list_of_paths
             .iter()
             .map(|paths| {
                 // this will break when you have :has(:is(a, b))
@@ -990,36 +1003,36 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
                 ]
                 .concat()
             })
-            .collect()
+            .collect())
     }
 }
 
 impl DBPath for CssPseudoClassNth {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassNthIdentifier {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassNthNumber {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         assert!(self.sign().is_none());
         let number = self.value().unwrap();
         let number = number.value_token().unwrap();
         let number = number.text_trimmed();
         let number: i32 = number.parse().unwrap();
 
-        vec![vec![Part::Pattern(Pattern::Number(number))]]
+        Ok(vec![vec![Part::Pattern(Pattern::Number(number))]])
     }
 }
 
 impl DBPath for AnyCssPseudoClassNth {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssPseudoClassNth::CssPseudoClassNth(s) => s.to_css_db_paths(),
             AnyCssPseudoClassNth::CssPseudoClassNthIdentifier(s) => s.to_css_db_paths(),
@@ -1029,14 +1042,14 @@ impl DBPath for AnyCssPseudoClassNth {
 }
 
 impl DBPath for CssPseudoClassNthSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         assert!(self.of_selector().is_none());
         self.nth().unwrap().to_css_db_paths()
     }
 }
 
 impl DBPath for AnyCssPseudoClassNthSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssPseudoClassNthSelector::CssBogusSelector(_) => todo!(),
             AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.to_css_db_paths(),
@@ -1045,53 +1058,53 @@ impl DBPath for AnyCssPseudoClassNthSelector {
 }
 
 impl DBPath for CssPseudoClassFunctionNth {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let name = self.name().unwrap().text_trimmed().to_string();
-        let paths = self.selector().unwrap().to_css_db_paths();
+        let paths = self.selector().unwrap().to_css_db_paths()?;
         assert!(paths.len() == 1);
         let path = paths.first().unwrap().clone();
 
-        vec![[
+        Ok(vec![[
             vec![Part::Pattern(Pattern::PseudoClassWithSelectorList(name))],
             path,
             vec![Part::Pattern(Pattern::CloseSelectorList)],
         ]
-        .concat()]
+        .concat()])
     }
 }
 
 impl DBPath for CssPseudoClassFunctionValueList {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionCompoundSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionCompoundSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionIdentifier {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoClassFunctionSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let name = self.name().unwrap().text_trimmed().to_string();
 
         let list_of_paths: Vec<Vec<Vec<Part>>> = self
@@ -1099,9 +1112,9 @@ impl DBPath for CssPseudoClassFunctionSelectorList {
             .into_iter()
             .map(|result| result.unwrap())
             .map(|list| list.to_css_db_paths())
-            .collect();
+            .collect::<Result<_, _>>()?;
 
-        list_of_paths
+        Ok(list_of_paths
             .iter()
             .flat_map(|paths| {
                 paths.iter().map(|path| {
@@ -1115,12 +1128,12 @@ impl DBPath for CssPseudoClassFunctionSelectorList {
                     .concat()
                 })
             })
-            .collect()
+            .collect())
     }
 }
 
 impl DBPath for AnyCssPseudoClass {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.to_css_db_paths(),
@@ -1134,14 +1147,16 @@ impl DBPath for AnyCssPseudoClass {
             AnyCssPseudoClass::CssPseudoClassIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![Part::Pattern(Pattern::PseudoClass(name.to_string()))]]
+                Ok(vec![vec![Part::Pattern(Pattern::PseudoClass(
+                    name.to_string(),
+                ))]])
             }
         }
     }
 }
 
 impl DBPath for CssAttributeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let name = self.name().unwrap();
         let name = name
             .name()
@@ -1158,37 +1173,35 @@ impl DBPath for CssAttributeSelector {
 
                 // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
                 // so that you can explore siblings along [data-kind]
-                vec![vec![
+                Ok(vec![vec![
                     Part::Pattern(Pattern::Attribute(name.clone())),
                     Part::Pattern(Pattern::AttributeMatch(
                         name.clone(),
                         operator.to_string(),
                         value.to_string(),
                     )),
-                ]]
+                ]])
             }
-            None => {
-                vec![vec![Part::Pattern(Pattern::Attribute(name))]]
-            }
+            None => Ok(vec![vec![Part::Pattern(Pattern::Attribute(name))]]),
         }
     }
 }
 
 impl DBPath for CssKeyframesAtRule {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let name = self.name().unwrap();
         let name = name.as_css_custom_identifier().unwrap();
         let name = name.value_token().unwrap();
 
-        vec![vec![
+        Ok(vec![vec![
             Part::AtRule(AtRulePart::Keyframes),
             Part::AtRule(AtRulePart::Name(name.text_trimmed().to_string())),
-        ]]
+        ]])
     }
 }
 
 impl DBPath for CssKeyframesPercentageSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let selector = self.selector().unwrap();
         let num: i32 = selector
             .as_fields()
@@ -1197,12 +1210,12 @@ impl DBPath for CssKeyframesPercentageSelector {
             .text_trimmed()
             .parse()
             .unwrap();
-        vec![vec![Part::AtRule(AtRulePart::Percentage(num))]]
+        Ok(vec![vec![Part::AtRule(AtRulePart::Percentage(num))]])
     }
 }
 
 impl DBPath for CssKeyframesSelectorList {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         self.into_iter()
             .map(|s| s.unwrap())
             .map(|s| match s {
@@ -1212,16 +1225,16 @@ impl DBPath for CssKeyframesSelectorList {
                     pct.to_css_db_paths()
                 }
             })
-            .map(|paths| {
-                assert!(paths.len() == 1);
-                paths.first().unwrap().clone()
+            .map(|paths| -> Result<Vec<Part>, CharismaError> {
+                // assert!(paths?.len() == 1);
+                Ok(paths?.first().unwrap().clone())
             })
-            .collect()
+            .collect::<Result<_, _>>()
     }
 }
 
 impl DBPath for AnyCssAtRule {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssAtRule::CssBogusAtRule(_) => todo!(),
             AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
@@ -1247,19 +1260,19 @@ impl DBPath for AnyCssAtRule {
 }
 
 impl DBPath for CssPseudoElementFunctionIdentifier {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for CssPseudoElementFunctionSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         todo!()
     }
 }
 
 impl DBPath for AnyCssPseudoElement {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssPseudoElement::CssBogusPseudoElement(_) => panic!(),
             AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(s) => s.to_css_db_paths(),
@@ -1267,20 +1280,20 @@ impl DBPath for AnyCssPseudoElement {
             AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![Part::Pattern(Pattern::PseudoElement(
+                Ok(vec![vec![Part::Pattern(Pattern::PseudoElement(
                     name.to_string(),
-                ))]]
+                ))]])
             }
         }
     }
 }
 
 impl DBPath for CssRelativeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
-        let paths = self.selector().unwrap().to_css_db_paths();
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
+        let paths = self.selector().unwrap().to_css_db_paths()?;
         if let Some(combinator) = self.combinator() {
             // prepend combinator to all the paths
-            paths
+            Ok(paths
                 .iter()
                 .map(|path| {
                     [
@@ -1289,15 +1302,15 @@ impl DBPath for CssRelativeSelector {
                     ]
                     .concat()
                 })
-                .collect()
+                .collect())
         } else {
-            paths
+            Ok(paths)
         }
     }
 }
 
 impl DBPath for AnyCssRelativeSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             AnyCssRelativeSelector::CssBogusSelector(_) => panic!(),
             AnyCssRelativeSelector::CssRelativeSelector(s) => s.to_css_db_paths(),
@@ -1306,19 +1319,19 @@ impl DBPath for AnyCssRelativeSelector {
 }
 
 impl DBPath for AnyCssSubSelector {
-    fn to_css_db_paths(&self) -> Vec<Vec<Part>> {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
             CssAttributeSelector(attribute_selector) => attribute_selector.to_css_db_paths(),
-            CssBogusSubSelector(_) => vec![],
+            CssBogusSubSelector(_) => Err(CharismaError::ParseError),
             CssClassSelector(class) => {
                 let name = class.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![Part::Pattern(Pattern::Class(name.to_string()))]]
+                Ok(vec![vec![Part::Pattern(Pattern::Class(name.to_string()))]])
             }
             CssIdSelector(id) => {
                 let name = id.name().unwrap().value_token().unwrap();
                 let name = name.text_trimmed();
-                vec![vec![Part::Pattern(Pattern::Id(name.to_owned()))]]
+                Ok(vec![vec![Part::Pattern(Pattern::Id(name.to_owned()))]])
             }
             CssPseudoClassSelector(pseudo_class) => pseudo_class.class().unwrap().to_css_db_paths(),
             CssPseudoElementSelector(pseudo_element) => {
