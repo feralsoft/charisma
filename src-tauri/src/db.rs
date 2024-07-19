@@ -1,5 +1,5 @@
-use crate::parse_utils::parse_property;
-use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
+use crate::{parse_utils::parse_property, CharismaError};
+use std::{collections::HashMap, fmt::Display, fs, str::Chars, string::ParseError, sync::Arc};
 
 use biome_css_syntax::{
     AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
@@ -141,27 +141,27 @@ impl Display for Property {
 }
 
 impl Property {
-    pub fn name(node: &CssDeclarationWithSemicolon) -> String {
-        let decl = node.declaration().unwrap();
-        let property = decl.property().unwrap();
+    pub fn name(node: &CssDeclarationWithSemicolon) -> Result<String, CharismaError> {
+        let decl = node.declaration().map_err(|_| CharismaError::ParseError)?;
+        let property = decl.property().map_err(|_| CharismaError::ParseError)?;
         let property = property.as_css_generic_property().unwrap();
-        let name = property.name().unwrap();
+        let name = property.name().map_err(|_| CharismaError::ParseError)?;
         let name = name.as_css_identifier().unwrap();
-        let name = name.value_token().unwrap();
-        name.text_trimmed().to_string()
+        let name = name.value_token().map_err(|_| CharismaError::ParseError)?;
+        Ok(name.text_trimmed().to_string())
     }
 
-    pub fn value(node: &CssDeclarationWithSemicolon) -> String {
-        let decl = node.declaration().unwrap();
-        let property = decl.property().unwrap();
+    pub fn value(node: &CssDeclarationWithSemicolon) -> Result<String, CharismaError> {
+        let decl = node.declaration().map_err(|_| CharismaError::ParseError)?;
+        let property = decl.property().map_err(|_| CharismaError::ParseError)?;
         let property = property.as_css_generic_property().unwrap();
-        property
+        Ok(property
             .value()
             .into_iter()
             .map(|item| item.to_string())
             .collect::<String>()
             .trim()
-            .to_string()
+            .to_string())
     }
 }
 
@@ -612,16 +612,17 @@ impl CSSDB {
         &mut self,
         selector: &Selector,
         property: CssDeclarationWithSemicolon,
-    ) {
+    ) -> Result<(), CharismaError> {
         self.insert_raw_regular_rule(
             selector.clone(),
             &selector.path,
             Property {
-                name: Property::name(&property),
-                value: Property::value(&property),
+                name: Property::name(&property)?,
+                value: Property::value(&property)?,
                 state: State::Commented,
             },
-        )
+        );
+        Ok(())
     }
 
     fn insert_empty_regular_rule_aux(&mut self, selector: Selector, path: &[Part]) {
@@ -674,16 +675,18 @@ impl CSSDB {
         &mut self,
         selector: &Selector,
         property: &CssDeclarationWithSemicolon,
-    ) {
+    ) -> Result<(), CharismaError> {
         self.insert_raw_regular_rule(
             selector.clone(),
             &selector.path,
             Property {
-                name: Property::name(property),
-                value: Property::value(property),
+                name: Property::name(property)?,
+                value: Property::value(property)?,
                 state: State::Valid,
             },
-        )
+        );
+
+        Ok(())
     }
 
     pub fn get(&self, path: &[Part]) -> Option<&CSSDB> {

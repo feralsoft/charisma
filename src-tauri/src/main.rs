@@ -314,7 +314,7 @@ fn insert_property(
     }?;
 
     for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
-        db.insert_regular_rule(&selector, &property);
+        db.insert_regular_rule(&selector, &property)?;
     }
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -361,9 +361,9 @@ fn replace_all_properties(
                     None => return Err(CharismaError::ParseError.into()),
                 };
             if property.is_commented {
-                db.insert_regular_rule_commented(&selector, parsed_property);
+                db.insert_regular_rule_commented(&selector, parsed_property)?;
             } else {
-                db.insert_regular_rule(&selector, &parsed_property);
+                db.insert_regular_rule(&selector, &parsed_property)?;
             }
         }
     }
@@ -413,7 +413,7 @@ fn update_value(
             .any(|p| p.name == name.trim() && p.value == original_value)
         {
             db.delete(&selector.path, name.trim(), original_value);
-            db.insert_regular_rule(&selector, &property);
+            db.insert_regular_rule(&selector, &property)?;
         } else {
             return Err(CharismaError::AssertionError(
                 "updating value without knowing previous value".into(),
@@ -460,7 +460,7 @@ fn load_rule(
                 Some(p) => p,
                 None => return Err(CharismaError::ParseError.into()),
             };
-            db.insert_regular_rule(&selector, &property);
+            db.insert_regular_rule(&selector, &property)?;
         }
     }
 
