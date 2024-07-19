@@ -3,7 +3,7 @@
 
 use db::*;
 use html::*;
-use parse_utils::{parse_property, parse_selector};
+use parse_utils::{parse_one, parse_property, parse_selector};
 use serde::Deserialize;
 use std::{fs, sync::Mutex};
 
@@ -274,6 +274,37 @@ fn update_value(
     fs::write(path, db.serialize()).unwrap()
 }
 
+#[tauri::command(rename_all = "snake_case")]
+fn load_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, rule: &str) -> String {
+    let mut db = state.lock().unwrap();
+    assert!(db.is_loaded(path));
+
+    let rule = parse_one(rule).unwrap();
+
+    let selector = rule.prelude();
+    let block = rule.block().unwrap();
+    let block = block.as_css_declaration_or_rule_block().unwrap();
+
+    for selector in (&selector)
+        .into_iter()
+        .flat_map(|s| s.unwrap().to_selectors(None))
+    {
+        for item in block.items() {
+            let property = item.as_css_declaration_with_semicolon().unwrap();
+            db.insert_regular_rule(&selector, &property);
+        }
+    }
+
+    fs::write(path, db.serialize()).unwrap();
+
+    selector
+        .into_iter()
+        .map(|s| s.unwrap().to_string())
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
 fn main() {
     let db = Mutex::new(CSSDB::new());
 
@@ -289,6 +320,7 @@ fn main() {
             replace_all_properties,
             update_value,
             insert_empty_rule,
+            load_rule,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

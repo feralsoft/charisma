@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 
   options.addEventListener("mousedown", async (e) => {
+    if (e.button !== 0) return;
     let selector = e.target.closest(".search-options > [data-kind]");
     if (!selector) return;
     await add_editor(selector.dataset.stringValue);

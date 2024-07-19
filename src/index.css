@@ -1,3 +1,9 @@
+#tagline {
+    --size: 400px;
+    --color: #f55e78;
+    --top: 17px;
+    --left: 20px;
+}
 .--editor {
     display: flex;
     flex-direction: column;
@@ -365,6 +371,12 @@
 }
 [data-kind="function"] > [data-attr="args"] [data-kind="dashed-id"]:not(:hover) .preview {
     display: none;
+}
+[data-kind="id-selector"] {
+    color: var(--class-color);
+}
+[data-kind="id-selector"]::before {
+    content: "#";
 }
 [data-kind="identifier"] {
     color: var(--attribute-color);

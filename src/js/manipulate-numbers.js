@@ -13,6 +13,7 @@ function finish(_) {
 }
 
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   let candidate = e.target.closest('[data-kind="unit"]');
   if (!candidate) return;
   is_dragging = true;

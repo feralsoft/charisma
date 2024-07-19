@@ -15,6 +15,7 @@ export function focus(elem) {
 
 // editor focus
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
 
   let found_editor;
@@ -46,6 +47,7 @@ window.addEventListener("mousedown", (e) => {
 });
 
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   if (!e.isTrusted) return; // don't trust simulated mouse clicks
 
   let property = document
@@ -105,6 +107,7 @@ window.addEventListener("keydown", (e) => {
 
 // focus value
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   // me & the homies don't trust simulated mouse clicks
   if (!e.isTrusted) return;
 

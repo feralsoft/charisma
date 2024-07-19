@@ -23,6 +23,7 @@ function finish() {
 }
 
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   if (!e.target.matches(".--editor-group")) return;
 
   let group = e.target;

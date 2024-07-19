@@ -13,8 +13,8 @@ import "./js/update-value.js";
 import "./js/group-menu.js";
 import "./js/drag-board.js";
 import "./js/copy-property.js";
-import "./js/select-selector-part.js";
 import "./js/choose-file.js";
+import "./js/copy-paste.js";
 
 import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 

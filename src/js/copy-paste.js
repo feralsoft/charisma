@@ -1,3 +1,4 @@
+import { focus } from "./focus.js";
 const { invoke } = window.__TAURI__.tauri;
 
 let currently_selected,
@@ -14,6 +15,7 @@ window.addEventListener("keyup", (_) => {
 });
 
 window.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
   currently_selected = null;
 
   document
@@ -79,4 +81,15 @@ window.addEventListener("keydown", async (e) => {
       await add_editor(selector);
     }
   }
+});
+
+window.addEventListener("paste", async (e) => {
+  if (currently_selected) return;
+  let rule = e.clipboardData.getData("text");
+  if (!rule) return;
+  let selector = await invoke("load_rule", {
+    path: localStorage.getItem("current-path"),
+    rule,
+  });
+  await add_editor(selector);
 });

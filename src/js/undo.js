@@ -1,5 +1,7 @@
 const { invoke } = window.__TAURI__.tauri;
 
+// TODO: there should be an undo/redo stack per editor
+
 class HistoryStack {
   static MAX_SIZE = 1000;
   _stack = [];
