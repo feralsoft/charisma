@@ -826,6 +826,9 @@ body.panning {
 body.panning .canvas {
     pointer-events: none;
 }
+body:has( > button.open-help.active) .canvas {
+    filter: blur(2px);
+}
 body:has( > button.open-help.active) article.help-modal {
     -webkit-user-select: none;
     display: flex;

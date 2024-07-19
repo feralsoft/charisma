@@ -36,7 +36,10 @@
         <div class="search-box">
             <div class="search" contenteditable spellcheck="false"></div>
         </div>
-        <div class="canvas"></div>
+        <div
+            class="canvas"
+            onmousedown="document.querySelector('.open-help').classList.remove('active')"
+        ></div>
         <button class="open-help" onclick="this.classList.toggle('active')">
             ?
         </button>
