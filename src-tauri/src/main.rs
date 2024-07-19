@@ -64,7 +64,7 @@ fn search(
                 match parse_selector(s).and_then(|s| s.into_iter().next()) {
                     Some(selector) => selector
                         .map_err(|_| CharismaError::ParseError)
-                        .map(|s| s.render_html(&RenderOptions::default())),
+                        .and_then(|s| s.render_html(&RenderOptions::default())),
                     None => Err(CharismaError::ParseError),
                 }
             }
@@ -153,7 +153,7 @@ fn render_rule(
                 .frames
                 .iter()
                 .map(|frame| frame.render_html(&RenderOptions::default()))
-                .collect::<String>()
+                .collect::<Result<String, _>>()?
         ))
     } else {
         let selector_list = match parse_selector(selector) {
@@ -198,11 +198,11 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector.render_html(&RenderOptions::default()),
+            selector.render_html(&RenderOptions::default())?,
             rule_properties
                 .iter()
                 .map(|p| p.render_html(&RenderOptions::default()))
-                .collect::<String>(),
+                .collect::<Result<String, _>>()?,
         ))
     }
 }
