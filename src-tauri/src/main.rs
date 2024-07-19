@@ -4,8 +4,9 @@
 use db::*;
 use html::*;
 use parse_utils::{parse_one, parse_property, parse_selector};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{fs, sync::Mutex};
+use tauri::InvokeError;
 
 mod db;
 mod html;
@@ -21,9 +22,20 @@ fn render_keyframes_selector(name: &str) -> String {
     )
 }
 
+#[derive(Serialize, Debug)]
+pub enum CharismaError {
+    DbLocked,
+    ParseError,
+    FailedToSave,
+}
+
 #[tauri::command]
-fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String> {
-    let mut db = state.lock().unwrap();
+fn search(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    q: &str,
+) -> Result<Vec<String>, InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
@@ -38,54 +50,71 @@ fn search(state: tauri::State<Mutex<CSSDB>>, path: &str, q: &str) -> Vec<String>
 
     results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 
-    results
+    let results: Result<Vec<String>, _> = results
         .iter()
-        .map(|s| {
+        .map(|s| -> Result<String, CharismaError> {
             if s.starts_with('@') {
-                let name = s.split("@keyframes").skip(1).next().unwrap().trim();
-                render_keyframes_selector(name)
+                match s.split("@keyframes").skip(1).next() {
+                    Some(name) => Ok(render_keyframes_selector(name.trim())),
+                    None => Err(CharismaError::ParseError),
+                }
             } else {
-                parse_selector(s)
-                    .unwrap()
-                    .into_iter()
-                    .next()
-                    .unwrap()
-                    .unwrap()
-                    .render_html(&RenderOptions::default())
+                match parse_selector(s).and_then(|s| s.into_iter().next()) {
+                    Some(selector) => selector
+                        .map_err(|_| CharismaError::ParseError)
+                        .map(|s| s.render_html(&RenderOptions::default())),
+                    None => Err(CharismaError::ParseError),
+                }
             }
         })
-        .collect()
+        .collect();
+
+    Ok(results?)
 }
 
 #[tauri::command]
-fn insert_empty_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) {
-    let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+fn insert_empty_rule(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
     if selector.starts_with("@keyframes") {
-        let name = selector
-            .split("@keyframes")
-            .skip(1)
-            .next()
-            .unwrap()
-            .trim()
-            .to_string();
-        db.insert_empty_keyframes_rule(name)
+        match selector.split("@keyframes").skip(1).next() {
+            Some(name) => db.insert_empty_keyframes_rule(name.trim().to_string()),
+            None => return Err(CharismaError::ParseError.into()),
+        }
     } else {
-        let selector_list = parse_selector(selector).unwrap();
-        for selector in selector_list
-            .into_iter()
-            .flat_map(|s| s.unwrap().to_selectors(None))
-        {
-            db.insert_empty_regular_rule(&selector);
+        match parse_selector(selector) {
+            Some(selector_list) => match selector_list
+                .into_iter()
+                .map(|s| {
+                    s.map_err(|_| CharismaError::ParseError)
+                        .map(|s| s.to_selectors(None))
+                })
+                .collect::<Result<Vec<Vec<Selector>>, _>>()
+            {
+                Ok(selectors) => selectors
+                    .iter()
+                    .flatten()
+                    .for_each(|selector| db.insert_empty_regular_rule(selector)),
+                Err(e) => return Err(e.into()),
+            },
+            None => return Err(CharismaError::ParseError.into()),
         }
     }
-    fs::write(path, db.serialize()).unwrap()
+    Ok(fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?)
 }
 
 #[tauri::command]
 fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) -> String {
-    let db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    let mut db = state.lock().unwrap();
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
     if selector.starts_with("@keyframes") {
         let name = selector.split("@keyframes").skip(1).next().unwrap().trim();
         let path = [
@@ -144,7 +173,9 @@ fn render_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str) ->
 #[tauri::command]
 fn delete(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
 
     let selector_list = parse_selector(selector).unwrap();
 
@@ -160,7 +191,9 @@ fn delete(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &
 #[tauri::command]
 fn disable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
 
     for selector in parse_selector(selector)
         .unwrap()
@@ -175,7 +208,9 @@ fn disable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: 
 #[tauri::command]
 fn enable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &str, value: &str) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
 
     for selector in parse_selector(selector)
         .unwrap()
@@ -190,7 +225,9 @@ fn enable(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, name: &
 #[tauri::command]
 fn insert_property(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, property: &str) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
     let property = parse_property(property).unwrap();
     for selector in parse_selector(selector)
         .unwrap()
@@ -217,7 +254,9 @@ fn replace_all_properties(
     properties: Vec<JsonProperty>,
 ) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
     for selector in parse_selector(selector)
         .unwrap()
         .into_iter()
@@ -253,7 +292,9 @@ fn update_value(
     value: &str,
 ) {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
 
     let property = parse_property(&format!("{}: {};", name, value)).unwrap();
     for selector in parse_selector(selector)
@@ -277,7 +318,9 @@ fn update_value(
 #[tauri::command(rename_all = "snake_case")]
 fn load_rule(state: tauri::State<Mutex<CSSDB>>, path: &str, rule: &str) -> String {
     let mut db = state.lock().unwrap();
-    assert!(db.is_loaded(path));
+    if !db.is_loaded(path) {
+        db.load(path);
+    }
 
     let rule = parse_one(rule).unwrap();
 
