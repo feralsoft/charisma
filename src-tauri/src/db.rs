@@ -300,20 +300,28 @@ impl CSSDB {
     ) -> Result<(), CharismaError> {
         let mut comments: Vec<String> = vec![];
         comments.extend(get_comments(
-            block.l_curly_token().unwrap().token_text().text(),
+            block
+                .l_curly_token()
+                .map_err(|_| CharismaError::ParseError)?
+                .token_text()
+                .text(),
         ));
         comments.extend(get_comments(
-            block.r_curly_token().unwrap().token_text().text(),
+            block
+                .r_curly_token()
+                .map_err(|_| CharismaError::ParseError)?
+                .token_text()
+                .text(),
         ));
 
         for property in block.items() {
             match property {
                 biome_css_syntax::AnyCssDeclarationOrRule::AnyCssRule(rule) => {
                     let rule = rule.as_css_nested_qualified_rule().unwrap();
-                    let block = rule.block().unwrap();
+                    let block = rule.block().map_err(|_| CharismaError::ParseError)?;
                     let block = block.as_css_declaration_or_rule_block().unwrap();
                     for child in rule.prelude() {
-                        let child = child.unwrap();
+                        let child = child.map_err(|_| CharismaError::ParseError)?;
                         for selector in child.to_selectors(Some(&selector)) {
                             self.load_rule(selector, block)?;
                         }
@@ -336,14 +344,14 @@ impl CSSDB {
         Ok(())
     }
 
-    fn load_at_rule(&mut self, at_rule: AnyCssAtRule) {
+    fn load_at_rule(&mut self, at_rule: AnyCssAtRule) -> Result<(), CharismaError> {
         let at_rule_paths = at_rule.to_css_db_paths();
         assert!(at_rule_paths.len() == 1);
         let at_rule_path = at_rule_paths.first().unwrap();
         match at_rule {
             AnyCssAtRule::CssKeyframesAtRule(rule) => {
-                let name = rule.name().unwrap();
-                let block = rule.block().unwrap();
+                let name = rule.name().map_err(|_| CharismaError::ParseError)?;
+                let block = rule.block().map_err(|_| CharismaError::ParseError)?;
                 let block = block.as_css_keyframes_block().unwrap();
                 let mut frames: Vec<Frame> = vec![];
                 for item in block.items() {
@@ -354,13 +362,22 @@ impl CSSDB {
                             assert!(paths.len() == 1);
                             let path = paths.first().unwrap().to_owned();
 
-                            let block = item.block().unwrap();
+                            let block = item.block().map_err(|_| CharismaError::ParseError)?;
                             let block = block.as_css_declaration_list_block().unwrap();
                             let mut properties: Vec<Property> = vec![];
                             for property in block.declarations() {
-                                let property = property.declaration().unwrap().property().unwrap();
+                                let property = property
+                                    .declaration()
+                                    .map_err(|_| CharismaError::ParseError)?
+                                    .property()
+                                    .unwrap();
                                 let property = property.as_css_generic_property().unwrap();
-                                let name = property.name().unwrap().to_string().trim().to_string();
+                                let name = property
+                                    .name()
+                                    .map_err(|_| CharismaError::ParseError)?
+                                    .to_string()
+                                    .trim()
+                                    .to_string();
                                 let value = property
                                     .value()
                                     .into_iter()
@@ -385,7 +402,9 @@ impl CSSDB {
                         name: name.to_string().trim().to_string(),
                         frames,
                     }),
-                )
+                );
+
+                Ok(())
             }
             AnyCssAtRule::CssBogusAtRule(_) => todo!(),
             AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
@@ -423,7 +442,7 @@ impl CSSDB {
                         }
                     }
                 }
-                AnyCssRule::CssAtRule(at_rule) => self.load_at_rule(at_rule.rule().unwrap()),
+                AnyCssRule::CssAtRule(at_rule) => self.load_at_rule(at_rule.rule().unwrap())?,
                 AnyCssRule::CssBogusRule(_) => todo!(),
                 AnyCssRule::CssNestedQualifiedRule(_) => todo!(),
             };
@@ -537,13 +556,8 @@ impl CSSDB {
         property_value: &str,
         state: State,
     ) {
-        let tree = self.get_mut(path).unwrap();
-        assert!(
-            tree.rule.is_some(),
-            "can't delete property from rule that doesn't exist"
-        );
+        let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
 
-        let rule = tree.rule.as_mut().unwrap();
         match rule {
             Rule::RegularRule(rule) => {
                 rule.comment_all_with_name(property_name);
@@ -560,12 +574,8 @@ impl CSSDB {
     }
 
     pub fn delete(&mut self, path: &[Part], property_name: &str, property_value: &str) {
-        let tree = self.get_mut(path).unwrap();
-        assert!(
-            tree.rule.is_some(),
-            "can't delete property from rule that doesn't exist"
-        );
-        let rule = tree.rule.as_mut().unwrap();
+        let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
+
         match rule {
             Rule::RegularRule(rule) => {
                 rule.properties
