@@ -290,20 +290,33 @@ fn enable(
 }
 
 #[tauri::command]
-fn insert_property(state: tauri::State<Mutex<CSSDB>>, path: &str, selector: &str, property: &str) {
-    let mut db = state.lock().unwrap();
+fn insert_property(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    selector: &str,
+    property: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path);
     }
-    let property = parse_property(property).unwrap();
-    for selector in parse_selector(selector)
-        .unwrap()
-        .into_iter()
-        .flat_map(|s| s.unwrap().to_selectors(None))
-    {
+    let property = match parse_property(property) {
+        Some(p) => p,
+        None => return Err(CharismaError::ParseError.into()),
+    };
+
+    let selector_list: Vec<_> = match parse_selector(selector) {
+        Some(list) => list
+            .into_iter()
+            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .collect::<Result<_, _>>(),
+        None => return Err(CharismaError::ParseError.into()),
+    }?;
+
+    for selector in selector_list.iter().flat_map(|s| s.to_selectors(None)) {
         db.insert_regular_rule(&selector, &property);
     }
-    fs::write(path, db.serialize()).unwrap()
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[derive(Deserialize)]
