@@ -103,6 +103,49 @@
 .class::before {
     
 }
+.offscreen-editor-preview {
+    
+}
+.offscreen-editor-preview::after {
+    content: attr(data-selector);
+    background: rgb(0, 0, 0, 0.5);
+    padding: var(--spacing);
+    outline: 0.1em solid var(--outline-color);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+    max-width: 16em;
+}
+.offscreen-editor-preview:hover::after {
+    max-width: unset;
+}
+.offscreen-editor-preview[data-placement*="left"][data-placement*="bottom"]::after {
+    bottom: 0;
+    position: absolute;
+}
+.offscreen-editor-preview[data-placement*="left"][data-placement*="top"]::after {
+    position: absolute;
+    top: 2em;
+}
+.offscreen-editor-preview[data-placement="bottom"]::after {
+    position: absolute;
+    bottom: 0;
+    left: calc(var(--x) * 1px);
+}
+.offscreen-editor-preview[data-placement="left"]::after {
+    position: absolute;
+    top: calc(var(--y) * 1px);
+}
+.offscreen-editor-preview[data-placement="right"]::after {
+    position: absolute;
+    right: 0;
+    top: calc(var(--y) * 1px);
+}
+.offscreen-editor-preview[data-placement="top"]::after {
+    position: absolute;
+    top: 1em;
+    left: calc(var(--x) * 1px);
+}
 .plain-text-node {
     width: max-content;
     user-select: all;
@@ -951,9 +994,12 @@ menu li {
 poop {
     
 }
+terst {
+    
+}
 tes {
     
 }
 test {
-    font-size: 70px;
+    font-size: 55px;
 }

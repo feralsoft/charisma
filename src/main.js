@@ -17,6 +17,7 @@ import "./js/choose-file.js";
 import "./js/copy-paste.js";
 import "./js/display-error.js";
 import "./js/reload.js";
+import "./js/off-screen.js";
 
 import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 

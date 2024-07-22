@@ -10,6 +10,10 @@ export let h = new Proxy(
             let [_, event_name] = key.split("@");
             assert(typeof value === "function");
             elem.addEventListener(event_name, value);
+          } else if (key === "style") {
+            for (let [name, style] of Object.entries(value)) {
+              elem.style.setProperty(name, style);
+            }
           } else {
             elem.setAttribute(key, value);
           }
