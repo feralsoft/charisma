@@ -101,9 +101,10 @@ function update_property_values(editor, new_properties) {
     let name = ast.property.name(new_property);
     let existing_property = editor.querySelector(`
       [data-kind="property"]:has(>
-        [data-attr="name"] [data-value="'${name}'"]
+        [data-attr="name"] [data-value="${name}"]
       )
     `);
+
     if (!existing_property) continue;
     let existing_value = ast.property.value(existing_property);
     let new_value = ast.property.value(new_property);
