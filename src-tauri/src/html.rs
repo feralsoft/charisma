@@ -29,6 +29,10 @@ pub fn render_value(value: &str) -> String {
     )
 }
 
+pub fn data_string_value(value: &str) -> String {
+    format!("data-string-value=\"{}\"", value.trim())
+}
+
 pub struct RenderOptions {
     pub attrs: Vec<(String, String)>,
 }
@@ -55,7 +59,10 @@ pub trait Render {
 impl Render for AnyCssSelector {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
         let options = RenderOptions {
-            attrs: vec![("data-string-value".to_string(), self.to_string())],
+            attrs: vec![(
+                "data-string-value".to_string().trim().to_string(),
+                self.to_string(),
+            )],
         };
         match self {
             AnyCssSelector::CssBogusSelector(_) => panic!(),
@@ -73,7 +80,7 @@ impl Render for CssComplexSelector {
 
         Ok(format!(
             "
-            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\" data-string-value='{}'>
+            <div data-kind=\"complex-selector\" data-combinator-type=\"{}\" {}>
                 <div data-attr=\"left\">{}</div>
                 <div data-attr=\"right\">{}</div>
             </div>",
@@ -83,7 +90,7 @@ impl Render for CssComplexSelector {
                 Combinator::Plus => "next-sibling",
                 Combinator::And => panic!(""),
             },
-            self.to_string().trim(),
+            data_string_value(&self.to_string()),
             left.render_html(options)?,
             right.render_html(options)?
         ))
@@ -115,20 +122,23 @@ impl Render for CssPseudoClassIdentifier {
 impl Render for CssRelativeSelector {
     fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
         match self.combinator() {
-            Some(combinator) => {
-                Ok(format!(
-                    "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" data-string-value=\"{}\">{}</div>",
-                    match get_combinator_type(combinator.kind()) {
-                        Combinator::Descendant => "descendant",
-                        Combinator::DirectDescendant => "direct-descendant",
-                        Combinator::Plus => "next-sibling",
-                        Combinator::And => todo!(),
-                    },
-                    self,
-                    self.selector().map_err(|_| CharismaError::ParseError)?.render_html(options)?
-                ))
-            }
-            None => self.selector().map_err(|_| CharismaError::ParseError)?.render_html(options),
+            Some(combinator) => Ok(format!(
+                "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" {}>{}</div>",
+                match get_combinator_type(combinator.kind()) {
+                    Combinator::Descendant => "descendant",
+                    Combinator::DirectDescendant => "direct-descendant",
+                    Combinator::Plus => "next-sibling",
+                    Combinator::And => todo!(),
+                },
+                data_string_value(&self.to_string()),
+                self.selector()
+                    .map_err(|_| CharismaError::ParseError)?
+                    .render_html(options)?
+            )),
+            None => self
+                .selector()
+                .map_err(|_| CharismaError::ParseError)?
+                .render_html(options),
         }
     }
 }
@@ -153,11 +163,11 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
         };
 
         Ok(format!(
-            "<div data-kind=\"pseudo-class-function\" data-string-value=\"{}\">
+            "<div data-kind=\"pseudo-class-function\" {}>
                 <div data-attr=\"function-name\">{}</div>
                 <div data-attr=\"args\">{}</div>
             </div>",
-            self,
+            data_string_value(&self.to_string()),
             render_value(name.text_trimmed()),
             selector.render_html(options)?
         ))
@@ -216,11 +226,11 @@ impl Render for CssPseudoClassNthNumber {
         let number = self.value().map_err(|_| CharismaError::ParseError)?;
         Ok(format!(
             "
-            <div data-kind=\"pseudo-class-nth-number\" data-string-value=\"{}\">
+            <div data-kind=\"pseudo-class-nth-number\" {}>
                 {}
             </div>
             ",
-            self,
+            data_string_value(&self.to_string()),
             render_value(&number.to_string())
         ))
     }
@@ -259,11 +269,11 @@ impl Render for CssPseudoClassFunctionNth {
         let name = self.name().map_err(|_| CharismaError::ParseError)?;
         let selector = self.selector().map_err(|_| CharismaError::ParseError)?;
         Ok(format!(
-            "<div data-kind=\"pseudo-class-function-nth\" data-string-value='{}'>
+            "<div data-kind=\"pseudo-class-function-nth\" {}>
                     <div data-attr=\"name\">{}</div>
                     <div data-attr=\"selector\">{}</div>
                 </div>",
-            self,
+            data_string_value(&self.to_string()),
             render_value(name.text_trimmed()),
             selector.render_html(options)?
         ))
@@ -296,12 +306,12 @@ impl Render for CssPseudoClassFunctionSelectorList {
 
         Ok(format!(
             "
-        <div data-kind=\"pseudo-class-function-selector\" data-string-value=\"{}\">
+        <div data-kind=\"pseudo-class-function-selector\" {}>
             <div data-attr=\"name\">{}</div>
             <div data-attr=\"selectors\">{}</div>
         </div>
             ",
-            self,
+            data_string_value(&self.to_string()),
             render_value(name.text_trimmed()),
             self.selectors()
                 .into_iter()
@@ -410,10 +420,10 @@ impl Render for CssIdSelector {
         let name = name.value_token().map_err(|_| CharismaError::ParseError)?;
 
         Ok(format!(
-            "<div data-kind=\"id-selector\" data-string-value=\"{}\">
+            "<div data-kind=\"id-selector\" {}>
                 <div data-attr=\"name\">{}</div>
             </div>",
-            self,
+            data_string_value(&self.to_string()),
             render_value(name.text_trimmed())
         ))
     }
@@ -540,8 +550,8 @@ impl Render for CssIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
         let value = self.value_token().map_err(|_| CharismaError::ParseError)?;
         Ok(format!(
-            "<div data-kind=\"identifier\" data-string-value=\"{}\">{}</div>",
-            value.text_trimmed(),
+            "<div data-kind=\"identifier\" {}>{}</div>",
+            data_string_value(value.text_trimmed()),
             render_value(value.text_trimmed())
         ))
     }
@@ -745,10 +755,10 @@ impl Render for CssSelectorList {
             .unwrap();
 
         Ok(format!(
-            "<div data-kind=\"selector-list\" data-string-value='{}'>
+            "<div data-kind=\"selector-list\" {}>
                 <div data-attr=\"selectors\">{}</div>
             </div>",
-            string_value,
+            data_string_value(&string_value),
             self.into_iter()
                 .map(|s| s
                     .map_err(|_| CharismaError::ParseError)
