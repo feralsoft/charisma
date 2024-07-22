@@ -531,7 +531,7 @@ impl Render for AnyCssDimension {
         match self {
             AnyCssDimension::CssPercentage(node) => node.render_html(options),
             AnyCssDimension::CssRegularDimension(node) => node.render_html(options),
-            AnyCssDimension::CssUnknownDimension(_) => panic!(),
+            AnyCssDimension::CssUnknownDimension(_) => Err(CharismaError::ParseError),
         }
     }
 }

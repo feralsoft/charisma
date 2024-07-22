@@ -1,6 +1,5 @@
 import { focus } from "./focus.js";
-
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 
 window.addEventListener("keydown", async (e) => {
   if (e.key !== "Backspace") return;
@@ -14,7 +13,7 @@ window.addEventListener("keydown", async (e) => {
     '[data-attr="value"] > [data-kind][data-string-value]',
   ).dataset.stringValue;
   let editor = property.closest(".--editor");
-  await invoke("delete", {
+  await invoke(editor, "delete", {
     path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
     name,

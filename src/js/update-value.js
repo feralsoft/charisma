@@ -1,5 +1,5 @@
 import { h, modifiers } from "./html.js";
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 
 function plain_text_node(editor, name, original_value) {
   return h.div(
@@ -13,7 +13,7 @@ function plain_text_node(editor, name, original_value) {
           this.blur();
         } else if (e.key === "Enter") {
           e.preventDefault();
-          await invoke("update_value", {
+          await invoke(editor, "update_value", {
             path: localStorage.getItem("current-path"),
             selector: editor.dataset.selector,
             name,
@@ -36,7 +36,7 @@ function plain_text_node(editor, name, original_value) {
 }
 
 const VALUE_SELECTOR =
-  '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]';
+  '[data-attr="properties"] > [data-kind="property"] > [data-attr="value"] > [data-kind]:not([data-kind="plain-text"])';
 
 function init(editor) {
   for (let value of editor.querySelectorAll(VALUE_SELECTOR)) {

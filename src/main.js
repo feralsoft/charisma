@@ -15,6 +15,7 @@ import "./js/drag-board.js";
 import "./js/copy-property.js";
 import "./js/choose-file.js";
 import "./js/copy-paste.js";
+import "./js/display-error.js";
 
 import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 

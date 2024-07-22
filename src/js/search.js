@@ -1,18 +1,16 @@
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 import { focus } from "./focus.js";
 
 window.add_editor = async function add_editor(selector) {
-  let html = await invoke("render_rule", {
-    path: localStorage.getItem("current-path"),
-    selector,
-  });
-
   let editor = document.createElement("div");
   editor.classList.add("--editor");
   editor.dataset.selector = selector;
   editor.setAttribute("spellcheck", false);
+  let html = await invoke(editor, "render_rule", {
+    path: localStorage.getItem("current-path"),
+    selector,
+  });
   editor.innerHTML = html;
-
   let canvas = document.querySelector(".canvas");
   canvas.append(editor);
   focus(editor);
@@ -70,7 +68,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (existing_rule) {
           focus(existing_rule);
         } else {
-          await invoke("insert_empty_rule", {
+          await invoke(null, "insert_empty_rule", {
             path: localStorage.getItem("current-path"),
             selector,
           });
@@ -126,7 +124,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
       move_cursor_to_end_of_element(input);
       setTimeout(async () => {
         // setTimeout so that innerText gets populated
-        let results = await invoke("search", {
+        let results = await invoke(null, "search", {
           path: localStorage.getItem("current-path"),
           q: input.innerText,
         });
@@ -139,7 +137,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (input.innerText.trim() === "") {
           options.innerHTML = "";
         } else if (old_text !== input.innerText) {
-          let results = await invoke("search", {
+          let results = await invoke(null, "search", {
             path: localStorage.getItem("current-path"),
             q: input.innerText,
           });
