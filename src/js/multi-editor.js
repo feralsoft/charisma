@@ -1,12 +1,16 @@
-import { num_var } from "./helpers.js";
+import { num_var, px_var } from "./helpers.js";
 import { find } from "./iter.js";
+
+const GRID_SIZE = 25;
 
 function new_group(position) {
   let group = document.createElement("div");
   group.classList.add("--editor-group");
 
-  // - 25 since the group has a padding of 25px
-  let pos = snap_position({ x: position.x - 25, y: position.y - 25 });
+  let pos = snap_position({
+    x: position.x - GRID_SIZE,
+    y: position.y - GRID_SIZE,
+  });
 
   group.style.setProperty("--x", pos.x);
   group.style.setProperty("--y", pos.y);
@@ -67,11 +71,11 @@ function put_in_group(editor, position) {
 const SNAP_OFFSET = 4;
 
 export function snap_position({ x, y }) {
-  if (x % 25 < 9) x = x - (x % 25) - SNAP_OFFSET;
-  else x = x + (25 - (x % 25)) - SNAP_OFFSET;
+  if (x % GRID_SIZE < 9) x = x - (x % GRID_SIZE) - SNAP_OFFSET;
+  else x = x + (GRID_SIZE - (x % GRID_SIZE)) - SNAP_OFFSET;
 
-  if (y % 25 < 9) y = y - (y % 25) - SNAP_OFFSET;
-  else y = y + (25 - (y % 25)) - SNAP_OFFSET;
+  if (y % GRID_SIZE < 9) y = y - (y % GRID_SIZE) - SNAP_OFFSET;
+  else y = y + (GRID_SIZE - (y % GRID_SIZE)) - SNAP_OFFSET;
 
   return { x, y };
 }
@@ -83,9 +87,12 @@ function init(editor) {
   let { width: editor_width, height: editor_height } =
     editor.getBoundingClientRect();
 
+  let x_offset = px_var(document.body, "--x-offset");
+  let y_offset = px_var(document.body, "--y-offset");
+
   put_in_group(editor, {
-    x: body_width / 2 - editor_width / 3,
-    y: body_height / 2 - editor_height / 3,
+    x: body_width / 2 - x_offset - editor_width / 2,
+    y: body_height / 2 - y_offset - editor_height / 2,
   });
 }
 
