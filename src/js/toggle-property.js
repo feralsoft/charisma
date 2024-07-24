@@ -1,4 +1,4 @@
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 
 async function toggle(e) {
   e.stopPropagation();
@@ -9,13 +9,12 @@ async function toggle(e) {
   let is_commented = property.dataset.commented === "true";
   let action = is_commented ? "enable" : "disable";
   let editor = property.closest(".--editor");
-  await invoke(action, {
+  await invoke(editor, action, {
     path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
     name,
     value,
   });
-  property.dispatchEvent(new Event("reload", { bubbles: true }));
 }
 
 function insert_comment_button(src) {
