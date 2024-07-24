@@ -939,6 +939,10 @@ hey-tehre {
 html {
     height: 100%;
 }
+input[type="color"] {
+    width: 2em;
+    height: 2em;
+}
 laugh {
     
 }
@@ -1001,5 +1005,5 @@ tes {
     
 }
 test {
-    font-size: 55px;
+    color: rgb(236, 230, 2);
 }

@@ -74,11 +74,11 @@ function morph_node(old_node, new_node) {
       for (let attr of old_node.querySelectorAll(":scope > [data-attr]")) {
         let old_node = attr.querySelector(":scope > [data-kind]");
         if (old_node) {
-          let new_node = new_node.querySelector(
+          let new_sub_node = new_node.querySelector(
             `:scope > [data-attr="${attr.dataset.attr}"] > [data-kind]`,
           );
-          assert(new_node);
-          morph_node(old_node, new_node);
+          assert(new_sub_node);
+          morph_node(old_node, new_sub_node);
         } else {
           let old_value = attr.querySelector(":scope > [data-value]");
           assert(old_value);
