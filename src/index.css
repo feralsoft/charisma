@@ -833,6 +833,7 @@ body .canvas {
         rgba(200, 200, 200, 0.5) 1px,
         rgba(0, 0, 0, 0) 1px
     );
+    transition: filter 125ms linear;
 }
 body .canvas:has( > .dragging) {
     pointer-events: none;
