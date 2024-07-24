@@ -1,3 +1,5 @@
+import { add_editor } from "./editor.js";
+
 const { invoke } = window.__TAURI__.tauri;
 
 let currently_selected,
@@ -70,18 +72,21 @@ window.addEventListener("keydown", async (e) => {
     copied = false;
     let selector = currently_selected.dataset.stringValue;
     if (e.target.matches(".search.active")) {
+      // pasting into search
       e.preventDefault();
       e.target.innerText = selector;
     } else {
+      let current_group = currently_selected.closest(".--editor-group");
       await invoke("insert_empty_rule", {
         path: localStorage.getItem("current-path"),
         selector,
       });
-      await add_editor(selector);
+      let editor = await add_editor(selector, current_group);
     }
   }
 });
 
+// paste from out of the app
 window.addEventListener("paste", async (e) => {
   if (currently_selected) return;
   let rule = e.clipboardData.getData("text");

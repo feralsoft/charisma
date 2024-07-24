@@ -26,7 +26,7 @@ function init(group) {
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", ({ detail: editor }) => {
+  canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
     init(editor.closest(".--editor-group"));
     editor.addEventListener("drag-finished", () =>
       init(editor.closest(".--editor-group")),

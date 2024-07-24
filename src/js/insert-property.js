@@ -207,7 +207,7 @@ window.addEventListener("keydown", (e) => {
 
 document.addEventListener("DOMContentLoaded", async (_) => {
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", ({ detail: editor }) => {
+  canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
     init(editor);
     editor.addEventListener("loaded", (_) => reload(editor));
   });

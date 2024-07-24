@@ -1,22 +1,7 @@
 import { focus } from "./focus.js";
+import { add_editor } from "./editor.js";
 
 const { invoke } = window.__TAURI__.tauri;
-
-window.add_editor = async function add_editor(selector) {
-  let editor = document.createElement("div");
-  editor.classList.add("--editor");
-  editor.dataset.selector = selector;
-  editor.setAttribute("spellcheck", false);
-  let html = await invoke("render_rule", {
-    path: localStorage.getItem("current-path"),
-    selector,
-  });
-  editor.innerHTML = html;
-  let canvas = document.querySelector(".canvas");
-  canvas.append(editor);
-  focus(editor);
-  canvas.dispatchEvent(new CustomEvent("new-editor", { detail: editor }));
-};
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let input = document.querySelector(".search");

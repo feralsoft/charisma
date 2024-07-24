@@ -98,8 +98,12 @@ function init(editor) {
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", ({ detail: editor }) => {
-    init(editor);
+  canvas.addEventListener("new-editor", ({ detail: { editor, anchor } }) => {
+    if (anchor) {
+      anchor.append(editor);
+    } else {
+      init(editor);
+    }
     editor.addEventListener("drag-finished", ({ detail: { position } }) =>
       put_in_group(editor, position),
     );

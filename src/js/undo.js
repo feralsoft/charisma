@@ -92,7 +92,7 @@ window.addEventListener("keydown", async (e) => {
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
-  canvas.addEventListener("new-editor", ({ detail: editor }) => {
+  canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
     init(editor);
   });
 });
