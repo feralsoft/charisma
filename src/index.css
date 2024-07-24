@@ -946,6 +946,12 @@ input[type="color"] {
     width: 2em;
     height: 2em;
 }
+input[type="color"]::-webkit-color-swatch {
+    
+}
+input[type="color"]::-webkit-color-wrapper {
+    
+}
 laugh {
     
 }

@@ -3,7 +3,6 @@ const { invoke: tauri_invoke } = window.__TAURI__.tauri;
 export default async function invoke(editor, path, args) {
   try {
     let result = await tauri_invoke(path, args);
-    if (!editor) return result;
     let loaded = new Promise((r) =>
       editor.addEventListener("loaded", function self() {
         r();
