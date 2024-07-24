@@ -1,4 +1,5 @@
 import { h } from "./html.js";
+import invoke from "./invoke.js";
 
 let { div } = h;
 
@@ -6,8 +7,6 @@ let { div } = h;
 let ALL_PROPERTIES = fetch("./js/all_properties.json").then((r) => r.json());
 
 let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
-
-const { invoke } = window.__TAURI__.tauri;
 
 let search_item = ({ value, description }) => [
   div({ class: "search-item-value" }, value),
@@ -76,12 +75,11 @@ let input = (editor) =>
           return accept_candidate(container, this);
         } else {
           // otherwise submit & reload
-          await invoke("insert_property", {
+          await invoke(editor, "insert_property", {
             path: localStorage.getItem("current-path"),
             selector: editor.dataset.selector,
             property: e.target.innerText,
           });
-          this.dispatchEvent(new Event("reload", { bubbles: true }));
         }
       } else if (e.key === "Escape") {
         this.blur();

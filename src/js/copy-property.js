@@ -1,4 +1,4 @@
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 
 let property_to_copy;
 
@@ -25,11 +25,10 @@ window.addEventListener("keydown", async (e) => {
       ':scope > [data-attr="value"] > [data-kind][data-string-value]',
     ).dataset.stringValue;
 
-    await invoke("insert_property", {
+    await invoke(focused_editor, "insert_property", {
       path: localStorage.getItem("current-path"),
       selector: focused_editor.dataset.selector,
       property: `${property_name}: ${property_value};`,
     });
-    focused_editor.dispatchEvent(new Event("reload", { bubbles: true }));
   }
 });

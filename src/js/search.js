@@ -6,7 +6,7 @@ window.add_editor = async function add_editor(selector) {
   editor.classList.add("--editor");
   editor.dataset.selector = selector;
   editor.setAttribute("spellcheck", false);
-  let html = await invoke(editor, "render_rule", {
+  let html = await invoke(null, "render_rule", {
     path: localStorage.getItem("current-path"),
     selector,
   });

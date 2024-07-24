@@ -1,4 +1,3 @@
-import { focus } from "./focus.js";
 const { invoke } = window.__TAURI__.tauri;
 
 let currently_selected,

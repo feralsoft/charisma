@@ -931,6 +931,9 @@ d {
     
 }
 data {
+    color: red;
+}
+div {
     
 }
 hey-tehre {
@@ -1005,5 +1008,6 @@ tes {
     
 }
 test {
-    color: rgb(0, 149, 178);
+    color: rgb(181, 206, 168);
+    font-size: 31px;
 }

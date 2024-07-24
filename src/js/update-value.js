@@ -20,7 +20,6 @@ function plain_text_node(editor, name, original_value) {
             original_value,
             value: this.innerText,
           });
-          this.blur();
         }
         [];
       },

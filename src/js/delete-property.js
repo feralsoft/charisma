@@ -19,6 +19,5 @@ window.addEventListener("keydown", async (e) => {
     name,
     value,
   });
-  editor.dispatchEvent(new Event("reload"));
   focus(editor);
 });

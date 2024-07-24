@@ -1,4 +1,4 @@
-const { invoke } = window.__TAURI__.tauri;
+import invoke from "./invoke.js";
 
 // make number go up & down (unit)
 
@@ -66,21 +66,13 @@ window.addEventListener("mousemove", async (e) => {
   let diff = (start_y - e.clientY) * factor;
   start_y = e.clientY;
 
-  await invoke("update_value", {
+  await invoke(editor, "update_value", {
     path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
     name,
     original_value: `${value.toFixed(precision)}${type}`,
     value: `${(value + diff).toFixed(precision)}${type}`,
   });
-  let loaded = new Promise((r) => {
-    editor.addEventListener("loaded", function self() {
-      r();
-      editor.removeEventListener("loaded", self);
-    });
-  });
-  unit.dispatchEvent(new Event("reload", { bubbles: true }));
-  await loaded;
 
   lock = false;
 });
@@ -98,22 +90,20 @@ window.addEventListener("keydown", async (e) => {
   let editor = unit.closest(".--editor");
 
   if (e.key === "ArrowUp") {
-    await invoke("update_value", {
+    await invoke(editor, "update_value", {
       path: localStorage.getItem("current-path"),
       selector: editor.dataset.selector,
       name,
       original_value: `${value.toFixed(precision)}${type}`,
       value: `${(value + factor).toFixed(precision)}${type}`,
     });
-    unit.dispatchEvent(new Event("reload", { bubbles: true }));
   } else if (e.key === "ArrowDown") {
-    await invoke("update_value", {
+    await invoke(editor, "update_value", {
       path: localStorage.getItem("current-path"),
       selector: editor.dataset.selector,
       name,
       original_value: `${value.toFixed(precision)}${type}`,
       value: `${(value - factor).toFixed(precision)}${type}`,
     });
-    unit.dispatchEvent(new Event("reload", { bubbles: true }));
   }
 });

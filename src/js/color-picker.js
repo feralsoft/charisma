@@ -48,11 +48,7 @@ function init(editor) {
             original_value: color.dataset.stringValue,
             value: hex_to_rgb(e.target.value),
           });
-          editor.dispatchEvent(new Event("reload"));
-          editor.addEventListener("loaded", function loaded() {
-            lock = false;
-            editor.removeEventListener("loaded", loaded);
-          });
+          lock = false;
         },
       }),
     );
