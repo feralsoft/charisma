@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         // do we already have this rule?
         let selector = candidate.dataset.stringValue;
         let existing_rule = document.querySelector(
-          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector}"]`,
+          `.--editor:has([data-attr="selector"] > [data-kind][data-string-value="${selector.replaceAll('"', '\\"')}"]`,
         );
 
         if (existing_rule) {
