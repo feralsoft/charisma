@@ -21,16 +21,16 @@ use crate::{
     Part, Property, State,
 };
 
+pub fn attr(name: &str, value: &str) -> String {
+    format!("{}=\"{}\"", name, value.replace('"', "&quot;").trim())
+}
+
 pub fn render_value(value: &str) -> String {
-    format!(
-        "<div data-value=\"{}\">{}</div>",
-        value.trim(),
-        value.trim()
-    )
+    format!("<div {}>{}</div>", attr("data-value", value), value.trim())
 }
 
 pub fn data_string_value(value: &str) -> String {
-    format!("data-string-value=\"{}\"", value.trim())
+    attr("data-string-value", value)
 }
 
 pub struct RenderOptions {
