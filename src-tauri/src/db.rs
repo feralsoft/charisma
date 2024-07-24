@@ -536,6 +536,37 @@ impl CSSDB {
         }
     }
 
+    fn recursive_search_for_property_aux(
+        &self,
+        q: &[&str],
+        properties: &mut Vec<(Arc<Property>, Selector)>,
+    ) {
+        match self.rule.as_ref() {
+            Some(Rule::RegularRule(rule)) => {
+                for property in rule.properties.iter() {
+                    if q.iter()
+                        .all(|q| property.name.contains(q) || property.value.contains(q))
+                    {
+                        properties.push((property.clone(), rule.selector.clone()))
+                    }
+                }
+            }
+            Some(Rule::Keyframes(_)) => {
+                // TODO!
+            }
+            None => {}
+        }
+        for child in self.children.values() {
+            child.recursive_search_for_property_aux(q, properties)
+        }
+    }
+
+    pub fn recursive_search_for_property(&self, q: &[&str]) -> Vec<(Arc<Property>, Selector)> {
+        let mut properties: Vec<(Arc<Property>, Selector)> = vec![];
+        self.recursive_search_for_property_aux(q, &mut properties);
+        return properties;
+    }
+
     pub fn all_selectors_with_properties(&self) -> Vec<String> {
         let mut selectors: Vec<String> = vec![];
         self.all_selectors_with_properties_aux(&mut selectors);

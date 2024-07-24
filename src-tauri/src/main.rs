@@ -5,7 +5,10 @@ use db::*;
 use html::*;
 use parse_utils::{parse_one, parse_property, parse_selector};
 use serde::{Deserialize, Serialize};
-use std::{fs, sync::Mutex};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 use tauri::InvokeError;
 
 mod db;
@@ -41,7 +44,7 @@ fn search(
     if !db.is_loaded(path) {
         db.load(path)?;
     }
-    let parts: Vec<&str> = q.trim().split(' ').collect();
+    let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
 
     let mut results: Vec<String> = db
         .all_selectors_with_properties()
@@ -69,6 +72,50 @@ fn search(
                 }
             }
         })
+        .take(20)
+        .collect();
+
+    Ok(results?)
+}
+
+#[tauri::command]
+fn find_property(
+    state: tauri::State<Mutex<CSSDB>>,
+    path: &str,
+    q: &str,
+) -> Result<Vec<(String, String)>, InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
+    if !db.is_loaded(path) {
+        db.load(path)?;
+    }
+    let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
+
+    let mut results: Vec<(Arc<Property>, Selector)> = db.recursive_search_for_property(&parts);
+
+    results.sort_by(|a, b| {
+        let a_property = format!("{}: {};", a.0.name, a.0.value);
+        let b_property = format!("{}: {};", b.0.name, b.0.value);
+        a_property
+            .len()
+            .cmp(&b_property.len())
+            .then_with(|| a_property.cmp(&b_property))
+    });
+
+    let results: Result<Vec<(String, String)>, _> = results
+        .iter()
+        .map(|(p, s)| (p, parse_selector(&s.string)))
+        .map(
+            |(property, selector)| -> Result<(String, String), CharismaError> {
+                match selector {
+                    None => Err(CharismaError::ParseError),
+                    Some(selector) => Ok((
+                        property.render_html(&RenderOptions::default())?,
+                        selector.render_html(&RenderOptions::default())?,
+                    )),
+                }
+            },
+        )
+        .take(20)
         .collect();
 
     Ok(results?)
@@ -505,6 +552,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             render_rule,
             search,
+            find_property,
             delete,
             enable,
             disable,

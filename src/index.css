@@ -103,6 +103,22 @@
 .class::before {
     
 }
+.find-search-result {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5em;
+}
+.find-search-result .selector {
+    opacity: 0.7;
+    /* display: none; */
+}
+.find-search-result .selector:hover {
+    
+}
+.find-search-result:hover .selector {
+    display: unset;
+    /* margin-left: 100%; */
+}
 .offscreen-editor-preview {
     
 }
@@ -476,8 +492,8 @@
     color: var(--brace-color);
 }
 [data-kind="keyframes-selector"] {
-    display: flex;
     gap: var(--spacing);
+    display: flex;
 }
 [data-kind="keyframes-selector"] [data-attr="name"] {
     

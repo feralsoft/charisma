@@ -19,6 +19,7 @@ import "./js/display-error.js";
 import "./js/reload.js";
 import "./js/off-screen.js";
 import "./js/color-picker.js";
+import "./js/find-property.js";
 
 import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 

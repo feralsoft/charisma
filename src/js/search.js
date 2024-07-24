@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   options.classList.add("search-options");
   container.append(options);
   function clear() {
-    input.classList.remove("active");
+    input.classList.remove("active", "selector-search");
     input.innerText = "";
     options.innerHTML = "";
   }
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
       if (input.classList.contains("active")) {
         clear();
       } else {
-        input.classList.add("active");
+        input.classList.add("active", "selector-search");
         input.focus();
       }
     }
@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
 
   options.addEventListener("mousedown", async (e) => {
     if (e.button !== 0) return;
+    if (!input.classList.contains("selector-search")) return;
     let selector = e.target.closest(".search-options > [data-kind]");
     if (!selector) return;
     await add_editor(selector.dataset.stringValue);
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   });
 
   input.addEventListener("keydown", async (e) => {
+    if (!input.classList.contains("selector-search")) return;
     if (e.key === "Enter") {
       e.preventDefault();
       let candidate = options.querySelector(".candidate");
@@ -114,7 +116,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
           path: localStorage.getItem("current-path"),
           q: input.innerText,
         });
-        options.innerHTML = results.slice(0, 20).join("");
+        options.innerHTML = results.join("");
       });
     } else {
       let old_text = input.innerText;
@@ -128,7 +130,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
             q: input.innerText,
           });
 
-          options.innerHTML = results.slice(0, 20).join("");
+          options.innerHTML = results.join("");
         }
       });
     }

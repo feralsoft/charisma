@@ -639,7 +639,19 @@ impl Render for CssFunction {
 
 impl Render for CssUrlFunction {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
-        todo!()
+        assert!(self.modifiers().into_iter().len() == 0);
+        let name = self.name().map_err(|_| CharismaError::ParseError)?;
+        let name = name.text_trimmed();
+        let url = self.value().unwrap().to_string();
+        Ok(format!(
+            "<div data-kind=\"url-function\" {}>
+                <div data-attr=\"name\">{}</div>
+                <div data-attr=\"value\">{}</div>
+            </div>",
+            data_string_value(&self.to_string()),
+            render_value(name),
+            render_value(&url),
+        ))
     }
 }
 
