@@ -7,7 +7,7 @@ const COLOR_SELECTOR =
 function hex_to_rgb(hex) {
   let r = hex.slice(1, 3);
   let g = hex.slice(3, 5);
-  let b = hex.slice(6, 7);
+  let b = hex.slice(5, 7);
   return `rgb(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)})`;
 }
 

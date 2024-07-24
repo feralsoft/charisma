@@ -72,21 +72,24 @@ function morph_node(old_node, new_node) {
       morph_value(old_value, new_value);
     } else {
       for (let attr of old_node.querySelectorAll(":scope > [data-attr]")) {
-        let old_node = attr.querySelector(":scope > [data-kind]");
-        if (old_node) {
-          let new_sub_node = new_node.querySelector(
-            `:scope > [data-attr="${attr.dataset.attr}"] > [data-kind]`,
-          );
-          assert(new_sub_node);
-          morph_node(old_node, new_sub_node);
-        } else {
-          let old_value = attr.querySelector(":scope > [data-value]");
-          assert(old_value);
-          let new_value = new_value.querySelector(
-            `:scope > [data-attr="${attr.dataset.attr}"] > [data-value]`,
-          );
-          assert(new_value);
-          morph(old_value, new_value);
+        let n = 1;
+        for (let old_node of attr.querySelectorAll(":scope > [data-kind]")) {
+          if (old_node) {
+            let new_sub_node = new_node.querySelector(
+              `:scope > [data-attr="${attr.dataset.attr}"] > [data-kind]:nth-child(${n})`,
+            );
+            assert(new_sub_node);
+            morph_node(old_node, new_sub_node);
+          } else {
+            let old_value = attr.querySelector(":scope > [data-value]");
+            assert(old_value);
+            let new_value = new_value.querySelector(
+              `:scope > [data-attr="${attr.dataset.attr}"] > [data-value]`,
+            );
+            assert(new_value);
+            morph(old_value, new_value);
+          }
+          n++;
         }
       }
     }
