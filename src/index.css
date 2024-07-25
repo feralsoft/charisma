@@ -1089,3 +1089,7 @@ test {
     color: rgb(181, 206, 168);
     padding: var(--spacing);
 }
+test2 {
+    font-size: 31px;
+    padding: var(--spacing);
+}

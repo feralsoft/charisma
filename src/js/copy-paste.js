@@ -81,14 +81,14 @@ window.addEventListener("keydown", async (e) => {
         path: localStorage.getItem("current-path"),
         selector,
       });
-      let editor = await add_editor(selector, current_group);
+      await add_editor(selector, current_group);
     }
   }
 });
 
 // paste from out of the app
 window.addEventListener("paste", async (e) => {
-  if (currently_selected) return;
+  if (document.querySelector(".focused")) return;
   let rule = e.clipboardData.getData("text");
   if (!rule) return;
   let selector = await invoke("load_rule", {
