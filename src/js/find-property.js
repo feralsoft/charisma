@@ -36,7 +36,7 @@ function start_search() {
   function on_keydown(e) {
     input.dataset.empty = false;
     if (!input.classList.contains("find-property")) return;
-    if (e.key === "Escape") {
+    if (e.key === "Escape" || (e.key == "p" && e.metaKey)) {
       clear();
     } else {
       setTimeout(async () => {

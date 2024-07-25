@@ -105,26 +105,29 @@
 }
 .find-search-result {
     display: flex;
-    justify-content: space-between;
-    gap: 0.5em;
+    flex-direction: column;
+    cursor: pointer;
 }
 .find-search-result .selector {
-    opacity: 0.7;
-    /* display: none; */
+    opacity: 0.6;
+    font-size: 0.8em;
 }
 .find-search-result .selector:hover {
     
 }
 .find-search-result:hover {
-    text-decoration: underline;
-    text-decoration-color: white;
+    background: rgb(60, 60, 60);
+    /* text-decoration: underline; */
+    /* text-decoration-color: white; */
 }
 .find-search-result:hover * {
     
 }
 .find-search-result:hover .selector {
-    display: unset;
-    /* margin-left: 100%; */
+    
+}
+.find-search-result:not(:first-child) {
+    border-top: 0.1em solid rgba(255, 255, 255, 0.1);
 }
 .offscreen-editor-preview {
     
@@ -186,6 +189,18 @@
 .search.active.selector-search[data-empty="true"]::before {
     opacity: 0.5;
     content: "find rules...";
+}
+.search.find-property {
+    
+}
+.search.find-property .options {
+    
+}
+.search-box:has(.search.find-property) .options {
+    
+}
+.search-box:has(.search.find-property) .search-options {
+    
 }
 .titlebar {
     z-index: 100;
@@ -337,6 +352,9 @@
 }
 [data-attr="properties"] [data-value]:hover {
     outline: var(--outline-color) solid 0.1em;
+}
+[data-attr="properties"] > [data-kind="property"] {
+    padding-left: 1em;
 }
 [data-attr="selector"] [data-kind="identifier"] {
     color: var(--attribute-color);
@@ -549,8 +567,7 @@
     align-items: center;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25em;
-    padding-left: 1em;
+    gap: var(--spacing);
 }
 [data-kind="property"] > [data-attr="name"] {
     color: var(--property-name-color);
@@ -770,6 +787,9 @@
     grid-template-columns: 1fr 1fr;
     grid-template-rows: repeat(1fr, 10);
 }
+[data-kind="rule"] [data-kind="property"] {
+    padding-left: 1em;
+}
 [data-kind="rule"] > [data-attr="properties"] {
     display: flex;
     flex-direction: column;
@@ -868,10 +888,10 @@ body .search.active {
     font-size: 1em;
     height: 1.25em;
     margin-top: 1em;
-    min-width: 15em;
     padding: var(--spacing);
     z-index: 10;
     background-color: rgb(40, 40, 40);
+    min-width: 40em;
 }
 body .search:not(.active) {
     display: none;
@@ -886,19 +906,18 @@ body .search-box:has(.search.active) {
     z-index: 100;
 }
 body .search-options:has( > *) {
-    position: absolute;
-    top: 3em;
-    width: max-content;
-    padding: 0.25em;
+    background: rgba(50, 50, 50, 0.97);
+    border: 0.1em solid black;
     border-radius: 5px;
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
-    max-width: 90vw;
-    text-overflow: ellipsis;
     overflow: hidden;
-    border: 0.1em solid black;
-    background: rgba(50, 50, 50, 0.97);
+    padding: 0.25em;
+    position: absolute;
+    text-overflow: ellipsis;
+    top: 3em;
+    width: 40em;
 }
 body .search-options:has( > *) > [data-kind] {
     cursor: pointer;
