@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
     input.innerText = "";
     options.innerHTML = "";
   }
+  input.dataset.empty = true;
 
   window.addEventListener("keydown", async (e) => {
     if (e.key === "p" && e.metaKey) {
@@ -21,6 +22,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
       if (input.classList.contains("active")) {
         clear();
       } else {
+        input.dataset.empty = true;
         input.classList.add("active", "selector-search");
         input.focus();
       }
@@ -111,6 +113,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
 
       move_cursor_to_end_of_element(input);
       setTimeout(async () => {
+        input.dataset.empty = input.innerText.trim().length === 0;
         // setTimeout so that innerText gets populated
         let results = await invoke("search", {
           path: localStorage.getItem("current-path"),
@@ -121,6 +124,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
     } else {
       let old_text = input.innerText;
       setTimeout(async () => {
+        input.dataset.empty = input.innerText.trim().length === 0;
         // setTimeout so that innerText gets populated
         if (input.innerText.trim() === "") {
           options.innerHTML = "";

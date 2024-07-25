@@ -8,6 +8,8 @@ function start_search() {
   input.classList.add("active", "find-property");
   input.focus();
 
+  input.dataset.empty = true;
+
   function clear() {
     input.classList.remove("active", "find-property");
     input.innerText = "";
@@ -32,6 +34,7 @@ function start_search() {
   }
 
   function on_keydown(e) {
+    input.dataset.empty = false;
     if (!input.classList.contains("find-property")) return;
     if (e.key === "Escape") {
       clear();
@@ -40,6 +43,7 @@ function start_search() {
         // setTimeout so that innerText gets populated
         if (input.innerText.trim() === "") {
           options.innerHTML = "";
+          input.dataset.empty = true;
         } else {
           let properties = await invoke("find_property", {
             path: localStorage.getItem("current-path"),
