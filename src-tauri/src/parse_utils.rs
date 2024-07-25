@@ -17,7 +17,9 @@ pub fn parse_one(rule: &str) -> Option<biome_css_syntax::CssQualifiedRule> {
     let rules = biome_css_parser::parse_css(rule, biome_css_parser::CssParserOptions::default())
         .tree()
         .rules();
-    assert!((&rules).into_iter().len() == 1);
+    if (&rules).into_iter().count() != 1 {
+        return None;
+    }
     let rule = rules.into_iter().next()?;
 
     Some(rule.as_css_qualified_rule()?.to_owned())
