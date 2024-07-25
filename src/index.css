@@ -107,6 +107,8 @@
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    padding-left: var(--spacing);
+    padding-right: var(--spacing);
 }
 .find-search-result .selector {
     opacity: 0.6;
@@ -117,8 +119,7 @@
 }
 .find-search-result:hover {
     background: rgb(60, 60, 60);
-    /* text-decoration: underline; */
-    /* text-decoration-color: white; */
+    border-radius: 5px;
 }
 .find-search-result:hover * {
     
@@ -127,7 +128,7 @@
     
 }
 .find-search-result:not(:first-child) {
-    border-top: 0.1em solid rgba(255, 255, 255, 0.1);
+    
 }
 .offscreen-editor-preview {
     
@@ -849,6 +850,22 @@ add {
 article.help-modal {
     display: none;
 }
+article.help-modal table {
+    width: 80vw;
+    --border-color: rgb(255, 255, 255, 0.1);
+    border: 0.1em solid var(--border-color);
+}
+article.help-modal table td {
+    border: 0.1em solid var(--border-color);
+    font-size: 0.9em;
+}
+article.help-modal table th {
+    border: 0.1em solid var(--border-color);
+}
+article.help-modal table thead th {
+    width: 50%;
+    text-align: left;
+}
 body {
     flex-direction: column;
     overscroll-behavior: none;
@@ -961,7 +978,7 @@ body:has( > button.open-help.active) article.help-modal {
     margin: auto;
     padding: 1rem;
     justify-content: center;
-    background-color: rgb(0, 0, 0, 0.5);
+    background-color: rgb(12, 12, 12);
 }
 body:has( > button.open-help.active) article.help-modal button.close {
     position: absolute;
