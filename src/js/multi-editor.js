@@ -41,6 +41,37 @@ function is_overlapping(group, editor, editor_position) {
   );
 }
 
+function is_overlapping_editor(editor_within_group, editor, editor_position) {
+  let { width: editor_width, height: editor_height } =
+    editor.getBoundingClientRect();
+  let editor_top = editor_position.y;
+  let editor_left = editor_position.x;
+  let editor_right = editor_left + editor_width;
+  let editor_bottom = editor_top + editor_height;
+
+  let x_offset = px_var(document.body, "--x-offset");
+  let y_offset = px_var(document.body, "--y-offset");
+  let {
+    width: editor_within_group_width,
+    height: editor_within_group_height,
+    top: e_top,
+    left: e_left,
+  } = editor_within_group.getBoundingClientRect();
+  let editor_within_group_left = e_left - x_offset;
+  let editor_within_group_top = e_top - y_offset;
+  let editor_within_group_bottom =
+    editor_within_group_top + editor_within_group_height;
+  let editor_within_group_right =
+    editor_within_group_left + editor_within_group_width;
+
+  return (
+    editor_within_group_bottom > editor_top &&
+    editor_bottom > editor_within_group_top &&
+    editor_left < editor_within_group_right &&
+    editor_right > editor_within_group_left
+  );
+}
+
 function put_in_group(editor, position) {
   // position is top-left
   //
@@ -60,12 +91,30 @@ function put_in_group(editor, position) {
   // intersection observer requires you to register all the elements to watch afaik
   // this seems hard to maintain, so for now we will just loop over all elements & check overlap
 
-  let group =
-    find(document.querySelectorAll(".--editor-group"), (group) =>
-      is_overlapping(group, editor, position),
-    ) ?? new_group(position);
+  let group = find(document.querySelectorAll(".--editor-group"), (group) =>
+    is_overlapping(group, editor, position),
+  );
 
-  group.append(editor);
+  if (group) {
+    let overlapping_editor = find(
+      group.querySelectorAll(".--editor"),
+      (other_editor) => is_overlapping(other_editor, editor, position),
+    );
+    if (overlapping_editor) {
+      let { height, top } = overlapping_editor.getBoundingClientRect();
+      let y_offset = px_var(document.body, "--y-offset");
+      if (position.y > top + height / 2 - y_offset) {
+        overlapping_editor.after(editor);
+      } else {
+        overlapping_editor.before(editor);
+      }
+    } else {
+      // TODO: check if should go to top or bottom
+      group.append(editor);
+    }
+  } else {
+    new_group(position).append(editor);
+  }
 }
 
 const SNAP_OFFSET = 4;

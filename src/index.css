@@ -804,7 +804,7 @@
     -webkit-user-select: none;
 }
 a {
-    width: min-content;
+    
 }
 abc {
     
@@ -969,6 +969,9 @@ data {
     color: red;
 }
 div {
+    
+}
+fa {
     
 }
 hey-tehre {
