@@ -405,6 +405,9 @@
     color: var(--brace-color);
     content: "[";
 }
+[data-kind="binary-expression"] {
+    gap: var(--spacing);
+}
 [data-kind="class"] {
     display: flex;
     color: var(--class-color);
@@ -929,12 +932,13 @@ body .search-options:has( > *) {
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
-    overflow: hidden;
     padding: 0.25em;
     position: absolute;
     text-overflow: ellipsis;
     top: 3em;
     width: 40em;
+    overflow: scroll;
+    height: 85vh;
 }
 body .search-options:has( > *) > [data-kind] {
     cursor: pointer;

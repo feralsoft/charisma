@@ -115,7 +115,7 @@ fn find_property(
                 }
             },
         )
-        .take(20)
+        .take(100)
         .collect();
 
     Ok(results?)
