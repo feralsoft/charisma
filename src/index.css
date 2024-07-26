@@ -1147,6 +1147,7 @@ test {
     color: rgb(1, 1,1);
     border: border-width;
     background-color: rgb(173, 62, 0);
+    gap: ;
 }
 test2 {
     font-size: 31px;

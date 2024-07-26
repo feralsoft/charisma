@@ -10,6 +10,9 @@ function plain_text_node(editor, name, original_value) {
       contenteditable: true,
       async "@keydown"(e) {
         if (e.key === "Escape") {
+          if (this.innerText.trim() === "") {
+            this.dataset.stringValue = "[undefined]";
+          }
           this.blur();
         } else if (e.key === "Enter") {
           e.preventDefault();
@@ -28,6 +31,9 @@ function plain_text_node(editor, name, original_value) {
         [];
       },
       async "@blur"(_) {
+        if (this.innerText.trim() === "") {
+          this.dataset.stringValue = "[undefined]";
+        }
         this.dispatchEvent(new Event("reload", { bubbles: true }));
       },
       [modifiers.on_mount]() {

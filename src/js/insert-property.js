@@ -78,7 +78,7 @@ let input = (editor) =>
           await invoke(editor, "insert_property", {
             path: localStorage.getItem("current-path"),
             selector: editor.dataset.selector,
-            property: e.target.innerText,
+            property: e.target.innerText.trim(),
           });
           this.innerText = "";
           container.querySelector(".search-options")?.remove();
