@@ -200,6 +200,10 @@
 .search.find-property .options {
     
 }
+.search-box .search-options:has( > *) {
+    height: 85vh;
+    width: 40em;
+}
 .search-box:has(.search.find-property) .options {
     
 }
@@ -962,9 +966,7 @@ body .search-options:has( > *) {
     position: absolute;
     text-overflow: ellipsis;
     top: 3em;
-    width: 40em;
     overflow: scroll;
-    height: 85vh;
 }
 body .search-options:has( > *) > [data-kind] {
     cursor: pointer;
