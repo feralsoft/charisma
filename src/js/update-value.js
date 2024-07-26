@@ -20,6 +20,10 @@ function plain_text_node(editor, name, original_value) {
             original_value,
             value: this.innerText,
           });
+        } else {
+          setTimeout(() => {
+            this.dataset.stringValue = this.innerText;
+          });
         }
         [];
       },
