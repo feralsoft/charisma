@@ -26,6 +26,7 @@ function nth_arg_value(fn, n) {
 
 function init(editor) {
   for (let color of editor.querySelectorAll(COLOR_SELECTOR)) {
+    if (color.parentElement.querySelector(".property-color-picker")) continue;
     let name = color
       .closest('[data-kind="property"]')
       .querySelector(':scope > [data-attr="name"] [data-value]').dataset.value;
@@ -59,5 +60,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
     init(editor);
+    editor.addEventListener("loaded", () => init(editor));
   });
 });
