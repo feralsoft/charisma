@@ -8,9 +8,6 @@ export const property = {
     assert(value.hasAttribute("data-string-value"));
     return value;
   },
-  is_commented(property) {
-    return property.dataset.isCommented == "true";
-  },
 };
 
 export const value = {

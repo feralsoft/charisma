@@ -3,55 +3,63 @@ const { invoke } = window.__TAURI__.tauri;
 
 let reload_lock = new Map();
 
-function remove_deleted_properties(old_properties, new_properties) {
-  let new_names = new Set(new_properties.map(ast.property.name));
-  for (let deleted_property of old_properties.filter(
-    (property) => !new_names.has(ast.property.name(property)),
-  )) {
-    deleted_property.remove();
+function remove_deleted_properties(editor, new_rule) {
+  let new_names = new Set(
+    Array.from(new_rule.querySelectorAll('[data-kind="property"]')).map(
+      ast.property.name,
+    ),
+  );
+  for (let property of editor.querySelectorAll('[data-kind="property"]')) {
+    let name = ast.property.name(property);
+    if (property.dataset.commented === "true") {
+      // if the property is commented out & then we change the value or remove it, we'll just remove it from the editor
+      // and in `insert_property` it'll be added back if it was uncommented + changed value
+      let property_in_new_rule =
+        new_rule.querySelector(`[data-kind="property"][data-commented="true"]:has(
+        > [data-attr="name"] [data-value="${name}"]
+        ):has(> [data-attr="value"] > [data-string-value="${ast.property.value(property).dataset.stringValue}"])`);
+      if (!property_in_new_rule) property.remove();
+    } else {
+      let uncommented_property_with_the_same_name = new_rule.querySelectorAll(
+        `[data-kind="property"][data-commented="false"]:has(> [data-attr="name"] [data-value="${name}"])`,
+      );
+
+      if (!uncommented_property_with_the_same_name) property.remove();
+    }
   }
 }
 
-function insert_property(properties_elem, property_list, new_property) {
+function insert_property(editor, new_property) {
   let new_property_name = ast.property.name(new_property);
-  for (let i = 0; i < property_list.length - 1; i++) {
-    let current = property_list[i];
-    let next = property_list[i + 1];
-    if (new_property_name >= current && new_property_name <= next) {
+  let properties = editor.querySelectorAll('[data-kind="property"]');
+
+  for (let i = 0; i < properties.length - 1; i++) {
+    let current = properties[i];
+    let next = properties[i + 1];
+
+    if (
+      new_property_name >= ast.property.name(current) &&
+      new_property_name <= ast.property.name(next)
+    ) {
       // insert at the ordered location
       current.after(new_property);
       return;
     }
   }
-  // otherwise insert at the end
-  properties_elem.append(new_property);
+
+  properties[properties.length - 1].after(new_property);
 }
 
-function insert_new_properties(existing_properties_elem, new_properties) {
-  let existing_properties = Array.from(
-    existing_properties_elem.querySelectorAll('[data-kind="property"]'),
-  );
-  let existing_names = new Set(existing_properties.map(ast.property.name));
-
+function insert_new_properties(editor, new_properties) {
   for (let new_property of new_properties) {
-    if (!existing_names.has(ast.property.name(new_property))) {
-      insert_property(
-        existing_properties_elem,
-        existing_properties,
-        new_property,
-      );
+    let existing_property = editor.querySelector(`
+      [data-kind="property"][data-commented="${new_property.dataset.commented}"]:has(
+        > [data-attr="name"] [data-value="${ast.property.name(new_property)}"]
+      ):has(> [data-attr="value"] > [data-string-value="${ast.property.value(new_property).dataset.stringValue}"])`);
+    if (!existing_property) {
+      insert_property(editor, new_property);
     }
   }
-}
-
-function no_duplicates(rule) {
-  return ast.rule
-    .properties(rule)
-    .map(ast.property.name)
-    .every(
-      (name, i, self) =>
-        !self.slice(0, i).includes(name) && !self.slice(i + 1).includes(name),
-    );
 }
 
 function morph_value(old_value, new_value) {
@@ -98,9 +106,10 @@ function morph_node(old_node, new_node) {
 
 function update_property_values(editor, new_properties) {
   for (let new_property of new_properties) {
+    if (new_property.dataset.commented === "true") continue;
     let name = ast.property.name(new_property);
     let existing_property = editor.querySelector(`
-      [data-kind="property"]:has(>
+      [data-kind="property"][data-commented="false"]:has(>
         [data-attr="name"] [data-value="${name}"]
       )
     `);
@@ -114,32 +123,61 @@ function update_property_values(editor, new_properties) {
   }
 }
 
-function update_commented_properties(existing_properties, new_properties) {
-  for (let property of existing_properties) {
+function update_comment_status(editor, updated_rule) {
+  for (let property of editor.querySelectorAll('[data-kind="property"]')) {
     let name = ast.property.name(property);
-    let new_property = new_properties.find(
-      (p) => ast.property.name(p) === name,
-    );
+    let string_value = ast.property.value(property).dataset.stringValue;
+    let new_property = updated_rule.querySelector(`
+      [data-kind="property"]:has(
+        > [data-attr="name"] [data-value="${name}"]
+      ):has(
+        > [data-attr="value"] > [data-string-value="${string_value}"]
+      )
+    `);
+
+    if (!new_property) continue;
     property.dataset.commented = new_property.dataset.commented;
   }
+}
+
+/*
+OLD:
+  display: flex;
+  gap: 1px;
+
+NEW:
+  display: flex;
+  // gap: 1px;
+  gap: 2px;
+
+*/
+
+function no_more_than_1_property_of_a_name_allowed_to_be_uncommented(editor) {
+  let count = {};
+  for (let property of editor.querySelectorAll('[data-kind="property"]')) {
+    if (property.dataset.commented === "false") {
+      let name = ast.property.name(property);
+      if (name in count) return false;
+      count[name] = 1;
+    }
+  }
+  return true;
 }
 
 function rejuvenate_editor(existing_editor, new_rule_html) {
   let updated_rule = document.createElement("div");
   updated_rule.innerHTML = new_rule_html;
-  assert(no_duplicates(updated_rule));
 
-  let existing_properties = ast.rule.properties(existing_editor);
   let new_properties = ast.rule.properties(updated_rule);
-  remove_deleted_properties(existing_properties, new_properties);
-  // update after delete
-  existing_properties = ast.rule.properties(existing_editor);
-  update_property_values(existing_editor, new_properties);
-  insert_new_properties(
-    existing_editor.querySelector('[data-attr="properties"]'),
-    new_properties,
+  remove_deleted_properties(existing_editor, updated_rule);
+  update_comment_status(existing_editor, updated_rule);
+  assert(
+    no_more_than_1_property_of_a_name_allowed_to_be_uncommented,
+    "more than 1 property of a given name is uncommented, that is no good",
   );
-  update_commented_properties(existing_properties, new_properties);
+  // now we can update values since there is only allowed 1 uncommented value per name at a time
+  update_property_values(existing_editor, new_properties);
+  insert_new_properties(existing_editor, new_properties);
 }
 
 async function reload() {
