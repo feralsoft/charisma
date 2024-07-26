@@ -1150,9 +1150,8 @@ tes {
     
 }
 test {
-    /* gap: 7; */
-    gap: 8;
     display: flex;
+    gap: 9;
 }
 test2 {
     font-size: 31px;

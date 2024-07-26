@@ -193,6 +193,17 @@ function init(editor) {
     .append(input_container(editor));
 }
 
+window.addEventListener("keydown", (e) => {
+  let editor = document.querySelector(".--editor.focused");
+  if (!editor) return;
+  if (document.activeElement.closest('[data-kind="property"]')) return;
+
+  if (e.key === "/") {
+    e.preventDefault();
+    editor.querySelector(".insert-property-container .input").focus();
+  }
+});
+
 function reload(editor) {
   let input = editor.querySelector(
     "[data-kind=rule] > [data-attr=properties] .insert-property-container",
