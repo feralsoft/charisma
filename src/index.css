@@ -814,6 +814,9 @@
     grid-template-columns: 1fr 1fr;
     grid-template-rows: repeat(1fr, 10);
 }
+[data-kind="rule"] [data-attr="properties"] .search-options:not(:has(.candidate)) .search-item:first-child .search-item-description {
+    
+}
 [data-kind="rule"] [data-attr="properties"] .search-options:not(:has(.candidate)) .search-item-value:first-child {
     text-decoration: underline;
 }
@@ -1150,8 +1153,7 @@ tes {
     
 }
 test {
-    display: flex;
-    gap: 9;
+    
 }
 test2 {
     font-size: 31px;

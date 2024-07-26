@@ -20,7 +20,7 @@ function remove_deleted_properties(editor, new_rule) {
         ):has(> [data-attr="value"] > [data-string-value="${ast.property.value(property).dataset.stringValue}"])`);
       if (!property_in_new_rule) property.remove();
     } else {
-      let uncommented_property_with_the_same_name = new_rule.querySelectorAll(
+      let uncommented_property_with_the_same_name = new_rule.querySelector(
         `[data-kind="property"][data-commented="false"]:has(> [data-attr="name"] [data-value="${name}"])`,
       );
 
@@ -47,7 +47,9 @@ function insert_property(editor, new_property) {
     }
   }
 
-  properties[properties.length - 1].after(new_property);
+  if (properties[properties.length - 1])
+    properties[properties.length - 1].after(new_property);
+  else editor.querySelector('[data-attr="properties"]').append(new_property);
 }
 
 function insert_new_properties(editor, new_properties) {
