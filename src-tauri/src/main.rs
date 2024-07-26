@@ -350,6 +350,11 @@ fn enable(
 }
 
 #[tauri::command]
+fn all_properties() -> &'static str {
+    include_str!("../all_properties.json")
+}
+
+#[tauri::command]
 fn insert_property(
     state: tauri::State<Mutex<CSSDB>>,
     path: &str,
@@ -554,6 +559,7 @@ fn main() {
             search,
             find_property,
             delete,
+            all_properties,
             enable,
             disable,
             insert_property,

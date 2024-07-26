@@ -4,7 +4,10 @@ import invoke from "./invoke.js";
 let { div } = h;
 
 // top level await seems to break safari
-let ALL_PROPERTIES = fetch("./js/all_properties.json").then((r) => r.json());
+
+let ALL_PROPERTIES = window.__TAURI__.tauri
+  .invoke("all_properties")
+  .then(JSON.parse);
 
 let ALL_PROPERTY_NAMES = ALL_PROPERTIES.then(Object.keys);
 
