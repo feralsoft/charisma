@@ -27,7 +27,7 @@ function search_options(options, has_description = false) {
     options = options.map((name) => ({ value: name, description: "" }));
 
   let elem = div({ class: "search-options" }, ...options.flatMap(search_item));
-  elem.firstElementChild.classList.add("candidate");
+
   return elem;
 }
 
@@ -44,16 +44,16 @@ window.move_cursor_to_end_of_element = function (element) {
 
 function accept_candidate(container, input_elem) {
   let options = container.querySelector(".search-options");
+  let candidate =
+    options.querySelector(".candidate") ?? options.firstElementChild;
 
   if (input_elem.innerText.includes(":")) {
     // we are accepting a value
     let [name, _] = input_elem.innerText.split(":");
-    input_elem.innerText =
-      name.trim() + ": " + options.querySelector(".candidate").innerText.trim();
+    input_elem.innerText = name.trim() + ": " + candidate.innerText.trim();
   } else {
     // we are accepting a name
-    input_elem.innerText =
-      options.querySelector(".candidate").innerText.trim() + ":";
+    input_elem.innerText = candidate.innerText.trim() + ":";
   }
   options.remove();
 
@@ -80,6 +80,8 @@ let input = (editor) =>
             selector: editor.dataset.selector,
             property: e.target.innerText,
           });
+          this.innerText = "";
+          this.click();
         }
       } else if (e.key === "Escape") {
         this.blur();
@@ -87,7 +89,8 @@ let input = (editor) =>
         // go up in search options
         e.preventDefault();
         let options = container.querySelector(".search-options");
-        let elem = options.querySelector(".candidate");
+        let elem =
+          options.querySelector(".candidate") ?? options.firstElementChild;
         if (elem.previousElementSibling) {
           let prev_elem = elem.previousElementSibling;
           if (!prev_elem.matches(".search-item-value"))
@@ -99,7 +102,8 @@ let input = (editor) =>
         // go down in search options
         e.preventDefault();
         let options = container.querySelector(".search-options");
-        let elem = options.querySelector(".candidate");
+        let elem =
+          options.querySelector(".candidate") ?? options.firstElementChild;
         if (elem.nextElementSibling) {
           let next_elem = elem.nextElementSibling;
           if (!next_elem.matches(".search-item-value"))
@@ -110,7 +114,8 @@ let input = (editor) =>
       } else if (e.key === "Tab") {
         accept_candidate(container, this);
         e.preventDefault();
-      } else if (!e.shiftKey) {
+      } else {
+        // ^ why do we care about shift key
         // populate auto complete list
         // setTimeout is needed so that `this.innerText` gets populated :facepalm:
         setTimeout(async () => {
@@ -188,22 +193,13 @@ function init(editor) {
 }
 
 function reload(editor) {
-  editor.querySelector(".insert-property-container").remove();
-  init(editor);
+  let input = editor.querySelector(
+    "[data-kind=rule] > [data-attr=properties] .insert-property-container",
+  );
+  editor
+    .querySelector("[data-kind=rule] > [data-attr=properties]")
+    .append(input);
 }
-
-window.addEventListener("keydown", (e) => {
-  if (document.activeElement?.closest(".insert-property-container")) return;
-  if (!document.querySelector(".--editor.focused")) return;
-  if (document.querySelector('[data-kind="property"].focused')) return;
-
-  if (e.key === "/") {
-    e.preventDefault();
-    document
-      .querySelector(".--editor.focused .insert-property-container .input")
-      .click();
-  }
-});
 
 document.addEventListener("DOMContentLoaded", async (_) => {
   let canvas = document.querySelector(".canvas");
