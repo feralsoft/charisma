@@ -5,7 +5,7 @@ export const property = {
   },
   value(property) {
     let value = property.querySelector('[data-attr="value"] > [data-kind]');
-    assert(value.dataset.stringValue);
+    assert(value.hasAttribute("data-string-value"));
     return value;
   },
   is_commented(property) {

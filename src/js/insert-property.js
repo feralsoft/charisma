@@ -81,6 +81,7 @@ let input = (editor) =>
             property: e.target.innerText,
           });
           this.innerText = "";
+          container.querySelector(".search-options")?.remove();
           this.click();
         }
       } else if (e.key === "Escape") {

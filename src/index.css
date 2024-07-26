@@ -177,6 +177,9 @@
     width: max-content;
     user-select: all;
 }
+.plain-text-node:empty {
+    width: 0.5em;
+}
 .search.active.find-property[data-empty="true"]::before {
     opacity: 0.5;
     content: "find properties...";
@@ -551,6 +554,13 @@
 [data-kind="multi-part-value"] {
     display: flex;
     gap: 0.25em;
+}
+[data-kind="multi-part-value"][data-len="0"] {
+    
+}
+[data-kind="multi-part-value"][data-len="0"]::before {
+    opacity: 0.5;
+    content: "[undefined]";
 }
 [data-kind="number"] {
     display: flex;
@@ -1127,11 +1137,12 @@ tes {
 }
 test {
     font-size: 31px;
-    padding: var(--spacing);
-    color: rgb(181, 206, 168);
     display: flex;
-    flex: 1;
-    flex-flow: flex-direction;
+    accent-color: 10px;
+    animation-direction: normal;
+    clip: auto;
+    align-self: nope;
+    color: rgb(1, 1,1);
 }
 test2 {
     font-size: 31px;
