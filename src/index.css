@@ -562,8 +562,11 @@
     color: var(--at-rule-color);
 }
 [data-kind="multi-part-value"] {
-    display: flex;
+    
+}
+[data-kind="multi-part-value"] [data-attr="args"] {
     gap: 0.25em;
+    display: flex;
 }
 [data-kind="multi-part-value"][data-len="0"] {
     
@@ -1153,7 +1156,7 @@ tes {
     
 }
 test {
-    
+    value: 1 2 3;
 }
 test2 {
     font-size: 31px;

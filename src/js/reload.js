@@ -16,12 +16,14 @@ function remove_deleted_properties(editor, new_rule) {
       // and in `insert_property` it'll be added back if it was uncommented + changed value
       let property_in_new_rule =
         new_rule.querySelector(`[data-kind="property"][data-commented="true"]:has(
-        > [data-attr="name"] [data-value="${name}"]
-        ):has(> [data-attr="value"] > [data-string-value="${ast.property.value(property).dataset.stringValue}"])`);
+        > [data-attr="name"] [data-value="${CSS.escape(name)}"]
+        ):has(> [data-attr="value"] > [data-string-value="${CSS.escape(
+          ast.property.value(property).dataset.stringValue,
+        )}"])`);
       if (!property_in_new_rule) property.remove();
     } else {
       let uncommented_property_with_the_same_name = new_rule.querySelector(
-        `[data-kind="property"][data-commented="false"]:has(> [data-attr="name"] [data-value="${name}"])`,
+        `[data-kind="property"][data-commented="false"]:has(> [data-attr="name"] [data-value="${CSS.escape(name)}"])`,
       );
 
       if (!uncommented_property_with_the_same_name) property.remove();
@@ -56,8 +58,10 @@ function insert_new_properties(editor, new_properties) {
   for (let new_property of new_properties) {
     let existing_property = editor.querySelector(`
       [data-kind="property"][data-commented="${new_property.dataset.commented}"]:has(
-        > [data-attr="name"] [data-value="${ast.property.name(new_property)}"]
-      ):has(> [data-attr="value"] > [data-string-value="${ast.property.value(new_property).dataset.stringValue}"])`);
+        > [data-attr="name"] [data-value="${CSS.escape(ast.property.name(new_property))}"]
+      ):has(> [data-attr="value"] > [data-string-value="${CSS.escape(
+        ast.property.value(new_property).dataset.stringValue,
+      )}"])`);
     if (!existing_property) {
       insert_property(editor, new_property);
     }
@@ -71,6 +75,7 @@ function morph_value(old_value, new_value) {
 }
 
 function morph_node(old_node, new_node) {
+  console.log("morphing", old_node, new_node);
   if (old_node.dataset.kind !== new_node.dataset.kind) {
     old_node.replaceWith(new_node);
   } else {
@@ -131,9 +136,9 @@ function update_comment_status(editor, updated_rule) {
     let string_value = ast.property.value(property).dataset.stringValue;
     let new_property = updated_rule.querySelector(`
       [data-kind="property"]:has(
-        > [data-attr="name"] [data-value="${name}"]
+        > [data-attr="name"] [data-value="${CSS.escape(name)}"]
       ):has(
-        > [data-attr="value"] > [data-string-value="${string_value}"]
+        > [data-attr="value"] > [data-string-value="${CSS.escape(string_value)}"]
       )
     `);
 

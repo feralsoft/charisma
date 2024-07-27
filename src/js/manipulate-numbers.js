@@ -66,12 +66,34 @@ window.addEventListener("mousemove", async (e) => {
   let diff = (start_y - e.clientY) * factor;
   start_y = e.clientY;
 
+  let original_unit_value = `${value.toFixed(precision)}${type}`;
+
+  let updated_unit_value = `${(value + diff).toFixed(precision)}${type}`;
+
+  let original_value = unit
+    .closest('[data-attr="value"]')
+    .querySelector(":scope > [data-kind]").dataset.stringValue;
+
+  assert(
+    unit
+      .closest('[data-attr="value"]')
+      .querySelectorAll(
+        `[data-value="${CSS.escape(value.toFixed(precision))}"]`,
+      ).length === 1,
+    "duplicate values are being scrubbed",
+  );
+
+  let updated_value = original_value.replace(
+    original_unit_value,
+    updated_unit_value,
+  );
+
   await invoke(editor, "update_value", {
     path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
     name,
-    original_value: `${value.toFixed(precision)}${type}`,
-    value: `${(value + diff).toFixed(precision)}${type}`,
+    original_value,
+    value: updated_value,
   });
 
   lock = false;

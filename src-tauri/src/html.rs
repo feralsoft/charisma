@@ -515,7 +515,7 @@ impl Render for CssRegularDimension {
             .to_string();
         Ok(format!(
             "<div data-kind=\"unit\" data-unit-type=\"{}\" {}>{}</div>",
-            unit_type,
+            unit_type.trim(),
             options,
             render_value(value.trim())
         ))
@@ -797,7 +797,9 @@ impl Render for Property {
             value.render_html(options)?
         } else {
             format!(
-                "<div data-kind=\"multi-part-value\" data-len=\"{}\" data-string-value='{}'>{}</div>",
+                "<div data-kind=\"multi-part-value\" data-len=\"{}\" data-string-value='{}'>
+                    <div data-attr=\"args\">{}</div>
+                </div>",
                 property.value().into_iter().count(),
                 property
                     .value()
