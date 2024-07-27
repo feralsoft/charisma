@@ -10,19 +10,11 @@ function plain_text_node(editor, name, original_value) {
       contenteditable: true,
       async "@keydown"(e) {
         if (e.key === "Escape") {
-          if (this.innerText.trim() === "") {
-            this.dataset.stringValue = "[undefined]";
-          }
           this.dispatchEvent(new Event("reload", { bubbles: true }));
         } else if (e.key === "Enter") {
           e.preventDefault();
           this.blur();
-        } else {
-          setTimeout(() => {
-            this.dataset.stringValue = this.innerText;
-          });
         }
-        [];
       },
       async "@blur"(_) {
         await invoke(editor, "update_value", {
