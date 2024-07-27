@@ -40,7 +40,7 @@ function init(editor) {
   for (let value of editor.querySelectorAll(VALUE_SELECTOR)) {
     let name = value
       .closest('[data-kind="property"]')
-      .querySelector('[data-attr="name"]').innerText;
+      .querySelector('[data-attr="name"] > [data-value]').dataset.value;
     value.addEventListener("dblclick", (_) => {
       value.replaceWith(
         plain_text_node(editor, name, value.dataset.stringValue),
