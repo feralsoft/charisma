@@ -13,16 +13,10 @@ function plain_text_node(editor, name, original_value) {
           if (this.innerText.trim() === "") {
             this.dataset.stringValue = "[undefined]";
           }
-          this.blur();
+          this.dispatchEvent(new Event("reload", { bubbles: true }));
         } else if (e.key === "Enter") {
           e.preventDefault();
-          await invoke(editor, "update_value", {
-            path: localStorage.getItem("current-path"),
-            selector: editor.dataset.selector,
-            name,
-            original_value,
-            value: this.innerText,
-          });
+          this.blur();
         } else {
           setTimeout(() => {
             this.dataset.stringValue = this.innerText;
@@ -31,10 +25,13 @@ function plain_text_node(editor, name, original_value) {
         [];
       },
       async "@blur"(_) {
-        if (this.innerText.trim() === "") {
-          this.dataset.stringValue = "[undefined]";
-        }
-        this.dispatchEvent(new Event("reload", { bubbles: true }));
+        await invoke(editor, "update_value", {
+          path: localStorage.getItem("current-path"),
+          selector: editor.dataset.selector,
+          name,
+          original_value,
+          value: this.innerText,
+        });
       },
       [modifiers.on_mount]() {
         window.getSelection().selectAllChildren(this);
