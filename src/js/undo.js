@@ -61,7 +61,7 @@ window.addEventListener("keydown", async (e) => {
     if (redo_stack.is_empty()) return;
     let { selector, properties } = redo_stack.pop();
     let editor = document.querySelector(
-      `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
+      `.--editor:has([data-attr='selector'] > [data-string-value='${CSS.escape(selector)}']`,
     );
     undo_stack.push(editor);
     await invoke("replace_all_properties", {
@@ -76,7 +76,7 @@ window.addEventListener("keydown", async (e) => {
     if (undo_stack.is_empty()) return;
     let { selector, properties } = undo_stack.pop();
     let editor = document.querySelector(
-      `.--editor:has([data-attr='selector'] > [data-string-value*='${selector}']`,
+      `.--editor:has([data-attr='selector'] > [data-string-value='${CSS.escape(selector)}']`,
     );
     redo_stack.push(editor);
     await invoke("replace_all_properties", {

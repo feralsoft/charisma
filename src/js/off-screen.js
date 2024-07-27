@@ -7,7 +7,7 @@ const GRID_SIZE = 25;
 
 function existing_offscreen_for(editor) {
   return document.querySelector(
-    `.offscreen-editor-preview[data-selector="${editor.dataset.selector.replaceAll('"', '\\"')}"]`,
+    `.offscreen-editor-preview[data-selector="${CSS.escape(editor.dataset.selector)}"]`,
   );
 }
 
@@ -46,7 +46,7 @@ function preview_offscreen(editor, x, y, placements) {
       preview.remove();
       bring_editor_onscreen(
         document.querySelector(
-          `.--editor[data-selector="${editor.dataset.selector.replaceAll('"', '\\"')}"]`,
+          `.--editor[data-selector="${CSS.escape(editor.dataset.selector)}"]`,
         ),
       );
     });
