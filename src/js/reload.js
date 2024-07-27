@@ -123,7 +123,11 @@ function update_property_values(editor, new_properties) {
     if (!existing_property) continue;
     let existing_value = ast.property.value(existing_property);
     let new_value = ast.property.value(new_property);
-    if (existing_value.dataset.stringValue !== new_value.dataset.stringValue) {
+    if (existing_value.classList.contains("plain-text-node")) {
+      existing_value.replaceWith(new_value.cloneNode(true));
+    } else if (
+      existing_value.dataset.stringValue !== new_value.dataset.stringValue
+    ) {
       morph_node(existing_value, new_value);
     }
   }
