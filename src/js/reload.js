@@ -75,9 +75,8 @@ function morph_value(old_value, new_value) {
 }
 
 function morph_node(old_node, new_node) {
-  console.log("morphing", old_node, new_node);
   if (old_node.dataset.kind !== new_node.dataset.kind) {
-    old_node.replaceWith(new_node);
+    old_node.replaceWith(new_node.cloneNode(true));
   } else {
     old_node.dataset.stringValue = new_node.dataset.stringValue;
     let old_value = old_node.querySelector(":scope > [data-value]");
@@ -124,7 +123,11 @@ function update_property_values(editor, new_properties) {
     if (!existing_property) continue;
     let existing_value = ast.property.value(existing_property);
     let new_value = ast.property.value(new_property);
-    if (existing_value.dataset.stringValue !== new_value.dataset.stringValue) {
+    if (existing_value.classList.contains("plain-text-node")) {
+      existing_value.replaceWith(new_value.cloneNode(true));
+    } else if (
+      existing_value.dataset.stringValue !== new_value.dataset.stringValue
+    ) {
       morph_node(existing_value, new_value);
     }
   }
