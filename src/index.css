@@ -1158,8 +1158,8 @@ tes {
     
 }
 test {
-    color: rgb(1, 2, 20);
     display: 10px;
+    color: rgb(0, 205, 75);
 }
 test2 {
     font-size: 31px;
