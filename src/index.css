@@ -991,8 +991,7 @@ body .search-options:has( > *) > [data-kind].candidate {
     text-decoration-color: white;
 }
 body .search-options:has( > *):not(:has(.candidate)) > [data-kind]:first-child {
-    text-decoration: underline;
-    text-decoration-color: white;
+    
 }
 body :has(.search.active) .canvas {
     
@@ -1088,6 +1087,9 @@ input[type="color"]::-webkit-color-swatch {
     
 }
 input[type="color"]::-webkit-color-wrapper {
+    
+}
+key {
     
 }
 laugh {

@@ -94,13 +94,19 @@ document.addEventListener("DOMContentLoaded", (_) => {
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       let current_candidate = options.querySelector(".candidate");
-      if (!current_candidate) current_candidate = options.firstElementChild;
-      if (!current_candidate.nextElementSibling) return;
-      current_candidate.classList.remove("candidate");
-      current_candidate.nextElementSibling.classList.add("candidate");
-      input.innerText =
-        current_candidate.nextElementSibling.dataset.stringValue;
-      move_cursor_to_end_of_element(input);
+      if (!current_candidate) {
+        let candidate = options.firstElementChild;
+        candidate.classList.add("candidate");
+        input.innerText = candidate.dataset.stringValue;
+        move_cursor_to_end_of_element(input);
+      } else {
+        if (!current_candidate.nextElementSibling) return;
+        current_candidate.classList.remove("candidate");
+        current_candidate.nextElementSibling.classList.add("candidate");
+        input.innerText =
+          current_candidate.nextElementSibling.dataset.stringValue;
+        move_cursor_to_end_of_element(input);
+      }
     } else if (e.key === "Tab") {
       e.preventDefault();
       let candidate =
