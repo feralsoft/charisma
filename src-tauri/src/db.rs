@@ -73,8 +73,8 @@ fn path_to_string(path: &[Part]) -> String {
     return condensed_path
         .iter()
         .map(|p| p.to_string())
-        .collect::<Vec<_>>()
-        .join("");
+        .collect::<String>()
+        .replace("( ", "(");
 }
 
 impl ToSelectors for AnyCssRelativeSelector {
