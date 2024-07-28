@@ -68,16 +68,30 @@ function insert_new_properties(editor, new_properties) {
   }
 }
 
+let _reload_value_nodes = [];
+function register_reload_value_event(node) {
+  _reload_value_nodes.push(node);
+}
+function exec_reload_value_events() {
+  for (let elem of _reload_value_nodes) {
+    elem.dispatchEvent(new Event("reload-value"));
+  }
+  _reload_value_nodes = [];
+}
+
 function morph_value(old_value, new_value) {
   assert(new_value);
+  register_reload_value_event(old_value);
   old_value.dataset.value = new_value.dataset.value;
   old_value.innerHTML = new_value.innerHTML;
 }
 
 function morph_node(old_node, new_node) {
   if (old_node.dataset.kind !== new_node.dataset.kind) {
+    register_reload_value_event(old_node.parentElement);
     old_node.replaceWith(new_node.cloneNode(true));
   } else {
+    register_reload_value_event(old_node);
     old_node.dataset.stringValue = new_node.dataset.stringValue;
     let old_value = old_node.querySelector(":scope > [data-value]");
     if (old_value) {
@@ -124,10 +138,12 @@ function update_property_values(editor, new_properties) {
     let existing_value = ast.property.value(existing_property);
     let new_value = ast.property.value(new_property);
     if (existing_value.classList.contains("plain-text-node")) {
+      register_reload_value_event(existing_property);
       existing_value.replaceWith(new_value.cloneNode(true));
     } else if (
       existing_value.dataset.stringValue !== new_value.dataset.stringValue
     ) {
+      register_reload_value_event(existing_property);
       morph_node(existing_value, new_value);
     }
   }
@@ -188,6 +204,7 @@ function rejuvenate_editor(existing_editor, new_rule_html) {
   // now we can update values since there is only allowed 1 uncommented value per name at a time
   update_property_values(existing_editor, new_properties);
   insert_new_properties(existing_editor, new_properties);
+  exec_reload_value_events();
 }
 
 async function reload() {

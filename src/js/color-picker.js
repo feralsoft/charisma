@@ -1,4 +1,5 @@
 import { h } from "./html.js";
+import * as ast from "./ast.js";
 import invoke from "./invoke";
 
 const COLOR_SELECTOR =
@@ -24,45 +25,41 @@ function nth_arg_value(fn, n) {
   ).dataset.value;
 }
 
+function hex(color) {
+  return rgb_to_hex(
+    nth_arg_value(color, 1),
+    nth_arg_value(color, 2),
+    nth_arg_value(color, 3),
+  );
+}
+
 function init(editor) {
   for (let color of editor.querySelectorAll(COLOR_SELECTOR)) {
-    let picker;
-    if (
-      (picker = color.parentElement.querySelector(".property-color-picker"))
-    ) {
-      let r = nth_arg_value(color, 1);
-      let g = nth_arg_value(color, 2);
-      let b = nth_arg_value(color, 3);
-      picker.value = rgb_to_hex(r, g, b);
-    } else {
-      let name = color
-        .closest('[data-kind="property"]')
-        .querySelector(':scope > [data-attr="name"] [data-value]')
-        .dataset.value;
-      let r = nth_arg_value(color, 1);
-      let g = nth_arg_value(color, 2);
-      let b = nth_arg_value(color, 3);
-      let lock = false;
-      color.after(
-        h.input({
-          type: "color",
-          class: "property-color-picker",
-          value: rgb_to_hex(r, g, b),
-          async "@input"(e) {
-            if (lock) return;
-            let color = this.parentElement.querySelector(COLOR_SELECTOR);
-            await invoke(editor, "update_value", {
-              path: localStorage.getItem("current-path"),
-              selector: editor.dataset.selector,
-              name,
-              original_value: color.dataset.stringValue,
-              value: hex_to_rgb(e.target.value),
-            });
-            lock = false;
-          },
-        }),
-      );
-    }
+    color
+      .closest('[data-kind="property"]')
+      .addEventListener("reload-value", function (_) {
+        color = this.querySelector(`[data-attr="value"] ${COLOR_SELECTOR}`);
+        this.querySelector(".property-color-picker").value = hex(color);
+      });
+    let lock = false;
+    color.after(
+      h.input({
+        type: "color",
+        class: "property-color-picker",
+        value: hex(color),
+        async "@input"(e) {
+          if (lock) return;
+          await invoke(editor, "update_value", {
+            path: localStorage.getItem("current-path"),
+            selector: editor.dataset.selector,
+            name: ast.property.name(color.closest('[data-kind="property"]')),
+            original_value: color.dataset.stringValue,
+            value: hex_to_rgb(e.target.value),
+          });
+          lock = false;
+        },
+      }),
+    );
   }
 }
 
@@ -70,6 +67,5 @@ document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
     init(editor);
-    editor.addEventListener("loaded", () => init(editor));
   });
 });
