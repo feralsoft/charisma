@@ -26,33 +26,43 @@ function nth_arg_value(fn, n) {
 
 function init(editor) {
   for (let color of editor.querySelectorAll(COLOR_SELECTOR)) {
-    if (color.parentElement.querySelector(".property-color-picker")) continue;
-    let name = color
-      .closest('[data-kind="property"]')
-      .querySelector(':scope > [data-attr="name"] [data-value]').dataset.value;
-    let r = nth_arg_value(color, 1);
-    let g = nth_arg_value(color, 2);
-    let b = nth_arg_value(color, 3);
-    let lock = false;
-    color.after(
-      h.input({
-        type: "color",
-        class: "property-color-picker",
-        value: rgb_to_hex(r, g, b),
-        async "@input"(e) {
-          if (lock) return;
-          lock = true;
-          await invoke(editor, "update_value", {
-            path: localStorage.getItem("current-path"),
-            selector: editor.dataset.selector,
-            name,
-            original_value: color.dataset.stringValue,
-            value: hex_to_rgb(e.target.value),
-          });
-          lock = false;
-        },
-      }),
-    );
+    let picker;
+    if (
+      (picker = color.parentElement.querySelector(".property-color-picker"))
+    ) {
+      let r = nth_arg_value(color, 1);
+      let g = nth_arg_value(color, 2);
+      let b = nth_arg_value(color, 3);
+      picker.value = rgb_to_hex(r, g, b);
+    } else {
+      let name = color
+        .closest('[data-kind="property"]')
+        .querySelector(':scope > [data-attr="name"] [data-value]')
+        .dataset.value;
+      let r = nth_arg_value(color, 1);
+      let g = nth_arg_value(color, 2);
+      let b = nth_arg_value(color, 3);
+      let lock = false;
+      color.after(
+        h.input({
+          type: "color",
+          class: "property-color-picker",
+          value: rgb_to_hex(r, g, b),
+          async "@input"(e) {
+            if (lock) return;
+            let color = this.parentElement.querySelector(COLOR_SELECTOR);
+            await invoke(editor, "update_value", {
+              path: localStorage.getItem("current-path"),
+              selector: editor.dataset.selector,
+              name,
+              original_value: color.dataset.stringValue,
+              value: hex_to_rgb(e.target.value),
+            });
+            lock = false;
+          },
+        }),
+      );
+    }
   }
 }
 
