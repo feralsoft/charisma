@@ -36,7 +36,7 @@ pub enum CharismaError {
 
 #[tauri::command]
 fn search(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     q: &str,
 ) -> Result<Vec<String>, InvokeError> {
@@ -80,7 +80,7 @@ fn search(
 
 #[tauri::command]
 fn find_property(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     q: &str,
 ) -> Result<Vec<(String, String)>, InvokeError> {
@@ -123,7 +123,7 @@ fn find_property(
 
 #[tauri::command]
 fn insert_empty_rule(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
 ) -> Result<(), InvokeError> {
@@ -160,7 +160,7 @@ fn insert_empty_rule(
 
 #[tauri::command]
 fn render_rule(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
 ) -> Result<String, InvokeError> {
@@ -262,7 +262,7 @@ fn render_rule(
 
 #[tauri::command]
 fn delete(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -292,7 +292,7 @@ fn delete(
 
 #[tauri::command]
 fn disable(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -322,7 +322,7 @@ fn disable(
 
 #[tauri::command]
 fn enable(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -356,7 +356,7 @@ fn all_properties() -> &'static str {
 
 #[tauri::command]
 fn insert_property(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     property: &str,
@@ -395,7 +395,7 @@ struct JsonProperty {
 
 #[tauri::command]
 fn replace_all_properties(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     properties: Vec<JsonProperty>,
@@ -441,7 +441,7 @@ fn replace_all_properties(
 
 #[tauri::command(rename_all = "snake_case")]
 fn update_value(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -498,7 +498,7 @@ fn update_value(
 
 #[tauri::command(rename_all = "snake_case")]
 fn load_rule(
-    state: tauri::State<Mutex<CSSDB>>,
+    state: tauri::State<Mutex<CssDB>>,
     path: &str,
     rule: &str,
 ) -> Result<String, InvokeError> {
@@ -550,7 +550,7 @@ fn load_rule(
 }
 
 fn main() {
-    let db = Mutex::new(CSSDB::new());
+    let db = Mutex::new(CssDB::new());
 
     tauri::Builder::default()
         .manage(db)

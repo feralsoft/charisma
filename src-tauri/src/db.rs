@@ -1,6 +1,4 @@
 use crate::{parse_utils::parse_property, CharismaError};
-use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
-
 use biome_css_syntax::{
     AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
     AnyCssPseudoClassNthSelector, AnyCssPseudoElement, AnyCssRelativeSelector, AnyCssRule,
@@ -16,8 +14,8 @@ use biome_css_syntax::{
     CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
     CssSyntaxKind, CssUniversalSelector,
 };
-
 use std::fmt::Write;
+use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum State {
@@ -70,11 +68,10 @@ fn path_to_string(path: &[Part]) -> String {
             _ => [new_path, vec![part.clone()]].concat(),
         });
 
-    return condensed_path
+    condensed_path
         .iter()
         .map(|p| p.to_string())
         .collect::<String>()
-        .replace("( ", "(");
 }
 
 impl ToSelectors for AnyCssRelativeSelector {
@@ -255,8 +252,8 @@ impl Rule {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct CSSDB {
-    children: HashMap<Part, CSSDB>,
+pub struct CssDB {
+    children: HashMap<Part, CssDB>,
     current_path: Option<String>,
     pub rule: Option<Rule>,
 }
@@ -277,9 +274,9 @@ fn get_comments(str: &str) -> Vec<String> {
     comments
 }
 
-impl CSSDB {
-    pub fn new() -> CSSDB {
-        CSSDB {
+impl CssDB {
+    pub fn new() -> CssDB {
+        CssDB {
             children: HashMap::new(),
             rule: None,
             current_path: None,
@@ -497,7 +494,7 @@ impl CSSDB {
             None => String::from(""),
         };
 
-        let mut children: Vec<(&Part, &CSSDB)> = self.children.iter().collect();
+        let mut children: Vec<(&Part, &CssDB)> = self.children.iter().collect();
         children.sort_by_key(|(p, _)| p.to_string());
 
         format!(
@@ -564,7 +561,7 @@ impl CSSDB {
     pub fn recursive_search_for_property(&self, q: &[&str]) -> Vec<(Arc<Property>, Selector)> {
         let mut properties: Vec<(Arc<Property>, Selector)> = vec![];
         self.recursive_search_for_property_aux(q, &mut properties);
-        return properties;
+        properties
     }
 
     pub fn all_selectors_with_properties(&self) -> Vec<String> {
@@ -626,7 +623,7 @@ impl CSSDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw(parts, rule),
                 None => {
-                    let mut new_tree = CSSDB::new();
+                    let mut new_tree = CssDB::new();
                     new_tree.insert_raw(parts, rule);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -650,7 +647,7 @@ impl CSSDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw_regular_rule(selector, parts, property),
                 None => {
-                    let mut new_tree = CSSDB::new();
+                    let mut new_tree = CssDB::new();
                     new_tree.insert_raw_regular_rule(selector, parts, property);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -686,7 +683,7 @@ impl CSSDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_empty_regular_rule_aux(selector, parts),
                 None => {
-                    let mut new_tree = CSSDB::new();
+                    let mut new_tree = CssDB::new();
                     new_tree.insert_empty_regular_rule_aux(selector, parts);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -704,14 +701,14 @@ impl CSSDB {
         let tree = match self.children.get_mut(&keyframes_part) {
             Some(tree) => tree,
             None => {
-                self.children.insert(keyframes_part.clone(), CSSDB::new());
+                self.children.insert(keyframes_part.clone(), CssDB::new());
                 self.children.get_mut(&keyframes_part).unwrap()
             }
         };
         match tree.children.get(&name_part) {
             Some(_) => {} // already there
             None => {
-                let mut dst = CSSDB::new();
+                let mut dst = CssDB::new();
                 dst.rule = Some(Rule::Keyframes(Keyframes {
                     name,
                     frames: vec![],
@@ -739,14 +736,14 @@ impl CSSDB {
         Ok(())
     }
 
-    pub fn get(&self, path: &[Part]) -> Option<&CSSDB> {
+    pub fn get(&self, path: &[Part]) -> Option<&CssDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get(part).and_then(|c| c.get(parts)),
         }
     }
 
-    pub fn get_mut(&mut self, path: &[Part]) -> Option<&mut CSSDB> {
+    pub fn get_mut(&mut self, path: &[Part]) -> Option<&mut CssDB> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get_mut(part).and_then(|c| c.get_mut(parts)),

@@ -20,7 +20,7 @@
     width: 100%;
     overflow: hidden;
 }
-.--editor > menu:not(:has(> .minimize.active)) {
+.--editor > menu:not(:has( > .minimize.active)) {
     right: 25px;
     margin-top: -1em;
 }
@@ -40,17 +40,17 @@
 .--editor.focused:not(.dragging) [data-kind="rule"] [data-attr="properties"] .input:is(:focus-within)::before {
     display: none;
 }
-.--editor:has(> menu .minimize.active) {
+.--editor:has( > menu .minimize.active) {
     outline: none;
 }
-.--editor:has(> menu .minimize.active) [data-kind="rule"] {
+.--editor:has( > menu .minimize.active) [data-kind="rule"] {
     display: none;
 }
-.--editor:has(> menu .minimize.active) menu {
+.--editor:has( > menu .minimize.active) menu {
     position: initial;
     margin-top: 0;
 }
-.--editor:has(> menu .minimize.active) menu .selector-preview {
+.--editor:has( > menu .minimize.active) menu .selector-preview {
     display: flex;
     text-wrap: nowrap;
     align-items: center;
@@ -81,10 +81,10 @@
     left: -0.1em;
     outline: 0.1em solid rgb(40, 40, 40);
 }
-.--editor-group:has(> menu .minimize.active) {
+.--editor-group:has( > menu .minimize.active) {
     border: none;
 }
-.--editor-group:has(> menu .minimize.active) .--editor {
+.--editor-group:has( > menu .minimize.active) .--editor {
     display: none;
 }
 .--editor-group:has(.--editor menu .minimize.active):not(:has(.--editor:nth-of-type(2))) {
@@ -94,7 +94,7 @@
     transform: translateX(var(--x-offset)) translateY(var(--y-offset));
     width: min-content;
 }
-.canvas > .--editor > menu:not(:has(> .minimize.active)) {
+.canvas > .--editor > menu:not(:has( > .minimize.active)) {
     right: 0;
 }
 .canvas:has(.dragging) {
@@ -206,7 +206,7 @@
 .search.find-property .options {
     
 }
-.search-box .search-options:has(> *) {
+.search-box .search-options:has( > *) {
     height: 85vh;
     width: 40em;
 }
@@ -614,10 +614,10 @@
     content: ";";
     margin-left: -0.25em;
 }
-[data-kind="property"]:has(> [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] {
+[data-kind="property"]:has( > [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] {
     
 }
-[data-kind="property"]:has(> [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]::before {
+[data-kind="property"]:has( > [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]::before {
     display: flex;
     align-items: center;
     font-size: 0.8em;
@@ -625,10 +625,10 @@
     color: var(--foreground-color);
     margin-right: var(--spacing);
 }
-[data-kind="property"]:has(> [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]:nth-child(1)::before {
+[data-kind="property"]:has( > [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]:nth-child(1)::before {
     content: "y: ";
 }
-[data-kind="property"]:has(> [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]:nth-child(2)::before {
+[data-kind="property"]:has( > [data-attr="name"] [data-value="padding"]) [data-kind="multi-part-value"][data-len="2"] > [data-kind]:nth-child(2)::before {
     content: "x: ";
 }
 [data-kind="property"][data-commented="false"] .toggle-comment {
@@ -937,7 +937,7 @@ body .canvas {
     );
     width: 100%;
 }
-body .canvas:has(> .dragging) {
+body .canvas:has( > .dragging) {
     pointer-events: none;
 }
 body .search.active {
@@ -967,7 +967,7 @@ body .search-box {
 body .search-box:has(.search.active) {
     z-index: 100;
 }
-body .search-options:has(> *) {
+body .search-options:has( > *) {
     background: rgba(50, 50, 50, 0.97);
     border: 0.1em solid black;
     display: flex;
@@ -980,17 +980,17 @@ body .search-options:has(> *) {
     overflow: scroll;
     border-radius: 5px;
 }
-body .search-options:has(> *) > [data-kind] {
+body .search-options:has( > *) > [data-kind] {
     cursor: pointer;
 }
-body .search-options:has(> *) > [data-kind] * {
+body .search-options:has( > *) > [data-kind] * {
     pointer-events: none;
 }
-body .search-options:has(> *) > [data-kind].candidate {
+body .search-options:has( > *) > [data-kind].candidate {
     text-decoration: underline;
     text-decoration-color: white;
 }
-body .search-options:has(> *):not(:has(.candidate)) > [data-kind]:first-child {
+body .search-options:has( > *):not(:has(.candidate)) > [data-kind]:first-child {
     
 }
 body :has(.search.active) .canvas {
@@ -1008,10 +1008,10 @@ body.panning {
 body.panning .canvas {
     pointer-events: none;
 }
-body:has(> button.open-help.active) .canvas {
+body:has( > button.open-help.active) .canvas {
     filter: blur(1px);
 }
-body:has(> button.open-help.active) article.help-modal {
+body:has( > button.open-help.active) article.help-modal {
     -webkit-user-select: none;
     display: flex;
     flex-direction: column;
@@ -1023,12 +1023,12 @@ body:has(> button.open-help.active) article.help-modal {
     justify-content: center;
     background-color: rgb(12, 12, 12);
 }
-body:has(> button.open-help.active) article.help-modal button.close {
+body:has( > button.open-help.active) article.help-modal button.close {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
 }
-body:has(> button.open-help.active) article.help-modal h2 {
+body:has( > button.open-help.active) article.help-modal h2 {
     margin: 0;
 }
 body:has(.search-box .search.active) .canvas {
