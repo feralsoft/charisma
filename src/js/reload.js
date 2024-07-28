@@ -145,7 +145,7 @@ function update_property_values(editor, new_properties) {
     } else if (
       existing_value.dataset.stringValue !== new_value.dataset.stringValue
     ) {
-      register_event(existing_property);
+      register_event(existing_property, "reload-value");
       morph_node(existing_value, new_value);
     }
   }
