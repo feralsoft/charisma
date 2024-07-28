@@ -1,11 +1,11 @@
 import invoke from "./invoke.js";
+import * as ast from "./ast.js";
 
 async function toggle(e) {
   e.stopPropagation();
   let property = this.closest('[data-kind="property"]');
-  let name = property.querySelector('[data-attr="name"]').textContent;
-  let value = property.querySelector('[data-attr="value"] > [data-kind]')
-    .dataset.stringValue;
+  let name = ast.property.name(property);
+  let value = ast.property.value(property).dataset.stringValue;
   let is_commented = property.dataset.commented === "true";
   let action = is_commented ? "enable" : "disable";
   let editor = property.closest(".--editor");
@@ -25,18 +25,13 @@ function insert_comment_button(src) {
   src.prepend(button);
 }
 
-const PROPERTY_SELECTOR =
-  "[data-attr=properties] > [data-kind=property]:not(:has(.toggle-comment))";
-
-function init(editor) {
-  for (let property of editor.querySelectorAll(PROPERTY_SELECTOR))
-    insert_comment_button(property);
-}
-
 document.addEventListener("DOMContentLoaded", (_) => {
   let canvas = document.querySelector(".canvas");
   canvas.addEventListener("new-editor", ({ detail: { editor } }) => {
-    init(editor);
-    editor.addEventListener("loaded", (_) => init(editor));
+    for (let property of editor.querySelectorAll('[data-kind="property"]'))
+      insert_comment_button(property);
+    editor.addEventListener("new-property", ({ detail: { new_property } }) => {
+      insert_comment_button(new_property);
+    });
   });
 });

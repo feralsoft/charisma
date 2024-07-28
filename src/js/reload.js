@@ -63,6 +63,7 @@ function insert_new_properties(editor, new_properties) {
         ast.property.value(new_property).dataset.stringValue,
       )}"])`);
     if (!existing_property) {
+      register_event(editor, "new-property", { new_property });
       insert_property(editor, new_property);
     }
   }
@@ -71,13 +72,12 @@ function insert_new_properties(editor, new_properties) {
 // we can't dispatch events during morphing/updating since it might happen
 // before all the updates have been applied
 let _event_queue = [];
-function register_event(node, kind) {
-  _event_queue.push({ node, kind });
+function register_event(node, kind, detail = {}) {
+  _event_queue.push({ node, kind, detail });
 }
 function exec_events() {
-  for (let { node, kind } of _event_queue) {
-    node.dispatchEvent(new Event(kind));
-  }
+  for (let { node, kind, detail } of _event_queue)
+    node.dispatchEvent(new CustomEvent(kind, { detail }));
   _event_queue = [];
 }
 
