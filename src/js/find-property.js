@@ -71,5 +71,10 @@ function start_search() {
 
 window.addEventListener("keydown", (e) => {
   if (e.target.closest(".--editor-group")) return;
-  if (e.key === "f" && e.ctrlKey) start_search();
+  if (e.key === "f" && e.ctrlKey) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    start_search();
+  }
 });
