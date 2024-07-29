@@ -98,7 +98,7 @@ function put_in_group(editor, position) {
   if (group) {
     let overlapping_editor = find(
       group.querySelectorAll(".--editor"),
-      (other_editor) => is_overlapping(other_editor, editor, position),
+      (other_editor) => is_overlapping_editor(other_editor, editor, position),
     );
     if (overlapping_editor) {
       let { height, top } = overlapping_editor.getBoundingClientRect();

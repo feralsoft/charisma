@@ -119,10 +119,9 @@ let input = (editor) =>
         accept_candidate(container, this);
         e.preventDefault();
       } else {
-        // ^ why do we care about shift key
-        // populate auto complete list
         // setTimeout is needed so that `this.innerText` gets populated :facepalm:
         setTimeout(async () => {
+          // populate auto complete list
           container.querySelector(".search-options")?.remove();
           let text = this.innerText.trim();
           if (text === "") return;
