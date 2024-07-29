@@ -63,10 +63,10 @@ let copied = false;
 
 window.addEventListener("keydown", async (e) => {
   if (!currently_selected) return;
-  if (e.key === "c" && e.metaKey) {
+  if (e.key === "c" && e.ctrlKey) {
     currently_selected.classList.add("copied");
     copied = true;
-  } else if (e.key === "v" && e.metaKey && copied) {
+  } else if (e.key === "v" && e.ctrlKey && copied) {
     currently_selected.classList.remove("copied");
     currently_selected.classList.remove("selected");
     copied = false;

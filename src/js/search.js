@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
   input.dataset.empty = true;
 
   window.addEventListener("keydown", async (e) => {
-    if (e.key === "p" && e.metaKey) {
+    if (e.key === "p" && e.ctrlKey) {
       e.preventDefault();
       if (input.classList.contains("active")) {
         clear();

@@ -57,7 +57,7 @@ function get_properties(editor) {
 }
 
 window.addEventListener("keydown", async (e) => {
-  if (e.key === "z" && e.metaKey && e.shiftKey) {
+  if (e.key === "z" && e.ctrlKey && e.shiftKey) {
     if (redo_stack.is_empty()) return;
     let { selector, properties } = redo_stack.pop();
     let editor = document.querySelector(
@@ -72,7 +72,7 @@ window.addEventListener("keydown", async (e) => {
     editor.dispatchEvent(
       new CustomEvent("reload", { detail: { src: "undo" } }),
     );
-  } else if (e.key === "z" && e.metaKey) {
+  } else if (e.key === "z" && e.ctrlKey) {
     if (undo_stack.is_empty()) return;
     let { selector, properties } = undo_stack.pop();
     let editor = document.querySelector(
