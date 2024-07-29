@@ -765,6 +765,8 @@ pub enum Combinator {
     And,
     // +
     Plus,
+    // borked
+    Bogus,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

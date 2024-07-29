@@ -28,7 +28,7 @@ fn render_keyframes_selector(name: &str) -> String {
 #[derive(Serialize, Debug)]
 pub enum CharismaError {
     DbLocked,
-    ParseError,
+    ParseError(String),
     FailedToSave,
     RuleNotFound,
     AssertionError(String),
@@ -61,14 +61,14 @@ fn search(
             if s.starts_with('@') {
                 match s.split("@keyframes").nth(1) {
                     Some(name) => Ok(render_keyframes_selector(name.trim())),
-                    None => Err(CharismaError::ParseError),
+                    None => Err(CharismaError::ParseError(s.to_owned())),
                 }
             } else {
                 match parse_selector(s).and_then(|s| s.into_iter().next()) {
                     Some(selector) => selector
-                        .map_err(|_| CharismaError::ParseError)
+                        .map_err(|_| CharismaError::ParseError(s.to_owned()))
                         .and_then(|s| s.render_html(&RenderOptions::default())),
-                    None => Err(CharismaError::ParseError),
+                    None => Err(CharismaError::ParseError(s.to_owned())),
                 }
             }
         })
