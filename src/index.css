@@ -1070,12 +1070,12 @@ body:has( > button.open-help.active) article.help-modal {
     justify-content: center;
     background-color: rgb(12, 12, 12);
 }
-body:has( > button.open-help.active) article.help-modal button.close {
+article.help-modal button.close {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
 }
-body:has( > button.open-help.active) article.help-modal h2 {
+ article.help-modal h2 {
     margin: 0;
 }
 body:has(.search-box .search.active) .canvas {
