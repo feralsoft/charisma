@@ -5,14 +5,15 @@ use biome_css_syntax::{
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
-    CssKeyframesAtRule, CssKeyframesIdentSelector, CssKeyframesPercentageSelector,
-    CssKeyframesSelectorList, CssPseudoClassFunctionCompoundSelector,
-    CssPseudoClassFunctionCompoundSelectorList, CssPseudoClassFunctionIdentifier,
-    CssPseudoClassFunctionNth, CssPseudoClassFunctionRelativeSelectorList,
-    CssPseudoClassFunctionSelector, CssPseudoClassFunctionSelectorList,
-    CssPseudoClassFunctionValueList, CssPseudoClassNth, CssPseudoClassNthIdentifier,
-    CssPseudoClassNthNumber, CssPseudoClassNthSelector, CssPseudoElementFunctionIdentifier,
-    CssPseudoElementFunctionSelector, CssRelativeSelector, CssSyntaxKind, CssUniversalSelector,
+    CssFontFaceAtRule, CssKeyframesAtRule, CssKeyframesIdentSelector,
+    CssKeyframesPercentageSelector, CssKeyframesSelectorList,
+    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
+    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
+    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
+    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassNth,
+    CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
+    CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
+    CssSyntaxKind, CssUniversalSelector,
 };
 use std::fmt::Write;
 use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
@@ -1298,6 +1299,12 @@ impl DBPath for CssKeyframesSelectorList {
     }
 }
 
+impl DBPath for CssFontFaceAtRule {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
+        todo!()
+    }
+}
+
 impl DBPath for AnyCssAtRule {
     fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         match self {
@@ -1307,7 +1314,7 @@ impl DBPath for AnyCssAtRule {
             AnyCssAtRule::CssContainerAtRule(_) => todo!(),
             AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
             AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
-            AnyCssAtRule::CssFontFaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFaceAtRule(r) => r.to_css_db_paths(),
             AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
             AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
             AnyCssAtRule::CssImportAtRule(_) => todo!(),
