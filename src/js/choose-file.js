@@ -9,12 +9,7 @@ async function set_path_text(path, file_picker) {
 async function prompt_file_selector(file_picker) {
   let path = await open({
     multiple: false,
-    filters: [
-      {
-        name: "Css",
-        extensions: ["css"],
-      },
-    ],
+    filters: [{ name: "Css", extensions: ["css"] }],
   });
   if (!path) return;
   localStorage.setItem("current-path", path);

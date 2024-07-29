@@ -1,4 +1,5 @@
 import invoke from "./invoke.js";
+import * as ast from "./ast.js";
 
 let property_to_copy;
 
@@ -17,13 +18,10 @@ window.addEventListener("keydown", async (e) => {
 
     // ok, lets paste
 
-    let property_name = property_to_copy.querySelector(
-      ':scope > [data-attr="name"] [data-value]',
-    ).dataset.value;
+    let property_name = ast.property.name(property_to_copy);
 
-    let property_value = property_to_copy.querySelector(
-      ':scope > [data-attr="value"] > [data-kind][data-string-value]',
-    ).dataset.stringValue;
+    let property_value =
+      ast.property.value(property_to_copy).dataset.stringValue;
 
     await invoke(focused_editor, "insert_property", {
       path: localStorage.getItem("current-path"),

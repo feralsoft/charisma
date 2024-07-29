@@ -1,5 +1,6 @@
 import { focus } from "./focus.js";
 import invoke from "./invoke.js";
+import * as ast from "./ast.js";
 
 window.addEventListener("keydown", async (e) => {
   if (e.key !== "Backspace") return;
@@ -7,17 +8,12 @@ window.addEventListener("keydown", async (e) => {
   if (!property) return;
   if (property.contains(document.activeElement)) return;
   // can delete
-  let name = property.querySelector('[data-attr="name"] > [data-value]').dataset
-    .value;
-  let value = property.querySelector(
-    '[data-attr="value"] > [data-kind][data-string-value]',
-  ).dataset.stringValue;
   let editor = property.closest(".--editor");
   await invoke(editor, "delete", {
     path: localStorage.getItem("current-path"),
     selector: editor.dataset.selector,
-    name,
-    value,
+    name: ast.property.name(property),
+    value: ast.property.value(property).dataset.stringValue,
   });
   focus(editor);
 });
