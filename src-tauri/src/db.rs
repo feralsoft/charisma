@@ -5,14 +5,14 @@ use biome_css_syntax::{
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
-    CssKeyframesAtRule, CssKeyframesPercentageSelector, CssKeyframesSelectorList,
-    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
-    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
-    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
-    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassNth,
-    CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
-    CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
-    CssSyntaxKind, CssUniversalSelector,
+    CssKeyframesAtRule, CssKeyframesIdentSelector, CssKeyframesPercentageSelector,
+    CssKeyframesSelectorList, CssPseudoClassFunctionCompoundSelector,
+    CssPseudoClassFunctionCompoundSelectorList, CssPseudoClassFunctionIdentifier,
+    CssPseudoClassFunctionNth, CssPseudoClassFunctionRelativeSelectorList,
+    CssPseudoClassFunctionSelector, CssPseudoClassFunctionSelectorList,
+    CssPseudoClassFunctionValueList, CssPseudoClassNth, CssPseudoClassNthIdentifier,
+    CssPseudoClassNthNumber, CssPseudoClassNthSelector, CssPseudoElementFunctionIdentifier,
+    CssPseudoElementFunctionSelector, CssRelativeSelector, CssSyntaxKind, CssUniversalSelector,
 };
 use std::fmt::Write;
 use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
@@ -799,6 +799,8 @@ pub enum AtRulePart {
     Keyframes,
     // keyframe-name
     Name(String),
+    // `from` or `to`
+    Identifier(String),
     // 20%
     Percentage(i32),
 }
@@ -859,6 +861,7 @@ impl Display for AtRulePart {
             AtRulePart::Keyframes => write!(f, "@keyframes")?,
             AtRulePart::Name(name) => write!(f, "{}", name)?,
             AtRulePart::Percentage(num) => write!(f, "{}%", num)?,
+            AtRulePart::Identifier(id) => write!(f, "{}", id)?,
         }
         Ok(())
     }
@@ -1254,6 +1257,15 @@ impl DBPath for CssKeyframesAtRule {
     }
 }
 
+impl DBPath for CssKeyframesIdentSelector {
+    fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
+        let selector = self.selector().map_err(|_| CharismaError::ParseError)?;
+        Ok(vec![vec![Part::AtRule(AtRulePart::Identifier(
+            selector.text_trimmed().to_string(),
+        ))]])
+    }
+}
+
 impl DBPath for CssKeyframesPercentageSelector {
     fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
         let selector = self.selector().map_err(|_| CharismaError::ParseError)?;
@@ -1273,7 +1285,7 @@ impl DBPath for CssKeyframesSelectorList {
             .map(|s| s.unwrap())
             .map(|s| match s {
                 AnyCssKeyframesSelector::CssBogusSelector(_) => todo!(),
-                AnyCssKeyframesSelector::CssKeyframesIdentSelector(_) => todo!(),
+                AnyCssKeyframesSelector::CssKeyframesIdentSelector(id) => id.to_css_db_paths(),
                 AnyCssKeyframesSelector::CssKeyframesPercentageSelector(pct) => {
                     pct.to_css_db_paths()
                 }
