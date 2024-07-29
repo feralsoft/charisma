@@ -282,13 +282,14 @@
     border-radius: 3px;
 }
 .toggle-comment .icon {
-    display: flex;
-    justify-content: center;
-    height: 0.75em;
-    background-image: var(--x-icon);
-    background-repeat: no-repeat;
     background-position: center;
+    background-repeat: no-repeat;
     background-size: 0.5em;
+    display: flex;
+    background-image: var(--line-icon);
+    height: 0.5em;
+    justify-content: center;
+    align-items: center;
 }
 .toggle-comment:hover {
     background: rgb(50, 50, 50);
@@ -655,6 +656,11 @@
 }
 [data-kind="property"][data-commented="true"] .toggle-comment {
     background-color: rgb(60, 60, 60);
+}
+[data-kind="property"][data-commented="true"] .toggle-comment .icon {
+    background-image: var(--plus-icon);
+    height: 0.9em;
+    background-size: 0.75em;
 }
 [data-kind="property"][data-commented="true"] .toggle-comment:focus {
     background-color: rgb(80, 80, 80);
@@ -1187,8 +1193,8 @@ tes {
     
 }
 test {
-    display: flex;
     color: rgb(178, 202, 96);
+    /* display: flex; */
 }
 test2 {
     font-size: 31px;
