@@ -852,6 +852,17 @@
     content: "}";
     color: var(--brace-color);
 }
+[data-kind="selector-list"] > [data-attr="selectors"] {
+    display: flex;
+    gap: var(--spacing);
+}
+[data-kind="selector-list"] > [data-attr="selectors"] > [data-kind]:not(:last-child) {
+    
+}
+[data-kind="selector-list"] > [data-attr="selectors"] > [data-kind]:not(:last-child)::after {
+    content: ",";
+    color: var(--foreground-color);
+}
 [data-kind="string"] {
     color: var(--string-color);
 }
@@ -884,6 +895,16 @@
     -webkit-user-select: none;
 }
 a {
+    display: flex;
+    color: green;
+}
+a.b {
+    
+}
+a:has(a) {
+    
+}
+a:has(b) {
     
 }
 abc {
@@ -910,6 +931,10 @@ article.help-modal table th {
 article.help-modal table thead th {
     width: 50%;
     text-align: left;
+}
+b {
+    display: flex;
+    /* color: red; */
 }
 body {
     flex-direction: column;

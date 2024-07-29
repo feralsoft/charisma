@@ -58,11 +58,16 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (existing_rule) {
           focus(existing_rule);
         } else {
-          await invoke("insert_empty_rule", {
-            path: localStorage.getItem("current-path"),
-            selector,
-          });
-          await add_editor(selector);
+          try {
+            await invoke("insert_empty_rule", {
+              path: localStorage.getItem("current-path"),
+              selector,
+            });
+            await add_editor(selector);
+          } catch (e) {
+            console.log(e);
+            throw e;
+          }
         }
       } else {
         // do we already have this rule?

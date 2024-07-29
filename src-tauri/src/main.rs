@@ -207,42 +207,35 @@ fn render_rule(
             Some(selector) => selector,
             None => return Err(CharismaError::ParseError.into()),
         };
-        let selectors: Result<Vec<_>, _> = selector_list.into_iter().collect();
-        let selectors = match selectors {
-            Ok(list) => list,
-            Err(_) => return Err(CharismaError::ParseError.into()),
-        };
 
-        let list_of_paths: Vec<Vec<Vec<Part>>> = selectors
-            .iter()
-            .map(|s| s.to_css_db_paths())
+        let list_of_paths: Vec<Vec<Vec<Part>>> = (&selector_list)
+            .into_iter()
+            .map(|s| s.map_err(|_| CharismaError::ParseError))
+            .map(|s| s.and_then(|s| s.to_css_db_paths()))
             .collect::<Result<Vec<_>, _>>()?;
 
         let paths = list_of_paths.concat();
 
-        if paths.len() != 1 {
-            return Err(CharismaError::AssertionError("expected_path".into()).into());
+        let mut properties: Vec<Arc<Property>> = vec![];
+        let mut i = 0;
+        for path in paths {
+            let rule = match db
+                .get(&path)
+                .and_then(|tree| tree.rule.as_ref())
+                .and_then(|r| r.as_regular_rule())
+            {
+                Some(rule) => rule,
+                None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+            };
+            if i == 0 {
+                properties.append(&mut rule.properties.clone())
+            } else {
+                let rule_properties = rule.properties.clone();
+                properties.retain(|p| rule_properties.contains(p))
+            }
+            i += 1;
         }
-
-        let path = match paths.first() {
-            Some(path) => path,
-            None => return Err(CharismaError::AssertionError("expected_one_path".into()).into()),
-        };
-        let rule = match db
-            .get(path)
-            .and_then(|tree| tree.rule.as_ref())
-            .and_then(|r| r.as_regular_rule())
-        {
-            Some(rule) => rule,
-            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
-        };
-
-        let mut rule_properties = rule.properties.clone();
-        rule_properties.sort_by_key(|p| p.name.clone());
-        let selector = match parse_selector(&rule.selector.string) {
-            Some(s) => s,
-            None => return Err(CharismaError::ParseError.into()),
-        };
+        properties.sort_by_key(|p| p.name.clone());
 
         Ok(format!(
             "
@@ -251,8 +244,8 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector.render_html(&RenderOptions::default())?,
-            rule_properties
+            selector_list.render_html(&RenderOptions::default())?,
+            properties
                 .iter()
                 .map(|p| p.render_html(&RenderOptions::default()))
                 .collect::<Result<String, _>>()?,
