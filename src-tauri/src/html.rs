@@ -4,18 +4,19 @@ use biome_css_syntax::{
     AnyCssSelector, AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
     CssBinaryExpression, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
     CssCompoundSelector, CssCustomIdentifier, CssDashedIdentifier, CssFunction, CssIdSelector,
-    CssIdentifier, CssNumber, CssParameter, CssParenthesizedExpression, CssPercentage,
-    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
-    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
-    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
-    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassIdentifier,
-    CssPseudoClassNth, CssPseudoClassNthIdentifier, CssPseudoClassNthNumber,
-    CssPseudoClassNthSelector, CssPseudoClassSelector, CssPseudoElementSelector, CssRatio,
-    CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector,
-    CssUniversalSelector, CssUrlFunction,
+    CssIdentifier, CssNthOffset, CssNumber, CssParameter, CssParenthesizedExpression,
+    CssPercentage, CssPseudoClassFunctionCompoundSelector,
+    CssPseudoClassFunctionCompoundSelectorList, CssPseudoClassFunctionIdentifier,
+    CssPseudoClassFunctionNth, CssPseudoClassFunctionRelativeSelectorList,
+    CssPseudoClassFunctionSelector, CssPseudoClassFunctionSelectorList,
+    CssPseudoClassFunctionValueList, CssPseudoClassIdentifier, CssPseudoClassNth,
+    CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
+    CssPseudoClassSelector, CssPseudoElementSelector, CssRatio, CssRegularDimension,
+    CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector, CssUniversalSelector,
+    CssUrlFunction,
 };
 use serde::Serialize;
-use std::fmt::Display;
+use std::{fmt::Display, string::ParseError};
 
 use crate::{
     get_combinator_type, parse_utils::parse_property, AtRulePart, CharismaError, Combinator, Frame,
@@ -236,7 +237,10 @@ impl Render for CssRelativeSelector {
 impl Render for AnyCssRelativeSelector {
     fn render_html(&self, options: &RenderOptions) -> RenderResult {
         match self {
-            AnyCssRelativeSelector::CssBogusSelector(_) => Err(CharismaError::ParseError),
+            AnyCssRelativeSelector::CssBogusSelector(s) => RenderResult {
+                html: String::from(""),
+                errors: vec![CharismaError::ParseError(format!("{:?}", s))]
+            },
             AnyCssRelativeSelector::CssRelativeSelector(s) => s.render_html(options),
         }
     }
@@ -244,29 +248,86 @@ impl Render for AnyCssRelativeSelector {
 
 impl Render for CssPseudoClassFunctionRelativeSelectorList {
     fn render_html(&self, options: &RenderOptions) -> RenderResult {
-        let name = self.name_token().map_err(|_| CharismaError::ParseError)?;
+        let mut errors: Vec<CharismaError> = vec![];
+        let name = match self.name_token() {
+            Ok(n) => {
+                n.text_trimmed()
+            },
+            Err(e) => {
+                errors.push(CharismaError::ParseError(e.to_string()));
+                ""
+            }
+        };
         assert!(self.relative_selectors().into_iter().count() == 1);
 
         let selector = match self.relative_selectors().into_iter().next() {
-            Some(s) => s.map_err(|_| CharismaError::ParseError)?,
-            None => return Err(CharismaError::ParseError),
+            Some(Ok(s)) => {
+                let r = s.render_html(options);
+                errors.extend(r.errors);
+                r.html
+            },
+            Some(Err(e)) => {
+                errors.push(CharismaError::ParseError(e.to_string()));
+                String::from("")
+            }
+            None => {
+                errors.push(CharismaError::ParseError(String::from("expected selector")));
+                String::from("")
+            }
         };
 
-        Ok(format!(
+        RenderResult {
+            html: format!(
             "<div data-kind=\"pseudo-class-function\" {}>
                 <div data-attr=\"function-name\">{}</div>
                 <div data-attr=\"args\">{}</div>
             </div>",
             data_string_value(&self.to_string()),
-            render_value(name.text_trimmed()),
-            selector.render_html(options)?
-        ))
+            render_value(name),
+            selector
+        ),
+        errors
+        }
+
+    }
+}
+impl Render for CssNthOffset {
+    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+        let sign = self.sign().unwrap().to_string();
+        let value = self.value().unwrap().to_string();
+
+        RenderResult {html: format!(
+            "
+            <div data-kind=\"nth-offset\">
+                <div data-attr=\"sign\">{}</div>
+                <div data-attr=\"value\">{}</div>
+            </div>
+            ",
+            render_value(sign.trim()),
+            render_value(value.trim())
+        ), errors: vec![]}
     }
 }
 
 impl Render for CssPseudoClassNth {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+        let offset = match self.offset() {
+            Some(o) => o.render_html(options)?,
+            None => String::from(""),
+        };
+
+        Ok(format!(
+            "
+            <div data-kind=\"pseudo-class-nth\" {}>
+                <div data-attr=\"value\">{}</div>
+                <div data-attr=\"offset\">{}</div>
+            </div>
+        ",
+            data_string_value(&self.to_string()),
+            render_value(self.value().unwrap().to_string().trim()),
+            offset,
+        ))
+
     }
 }
 
