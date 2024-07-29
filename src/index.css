@@ -1156,8 +1156,8 @@ menu {
     background-color: rgb(20, 20, 20);
 }
 menu .close {
-    background-size: 0.5em;
     background-image: var(--x-icon);
+    background-size: 0.5em;
 }
 menu .info {
     background-size: 1em;
@@ -1213,6 +1213,7 @@ tes {
 test {
     color: rgb(178, 202, 96);
     display: flex;
+    font-size: 51px;
 }
 test2 {
     font-size: 31px;

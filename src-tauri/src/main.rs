@@ -25,7 +25,7 @@ fn render_keyframes_selector(name: &str) -> String {
     )
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub enum CharismaError {
     DbLocked,
     ParseError(String),
@@ -39,7 +39,7 @@ fn search(
     state: tauri::State<Mutex<CssDB>>,
     path: &str,
     q: &str,
-) -> Result<Vec<String>, InvokeError> {
+) -> Result<RenderResult, InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path)?;
@@ -55,27 +55,49 @@ fn search(
 
     results.sort_by(|a, b| a.len().cmp(&b.len()).then_with(|| a.cmp(b)));
 
-    let results: Result<Vec<String>, _> = results
+    let results = results
         .iter()
-        .map(|s| -> Result<String, CharismaError> {
+        .map(|s| {
             if s.starts_with('@') {
                 match s.split("@keyframes").nth(1) {
-                    Some(name) => Ok(render_keyframes_selector(name.trim())),
-                    None => Err(CharismaError::ParseError(s.to_owned())),
+                    Some(name) => RenderResult {
+                        html: render_keyframes_selector(name.trim()),
+                        errors: vec![],
+                    },
+                    None => RenderResult {
+                        html: String::from(""),
+                        errors: vec![CharismaError::ParseError(
+                            "failed to render keyframes".to_string(),
+                        )],
+                    },
                 }
             } else {
                 match parse_selector(s).and_then(|s| s.into_iter().next()) {
-                    Some(selector) => selector
-                        .map_err(|_| CharismaError::ParseError(s.to_owned()))
-                        .and_then(|s| s.render_html(&RenderOptions::default())),
-                    None => Err(CharismaError::ParseError(s.to_owned())),
+                    Some(selector) => match selector {
+                        Ok(s) => s.render_html(&RenderOptions::default()),
+                        Err(e) => RenderResult {
+                            html: "".to_string(),
+                            errors: vec![CharismaError::ParseError(e.to_string())],
+                        },
+                    },
+                    None => RenderResult {
+                        html: "".to_string(),
+                        errors: vec![CharismaError::ParseError(s.to_string())],
+                    },
                 }
             }
         })
         .take(20)
-        .collect();
+        .reduce(|acc, RenderResult { html, errors }| RenderResult {
+            errors: [acc.errors, errors].concat(),
+            html: acc.html + &html,
+        })
+        .unwrap_or(RenderResult {
+            html: String::from(""),
+            errors: vec![],
+        });
 
-    Ok(results?)
+    Ok(results)
 }
 
 #[tauri::command]
@@ -83,7 +105,7 @@ fn find_property(
     state: tauri::State<Mutex<CssDB>>,
     path: &str,
     q: &str,
-) -> Result<Vec<(String, String)>, InvokeError> {
+) -> Result<Vec<(RenderResult, RenderResult)>, InvokeError> {
     let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
     if !db.is_loaded(path) {
         db.load(path)?;
@@ -101,16 +123,18 @@ fn find_property(
             .then_with(|| a_property.cmp(&b_property))
     });
 
-    let results: Result<Vec<(String, String)>, _> = results
+    let results: Result<Vec<(RenderResult, RenderResult)>, _> = results
         .iter()
         .map(|(p, s)| (p, parse_selector(&s.string)))
         .map(
-            |(property, selector)| -> Result<(String, String), CharismaError> {
+            |(property, selector)| -> Result<(RenderResult, RenderResult), CharismaError> {
                 match selector {
-                    None => Err(CharismaError::ParseError),
+                    None => Err(CharismaError::ParseError(
+                        "failed to parse selector".to_owned(),
+                    )),
                     Some(selector) => Ok((
-                        property.render_html(&RenderOptions::default())?,
-                        selector.render_html(&RenderOptions::default())?,
+                        property.render_html(&RenderOptions::default()),
+                        selector.render_html(&RenderOptions::default()),
                     )),
                 }
             },
@@ -134,14 +158,16 @@ fn insert_empty_rule(
     if selector.starts_with("@keyframes") {
         match selector.split("@keyframes").nth(1) {
             Some(name) => db.insert_empty_keyframes_rule(name.trim().to_string()),
-            None => return Err(CharismaError::ParseError.into()),
+            None => {
+                return Err(CharismaError::ParseError("keyframes parse error".to_string()).into())
+            }
         }
     } else {
         match parse_selector(selector) {
             Some(selector_list) => match selector_list
                 .into_iter()
                 .map(|s| {
-                    s.map_err(|_| CharismaError::ParseError)
+                    s.map_err(|e| CharismaError::ParseError(e.to_string()))
                         .and_then(|s| s.to_selectors(None))
                 })
                 .collect::<Result<Vec<Vec<Selector>>, _>>()
@@ -152,7 +178,7 @@ fn insert_empty_rule(
                     .for_each(|selector| db.insert_empty_regular_rule(selector)),
                 Err(e) => return Err(e.into()),
             },
-            None => return Err(CharismaError::ParseError.into()),
+            None => return Err(CharismaError::ParseError("selector empty".to_string()).into()),
         }
     }
     Ok(fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?)
@@ -171,7 +197,7 @@ fn render_rule(
     if selector.starts_with("@keyframes") {
         let name = match selector.split("@keyframes").nth(1) {
             Some(name) => name.trim(),
-            None => return Err(CharismaError::ParseError.into()),
+            None => return Err(CharismaError::ParseError("keyframes typo".into()).into()),
         };
 
         let path = [
@@ -200,17 +226,25 @@ fn render_rule(
                 .frames
                 .iter()
                 .map(|frame| frame.render_html(&RenderOptions::default()))
-                .collect::<Result<String, _>>()?
+                .reduce(|acc, RenderResult { html, errors }| RenderResult {
+                    errors: [acc.errors, errors].concat(),
+                    html: acc.html + &html,
+                })
+                .unwrap_or(RenderResult {
+                    html: String::from(""),
+                    errors: vec![],
+                })
+                .html
         ))
     } else {
         let selector_list = match parse_selector(selector) {
             Some(selector) => selector,
-            None => return Err(CharismaError::ParseError.into()),
+            None => return Err(CharismaError::ParseError("missing selector".into()).into()),
         };
 
         let list_of_paths: Vec<Vec<Vec<Part>>> = (&selector_list)
             .into_iter()
-            .map(|s| s.map_err(|_| CharismaError::ParseError))
+            .map(|s| s.map_err(|e| CharismaError::ParseError(e.to_string())))
             .map(|s| s.and_then(|s| s.to_css_db_paths()))
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -244,11 +278,19 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector_list.render_html(&RenderOptions::default())?,
+            selector_list.render_html(&RenderOptions::default()).html,
             properties
                 .iter()
                 .map(|p| p.render_html(&RenderOptions::default()))
-                .collect::<Result<String, _>>()?,
+                .reduce(|acc, RenderResult { html, errors }| RenderResult {
+                    errors: [acc.errors, errors].concat(),
+                    html: acc.html + &html,
+                })
+                .unwrap_or(RenderResult {
+                    html: String::from(""),
+                    errors: vec![],
+                })
+                .html
         ))
     }
 }
@@ -269,9 +311,9 @@ fn delete(
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("selector parse error".to_string()).into()),
     }?;
 
     for paths in selector_list.into_iter().map(|s| s.to_css_db_paths()) {
@@ -299,9 +341,9 @@ fn disable(
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("selector parse err".to_string()).into()),
     }?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -329,9 +371,9 @@ fn enable(
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("sel".to_string()).into()),
     }?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -360,15 +402,15 @@ fn insert_property(
     }
     let property = match parse_property(property) {
         Some(p) => p,
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
     };
 
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid slector".to_string()).into()),
     }?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -401,9 +443,9 @@ fn replace_all_properties(
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid selector".to_string()).into()),
     }?;
     // TODO: if we fail, we should revert all the things .. ugh
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -419,7 +461,11 @@ fn replace_all_properties(
                 let parsed_property =
                     match parse_property(&format!("{}: {};", property.name, property.value)) {
                         Some(p) => p,
-                        None => return Err(CharismaError::ParseError.into()),
+                        None => {
+                            return Err(
+                                CharismaError::ParseError("invalid property".to_string()).into()
+                            )
+                        }
                     };
                 if property.is_commented {
                     db.insert_regular_rule_commented(&selector, parsed_property)?;
@@ -448,15 +494,15 @@ fn update_value(
 
     let property = match parse_property(&format!("{}: {};", name, value)) {
         Some(p) => p,
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
     };
 
     let selector_list: Vec<_> = match parse_selector(selector) {
         Some(list) => list
             .into_iter()
-            .map(|r| r.map_err(|_| CharismaError::ParseError))
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
             .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid selector".to_string()).into()),
     }?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -502,19 +548,21 @@ fn load_rule(
 
     let rule = match parse_one(rule) {
         Some(r) => r,
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("rule invalid".to_string()).into()),
     };
 
     let selector = rule.prelude();
-    let block = rule.block().map_err(|_| CharismaError::ParseError)?;
+    let block = rule
+        .block()
+        .map_err(|e| CharismaError::ParseError(e.to_string()))?;
     let block = match block.as_css_declaration_or_rule_block() {
         Some(b) => b,
-        None => return Err(CharismaError::ParseError.into()),
+        None => return Err(CharismaError::ParseError("invalid rule".to_string()).into()),
     };
 
     let selector_list: Vec<_> = selector
         .into_iter()
-        .map(|r| r.map_err(|_| CharismaError::ParseError))
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
         .collect::<Result<_, _>>()?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
@@ -525,7 +573,9 @@ fn load_rule(
                 // and then, revert it back
                 let property = match item.as_css_declaration_with_semicolon() {
                     Some(p) => p,
-                    None => return Err(CharismaError::ParseError.into()),
+                    None => {
+                        return Err(CharismaError::ParseError("invalid decl".to_string()).into())
+                    }
                 };
                 db.insert_regular_rule(&selector, property)?;
             }
