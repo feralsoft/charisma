@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
           path: localStorage.getItem("current-path"),
           q: input.innerText,
         });
-        options.innerHTML = results.join("");
+        options.innerHTML = results.html;
       });
     } else {
       let old_text = input.innerText;
@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
             q: input.innerText,
           });
 
-          options.innerHTML = results.join("");
+          options.innerHTML = results.html;
         }
       });
     }

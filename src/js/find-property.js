@@ -51,14 +51,14 @@ function start_search() {
           });
 
           options.innerHTML = properties
-            .map(
-              ([property, selector]) =>
-                `<div class='find-search-result'>
-                  <div class='property'>${property}</div>
-                  <div class='selector'>${selector}</div>
+            .map(([property, selector]) => {
+              // todo: handle errors
+              return `<div class='find-search-result'>
+                  <div class='property'>${property.html}</div>
+                  <div class='selector'>${selector.html}</div>
                 </div>
-                `,
-            )
+                `;
+            })
             .join("");
         }
       });
