@@ -286,10 +286,10 @@
     background-repeat: no-repeat;
     background-size: 0.5em;
     display: flex;
-    background-image: var(--line-icon);
     height: 0.5em;
     justify-content: center;
     align-items: center;
+    background-image: var(--line-thick-icon);
 }
 .toggle-comment:hover {
     background: rgb(50, 50, 50);
@@ -313,6 +313,7 @@
     --function-color: #dcdcaa;
     --info-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 7.01002L12 7.00003M12 17L12 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --line-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12L21 12" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    --line-thick-icon: url('data:image/svg+xml;utf8,<svg stroke="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 12L21 12" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     --number-color: #b5cea8;
     --outline-color: #ffffff17;
     --property-name-color: #9cdcfe;
