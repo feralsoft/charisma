@@ -3,7 +3,6 @@ import { homeDir } from "../node_modules/@tauri-apps/api/path.js";
 
 async function set_path_text(path, file_picker) {
   let home_dir = await homeDir();
-  document.body.dataset.current_path = path;
   file_picker.innerText = path.replace(home_dir, "~/");
 }
 
