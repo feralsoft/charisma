@@ -231,23 +231,31 @@ pub struct Keyframes {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct FontFace {
+    pub properties: Vec<Property>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
     RegularRule(RegularRule),
     Keyframes(Keyframes),
+    // there's no good way to index @font-face since the selector doesn't include
+    // something to use
+    FontFace(Vec<FontFace>),
 }
 
 impl Rule {
     pub fn as_regular_rule(&self) -> Option<RegularRule> {
         match self {
             Rule::RegularRule(rule) => Some(rule.clone()),
-            Rule::Keyframes(_) => None,
+            _ => None,
         }
     }
 
     pub fn as_keyframes(&self) -> Option<Keyframes> {
         match self {
-            Rule::RegularRule(_) => None,
             Rule::Keyframes(rule) => Some(rule.clone()),
+            _ => None,
         }
     }
 }
@@ -411,7 +419,43 @@ impl CssDB {
             AnyCssAtRule::CssContainerAtRule(_) => todo!(),
             AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
             AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
-            AnyCssAtRule::CssFontFaceAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFaceAtRule(rule) => {
+                let block = rule.block().map_err(|_| CharismaError::ParseError)?;
+                let block = block.as_css_declaration_list_block().unwrap();
+                let path = rule.to_css_db_paths()?;
+                assert!(path.len() == 1);
+                let mut properties: Vec<Property> = vec![];
+                for property in block.declarations() {
+                    let property = property
+                        .declaration()
+                        .map_err(|_| CharismaError::ParseError)?
+                        .property()
+                        .unwrap();
+                    let property = property.as_css_generic_property().unwrap();
+                    let name = property
+                        .name()
+                        .map_err(|_| CharismaError::ParseError)?
+                        .to_string()
+                        .trim()
+                        .to_string();
+                    let value = property
+                        .value()
+                        .into_iter()
+                        .map(|value| value.to_string())
+                        .reduce(|acc, cur| format!("{} {}", acc.trim(), cur.trim()))
+                        .unwrap();
+
+                    properties.push(Property {
+                        state: State::Valid,
+                        name,
+                        value,
+                    });
+                }
+
+                self.insert_font_face(FontFace { properties });
+
+                Ok(())
+            }
             AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
             AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
             AnyCssAtRule::CssImportAtRule(_) => panic!(),
@@ -467,6 +511,18 @@ impl CssDB {
                         .trim()
                 )
             }
+            Some(Rule::FontFace(fonts)) => fonts
+                .iter()
+                .map(|f| {
+                    format!(
+                        "@font-face {{\n    {}}}\n",
+                        f.properties
+                            .iter()
+                            .map(|p| p.to_string())
+                            .collect::<String>()
+                    )
+                })
+                .collect::<String>(),
             Some(Rule::Keyframes(Keyframes { name, frames })) => {
                 format!(
                     "@keyframes {} {{\n    {}\n}}\n",
@@ -527,6 +583,9 @@ impl CssDB {
                     selectors.push(format!("@keyframes {}", rule.name));
                 }
             }
+            Some(Rule::FontFace(_fonts)) => {
+                // TODO: what do we show here?
+            }
             None => {}
         }
         for tree in self.children.values() {
@@ -552,6 +611,9 @@ impl CssDB {
             Some(Rule::Keyframes(_)) => {
                 // TODO!
             }
+            Some(Rule::FontFace(_)) => {
+                // TODO!
+            }
             None => {}
         }
         for child in self.children.values() {
@@ -574,7 +636,8 @@ impl CssDB {
     pub fn drain(&mut self) {
         match &mut self.rule {
             Some(Rule::RegularRule(rule)) => rule.properties.drain(0..),
-            Some(Rule::Keyframes(_)) => panic!("sdfwfjl"),
+            Some(Rule::Keyframes(_)) => panic!("drain"),
+            Some(Rule::FontFace(_)) => panic!("drain"),
             None => todo!(),
         };
     }
@@ -600,6 +663,7 @@ impl CssDB {
                 }
             }
             Rule::Keyframes(_) => panic!(),
+            Rule::FontFace(_) => panic!(),
         }
     }
 
@@ -612,6 +676,21 @@ impl CssDB {
                     .retain(|p| !(p.name == property_name && p.value == property_value));
             }
             Rule::Keyframes(_) => panic!(),
+            Rule::FontFace(_) => panic!(),
+        }
+    }
+
+    fn insert_font_face(&mut self, fontface: FontFace) {
+        match self
+            .get_mut(&[Part::AtRule(AtRulePart::Fontface)])
+            .and_then(|t| t.rule.as_mut())
+        {
+            Some(Rule::FontFace(fonts)) => fonts.push(fontface),
+            Some(_) => panic!("should have a font here"),
+            None => self.insert_raw(
+                &[Part::AtRule(AtRulePart::Fontface)],
+                Rule::FontFace(vec![fontface]),
+            ),
         }
     }
 
@@ -638,6 +717,7 @@ impl CssDB {
                 match &mut self.rule {
                     Some(Rule::RegularRule(rule)) => rule.insert(property),
                     Some(Rule::Keyframes(_)) => panic!(),
+                    Some(Rule::FontFace(_)) => panic!(),
                     None => {
                         let mut rule = RegularRule::new(selector);
                         rule.insert(property);
@@ -769,35 +849,59 @@ pub enum Combinator {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Sign {
+    Plus,
+    Minus,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Pattern {
     // [data-kind]
     Attribute(String),
+
     // [data-kind=rule]
     AttributeMatch(String, String, String),
+
     // .name
     Class(String),
+
     // #name
     Id(String),
+
     // div
     Element(String),
+
     // ::before
     PseudoElement(String),
+
     // :active
     PseudoClass(String),
+
     // :has(
     PseudoClassWithSelectorList(String),
+
     // )
     CloseSelectorList,
+
     // *
     Star,
+
     // 2 -- part of nth selectors
     Number(i32),
+
+    // 3n
+    Nth(i32),
+
+    // 3n + 1
+    NthWithOffset(i32, Sign, i32),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum AtRulePart {
     // @keyframes
     Keyframes,
+    // @font-face
+    Fontface,
     // keyframe-name
     Name(String),
     // `from` or `to`
@@ -835,6 +939,15 @@ impl Display for Combinator {
     }
 }
 
+impl Display for Sign {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Sign::Plus => write!(f, "+"),
+            Sign::Minus => write!(f, "-"),
+        }
+    }
+}
+
 impl Display for Pattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -851,6 +964,8 @@ impl Display for Pattern {
             Pattern::CloseSelectorList => write!(f, ")")?,
             Pattern::Star => write!(f, "*")?,
             Pattern::Number(num) => write!(f, "{}", num)?,
+            Pattern::Nth(n) => write!(f, "{}n", n)?,
+            Pattern::NthWithOffset(n, s, o) => write!(f, "{}n {} {}", n, s, o)?,
         };
         Ok(())
     }
@@ -860,6 +975,7 @@ impl Display for AtRulePart {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AtRulePart::Keyframes => write!(f, "@keyframes")?,
+            AtRulePart::Fontface => write!(f, "@font-face")?,
             AtRulePart::Name(name) => write!(f, "{}", name)?,
             AtRulePart::Percentage(num) => write!(f, "{}%", num)?,
             AtRulePart::Identifier(id) => write!(f, "{}", id)?,
@@ -1045,7 +1161,28 @@ impl DBPath for CssPseudoClassFunctionRelativeSelectorList {
 
 impl DBPath for CssPseudoClassNth {
     fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
-        todo!()
+        assert!(self.sign().is_none()); // don't know what this is
+        assert!(self.symbol_token().unwrap().to_string().trim() == "n");
+        let value = self.value().unwrap();
+        let value = value
+            .to_string()
+            .parse::<i32>()
+            .map_err(|_| CharismaError::ParseError)?;
+        match self.offset() {
+            Some(o) => {
+                let sign = match o.sign().unwrap().kind() {
+                    CssSyntaxKind::PLUS => Sign::Plus,
+                    CssSyntaxKind::MINUS => Sign::Minus,
+                    _ => panic!(),
+                };
+
+                let offset: i32 = o.value().unwrap().to_string().trim().parse().unwrap();
+                Ok(vec![vec![Part::Pattern(Pattern::NthWithOffset(
+                    value, sign, offset,
+                ))]])
+            }
+            None => Ok(vec![vec![Part::Pattern(Pattern::Nth(value))]]),
+        }
     }
 }
 
@@ -1301,7 +1438,7 @@ impl DBPath for CssKeyframesSelectorList {
 
 impl DBPath for CssFontFaceAtRule {
     fn to_css_db_paths(&self) -> Result<Vec<Vec<Part>>, CharismaError> {
-        todo!()
+        Ok(vec![vec![Part::AtRule(AtRulePart::Fontface)]])
     }
 }
 

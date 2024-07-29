@@ -303,6 +303,9 @@
 :focus {
     outline: none;
 }
+:nth-child(2n + 1) {
+    
+}
 :root {
     --at-rule-color: #c586c0;
     --attribute-color: var(--property-name-color);
@@ -577,6 +580,10 @@
     opacity: 0.5;
     content: "[undefined]";
 }
+[data-kind="nth-offset"] {
+    gap: var(--spacing);
+    color: var(--number-color);
+}
 [data-kind="number"] {
     display: flex;
 }
@@ -729,6 +736,16 @@
 }
 [data-kind="pseudo-class-id"] > [data-value]::before {
     content: ":";
+}
+[data-kind="pseudo-class-nth"] {
+    gap: var(--spacing);
+}
+[data-kind="pseudo-class-nth"] > [data-attr="value"] {
+    color: var(--number-color);
+}
+[data-kind="pseudo-class-nth"] > [data-attr="value"]::after {
+    content: "n";
+    color: var(--function-color);
 }
 [data-kind="pseudo-element-selector"] {
     color: var(--class-color);

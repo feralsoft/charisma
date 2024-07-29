@@ -4,15 +4,16 @@ use biome_css_syntax::{
     AnyCssSelector, AnyCssSimpleSelector, AnyCssSubSelector, AnyCssValue, CssAttributeSelector,
     CssBinaryExpression, CssClassSelector, CssColor, CssComplexSelector, CssComponentValueList,
     CssCompoundSelector, CssCustomIdentifier, CssDashedIdentifier, CssFunction, CssIdSelector,
-    CssIdentifier, CssNumber, CssParameter, CssParenthesizedExpression, CssPercentage,
-    CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
-    CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
-    CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
-    CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassIdentifier,
-    CssPseudoClassNth, CssPseudoClassNthIdentifier, CssPseudoClassNthNumber,
-    CssPseudoClassNthSelector, CssPseudoClassSelector, CssPseudoElementSelector, CssRatio,
-    CssRegularDimension, CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector,
-    CssUniversalSelector, CssUrlFunction,
+    CssIdentifier, CssNthOffset, CssNumber, CssParameter, CssParenthesizedExpression,
+    CssPercentage, CssPseudoClassFunctionCompoundSelector,
+    CssPseudoClassFunctionCompoundSelectorList, CssPseudoClassFunctionIdentifier,
+    CssPseudoClassFunctionNth, CssPseudoClassFunctionRelativeSelectorList,
+    CssPseudoClassFunctionSelector, CssPseudoClassFunctionSelectorList,
+    CssPseudoClassFunctionValueList, CssPseudoClassIdentifier, CssPseudoClassNth,
+    CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
+    CssPseudoClassSelector, CssPseudoElementSelector, CssRatio, CssRegularDimension,
+    CssRelativeSelector, CssSelectorList, CssString, CssTypeSelector, CssUniversalSelector,
+    CssUrlFunction,
 };
 use std::fmt::Display;
 
@@ -174,9 +175,42 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 
-impl Render for CssPseudoClassNth {
+impl Render for CssNthOffset {
     fn render_html(&self, _options: &RenderOptions) -> Result<String, CharismaError> {
-        todo!()
+        let sign = self.sign().unwrap().to_string();
+        let value = self.value().unwrap().to_string();
+
+        Ok(format!(
+            "
+            <div data-kind=\"nth-offset\">
+                <div data-attr=\"sign\">{}</div>
+                <div data-attr=\"value\">{}</div>
+            </div>
+            ",
+            render_value(sign.trim()),
+            render_value(value.trim())
+        ))
+    }
+}
+
+impl Render for CssPseudoClassNth {
+    fn render_html(&self, options: &RenderOptions) -> Result<String, CharismaError> {
+        let offset = match self.offset() {
+            Some(o) => o.render_html(options)?,
+            None => String::from(""),
+        };
+
+        Ok(format!(
+            "
+            <div data-kind=\"pseudo-class-nth\" {}>
+                <div data-attr=\"value\">{}</div>
+                <div data-attr=\"offset\">{}</div>
+            </div>
+        ",
+            data_string_value(&self.to_string()),
+            render_value(self.value().unwrap().to_string().trim()),
+            offset,
+        ))
     }
 }
 
