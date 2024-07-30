@@ -31,6 +31,14 @@ pub fn render_value(value: &str) -> String {
     format!("<div {}>{}</div>", attr("data-value", value), value.trim())
 }
 
+pub fn render_error_node(value: &str) -> String {
+    format!(
+        "<div data-kind=\"error-node\" {}>{}</div>",
+        data_string_value(value),
+        value
+    )
+}
+
 pub fn data_string_value(value: &str) -> String {
     attr("data-string-value", value)
 }
@@ -866,8 +874,8 @@ impl Render for AnyCssDimension {
         match self {
             AnyCssDimension::CssPercentage(node) => node.render_html(options),
             AnyCssDimension::CssRegularDimension(node) => node.render_html(options),
-            AnyCssDimension::CssUnknownDimension(_) => RenderResult {
-                html: "".to_string(),
+            AnyCssDimension::CssUnknownDimension(d) => RenderResult {
+                html: render_error_node(&d.to_string()),
                 errors: vec![CharismaError::ParseError(
                     "unknown css dimension".to_string(),
                 )],

@@ -473,6 +473,11 @@
 [data-kind="dashed-id"] {
     color: var(--variable-color);
 }
+[data-kind="error-node"] {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: red;
+}
 [data-kind="frame"] {
     display: flex;
     flex-direction: column;
@@ -1226,9 +1231,9 @@ tes {
     
 }
 test {
-    color: rgb(178, 202, 96);
     display: flex;
-    font-size: 51px;
+    font-size: 2p;
+    color: rgb(178, 202, 96);
 }
 test2 {
     font-size: 31px;
