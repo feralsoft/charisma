@@ -229,7 +229,10 @@
     
 }
 .test {
-    font-size: 7px;
+    /* font-size: 7px; */
+    display: flex;
+    color: rgb(178, 202, 96);
+    font-size: 2px;
 }
 .titlebar {
     z-index: 100;
@@ -323,6 +326,9 @@
 }
 :nth-child(2n + 1) {
     
+}
+:preferences {
+    --modifier-key: ctrl;
 }
 :root {
     --at-rule-color: #c586c0;
@@ -790,8 +796,8 @@
 [data-kind="rule"] {
     box-sizing: border-box;
     padding: var(--spacing);
-    width: calc(99% - 1em);
     flex-direction: column;
+    width: calc(99% - 1em);
 }
 [data-kind="rule"] [data-attr="properties"] .input {
     display: flex;
@@ -1234,11 +1240,15 @@ tes {
     
 }
 test {
-    font-size: 2p;
-    color: rgb(178, 202, 96);
-    display: flex;
+    
 }
 test2 {
     font-size: 31px;
     padding: var(--spacing);
+}
+tests {
+    
+}
+tets {
+    
 }

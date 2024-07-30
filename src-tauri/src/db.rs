@@ -204,6 +204,18 @@ impl RegularRule {
             .collect();
     }
 
+    pub fn remove(&mut self, property_to_remove: &Property) {
+        self.properties = self
+            .properties
+            .iter()
+            .filter(|existing_property| {
+                !(existing_property.name == property_to_remove.name
+                    && existing_property.value == property_to_remove.value)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+    }
+
     pub fn insert(&mut self, new_property: Property) {
         if new_property.state == State::Valid {
             self.properties = self
@@ -260,6 +272,13 @@ impl Rule {
     pub fn as_regular_rule(&self) -> Option<RegularRule> {
         match self {
             Rule::RegularRule(rule) => Some(rule.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn as_mut_regular_rule(&mut self) -> Option<&mut RegularRule> {
+        match self {
+            Rule::RegularRule(rule) => Some(rule),
             _ => None,
         }
     }
@@ -836,6 +855,15 @@ impl CssDB {
             },
         );
 
+        Ok(())
+    }
+
+    pub fn insert_regular_property(
+        &mut self,
+        selector: &Selector,
+        property: &Property,
+    ) -> Result<(), CharismaError> {
+        self.insert_raw_regular_rule(selector.clone(), &selector.path, property.clone());
         Ok(())
     }
 

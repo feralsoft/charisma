@@ -37,8 +37,10 @@
             <div class="search" contenteditable spellcheck="false"></div>
         </div>
         <div
+            data-interacted="false"
             class="canvas"
             onmousedown="document.querySelector('.open-help').classList.remove('active')"
+            onclick="this.dataset.interacted = true"
         ></div>
         <button class="open-help" onclick="this.classList.toggle('active')">
             ?

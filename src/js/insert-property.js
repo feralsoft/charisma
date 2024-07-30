@@ -1,5 +1,6 @@
 import { h } from "./html.js";
 import invoke from "./invoke.js";
+import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
 
 let { div } = h;
 
@@ -33,17 +34,6 @@ function search_options(options, has_description = false) {
 
   return elem;
 }
-
-window.move_cursor_to_end_of_element = function (element) {
-  // start garbage internet code to go the end of a text range
-  let range = document.createRange();
-  let selection = window.getSelection();
-  range.setStart(element, element.childNodes.length);
-  range.collapse(true);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  // end of garbage internet code
-};
 
 function accept_candidate(container, input_elem) {
   let options = container.querySelector(".search-options");

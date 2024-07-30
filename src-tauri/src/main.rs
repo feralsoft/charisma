@@ -592,6 +592,90 @@ fn load_rule(
         .to_string())
 }
 
+#[tauri::command(rename_all = "snake_case")]
+fn rename_rule(
+    state: tauri::State<Mutex<CssDB>>,
+    path: &str,
+    old_selector: &str,
+    new_selector: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
+    if !db.is_loaded(path) {
+        db.load(path)?;
+    }
+
+    let old_selector = match parse_selector(old_selector) {
+        Some(s) => s,
+        None => return Err(CharismaError::ParseError("old selector invalid".into()).into()),
+    };
+    let new_selector = match parse_selector(new_selector) {
+        Some(s) => s,
+        None => return Err(CharismaError::ParseError("new selector invalid".into()).into()),
+    };
+
+    let mut paths_from_old_selector: Vec<Vec<Part>> = vec![];
+
+    for s in old_selector {
+        let s = s.map_err(|e| CharismaError::ParseError(e.to_string()))?;
+        paths_from_old_selector.extend(s.to_css_db_paths()?);
+    }
+
+    let mut shared_properties_from_all_paths: Vec<Arc<Property>> = vec![];
+
+    let mut i = 0;
+    for path in &paths_from_old_selector {
+        let rule = match db
+            .get(path)
+            .and_then(|tree| tree.rule.as_ref())
+            .and_then(|r| r.as_regular_rule())
+        {
+            Some(rule) => rule,
+            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+        };
+
+        if i == 0 {
+            shared_properties_from_all_paths.append(&mut rule.properties.clone())
+        } else {
+            let rule_properties = rule.properties.clone();
+            shared_properties_from_all_paths.retain(|p| rule_properties.contains(p))
+        }
+        i += 1;
+    }
+
+    for path in paths_from_old_selector {
+        let rule = match db
+            .get_mut(&path)
+            .and_then(|tree| tree.rule.as_mut())
+            .and_then(|r| r.as_mut_regular_rule())
+        {
+            Some(rule) => rule,
+            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+        };
+
+        for property in &shared_properties_from_all_paths {
+            rule.remove(property);
+        }
+    }
+
+    let mut new_selectors: Vec<Selector> = vec![];
+
+    for s in new_selector {
+        let s = s.map_err(|e| CharismaError::ParseError(e.to_string()))?;
+        new_selectors.extend(s.to_selectors(None)?);
+    }
+
+    for selector in new_selectors {
+        shared_properties_from_all_paths
+            .iter()
+            .for_each(|property| {
+                db.insert_regular_property(&selector, property.as_ref())
+                    .unwrap();
+            })
+    }
+
+    Ok(())
+}
+
 fn main() {
     let db = Mutex::new(CssDB::new());
 
@@ -610,6 +694,7 @@ fn main() {
             update_value,
             insert_empty_rule,
             load_rule,
+            rename_rule,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

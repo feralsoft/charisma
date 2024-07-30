@@ -1,5 +1,6 @@
 import { focus } from "./focus.js";
 import { add_editor } from "./editor.js";
+import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
 
 const { invoke } = window.__TAURI__.tauri;
 

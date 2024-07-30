@@ -65,6 +65,7 @@ window.addEventListener("keydown", (e) => {
   if (!focused_editor) return;
 
   if (e.target.closest('[data-attr="properties"]')) return;
+  if (e.target.closest('[data-attr="selector"]')) return;
   if (e.target.closest(".search-box")) return;
 
   if (e.key === "Backspace") {
