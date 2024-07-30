@@ -39,8 +39,10 @@
         <div
             data-interacted="false"
             class="canvas"
-            onmousedown="document.querySelector('.open-help').classList.remove('active')"
-            onclick="this.dataset.interacted = true"
+            onmousedown="
+                document.querySelector('.open-help').classList.remove('active');
+                this.dataset.interacted = true;
+            "
         ></div>
         <button class="open-help" onclick="this.classList.toggle('active')">
             ?

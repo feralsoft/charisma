@@ -43,6 +43,7 @@ pub fn data_string_value(value: &str) -> String {
     attr("data-string-value", value)
 }
 
+// TODO: remove this
 pub struct RenderOptions {
     pub attrs: Vec<(String, String)>,
 }
@@ -1183,8 +1184,32 @@ impl Render for CssString {
 }
 
 impl Render for CssRatio {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+        let numerator = match self.numerator() {
+            Ok(n) => n.render_html(options),
+            Err(err) => RenderResult {
+                html: "".to_string(),
+                errors: vec![CharismaError::ParseError(err.to_string())],
+            },
+        };
+        let denominator = match self.denominator() {
+            Ok(d) => d.render_html(options),
+            Err(err) => RenderResult {
+                html: "".to_string(),
+                errors: vec![CharismaError::ParseError(err.to_string())],
+            },
+        };
+
+        RenderResult {
+            html: format!(
+                "<div data-kind=\"ratio\">
+                    <div data-attr=\"numerator\">{}</div>
+                    <div data-attr=\"denominator\">{}</div>
+                </div>",
+                numerator.html, denominator.html
+            ),
+            errors: [numerator.errors, denominator.errors].concat(),
+        }
     }
 }
 

@@ -98,19 +98,31 @@
     right: 0;
 }
 .canvas:empty::after {
+    
+}
+.canvas:has(.dragging) {
+    cursor: grabbing;
+}
+.canvas:is(:empty)::after {
+    
+}
+.canvas:is([data-interacted="false"])::after {
+    
+}
+.canvas[data-interacted="false"]::after {
+    
+}
+.canvas[data-interacted="false"]:empty::after {
     position: absolute;
     left: 50vw;
     top: 50vh;
     transform: translate(-50%,-50%);
     opacity: 0.75;
-    background: rgba(0, 0, 0, 0.5);
     border-radius: 5px;
     width: max-content;
     padding: 0.5em;
     content: "welcome to charisma";
-}
-.canvas:has(.dragging) {
-    cursor: grabbing;
+    background: rgba(0, 0, 0, 0.5);
 }
 .class::before {
     
@@ -229,10 +241,10 @@
     
 }
 .test {
-    /* font-size: 7px; */
     display: flex;
     color: rgb(178, 202, 96);
     font-size: 2px;
+    /* font-size: 7px; */
 }
 .titlebar {
     z-index: 100;
@@ -736,11 +748,17 @@
     content: ":";
     color: var(--foreground-color);
 }
+[data-kind="pseudo-class-function-nth"] > [data-attr="selector"] {
+    
+}
 [data-kind="pseudo-class-function-nth"] > [data-attr="selector"]::after {
     content: ")";
 }
 [data-kind="pseudo-class-function-nth"] > [data-attr="selector"]::before {
     content: "(";
+}
+[data-kind="pseudo-class-function-nth"] > [data-attr="selectors"] {
+    
 }
 [data-kind="pseudo-class-function-selector"] {
     display: flex;
@@ -751,6 +769,17 @@
 [data-kind="pseudo-class-function-selector"] > [data-attr="name"] [data-value]::before {
     content: ":";
     color: var(--foreground-color);
+}
+[data-kind="pseudo-class-function-selector"] > [data-attr="selectors"] {
+    
+}
+[data-kind="pseudo-class-function-selector"] > [data-attr="selectors"] > [data-kind]:not(:first-child)::before {
+    content: ",";
+    color: var(--foreground-color);
+    margin-right: var(--spacing);
+}
+[data-kind="pseudo-class-function-selector"] > [data-attr="selectors"] > [data-kind]:not(:last-child)::after {
+    
 }
 [data-kind="pseudo-class-function-selector"] > [data-attr="selectors"]::after {
     content: ")";
@@ -834,10 +863,10 @@
     margin-left: 1em;
 }
 [data-kind="rule"] [data-attr="properties"] .search-options .candidate + .search-item-description[data-is-empty="false"] {
-    grid-column: 2 / span 1;
-    grid-row: 1 / span 1;
     height: 0;
     display: grid;
+    grid-column: 2 / span 1;
+    grid-row: 1 / span 1;
 }
 [data-kind="rule"] [data-attr="properties"] .search-options .search-item.candidate .search-item-description {
     width: max-content;
