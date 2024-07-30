@@ -97,6 +97,18 @@
 .canvas > .--editor > menu:not(:has( > .minimize.active)) {
     right: 0;
 }
+.canvas:empty::after {
+    position: absolute;
+    left: 50vw;
+    top: 50vh;
+    transform: translate(-50%,-50%);
+    opacity: 0.75;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    width: max-content;
+    padding: 0.5em;
+    content: "welcome to charisma";
+}
 .canvas:has(.dragging) {
     cursor: grabbing;
 }
@@ -299,6 +311,9 @@
 }
 ::before {
     font-family: var(--font-family);
+}
+:e {
+    
 }
 :focus {
     outline: none;
@@ -939,6 +954,14 @@ add {
 article.help-modal {
     display: none;
 }
+article.help-modal button.close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+article.help-modal h2 {
+    margin: 0;
+}
 article.help-modal table {
     width: 80vw;
     --border-color: rgb(255, 255, 255, 0.1);
@@ -1069,14 +1092,6 @@ body:has( > button.open-help.active) article.help-modal {
     padding: 1rem;
     justify-content: center;
     background-color: rgb(12, 12, 12);
-}
-article.help-modal button.close {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-}
- article.help-modal h2 {
-    margin: 0;
 }
 body:has(.search-box .search.active) .canvas {
     filter: brightness(50%);
