@@ -1060,13 +1060,13 @@ body .search.active {
     box-shadow: 0px 2px 2px 2px #00000030;
     color: white;
     font-size: 1em;
-    height: 1.25em;
     margin-top: 1em;
     padding: var(--spacing);
     z-index: 10;
     background-color: rgb(40, 40, 40);
     min-width: 40em;
     font-family: var(--font-family);
+    height: 1em;
 }
 body .search:not(.active) {
     display: none;
