@@ -1236,7 +1236,7 @@ tes {
 test {
     font-size: 2p;
     color: rgb(178, 202, 96);
-    /* display: flex; */
+    display: flex;
 }
 test2 {
     font-size: 31px;
