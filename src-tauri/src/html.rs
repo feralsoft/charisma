@@ -1327,7 +1327,7 @@ impl Render for Property {
                 }
             }
             Err(e) => RenderResult {
-                html: "".to_string(),
+                html: render_error_node(&property.to_string()),
                 errors: vec![CharismaError::ParseError(e.to_string())],
             },
         }
