@@ -33,33 +33,46 @@ function hex(color) {
   );
 }
 
+function try_setup_color_picker(property, editor) {
+  let color, picker;
+
+  if (
+    (color = property.querySelector(`[data-attr="value"] ${COLOR_SELECTOR}`))
+  ) {
+    if ((picker = property.querySelector(".property-color-picker"))) {
+      picker.value = hex(color);
+    } else {
+      let lock = false;
+      color.after(
+        h.input({
+          type: "color",
+          class: "property-color-picker",
+          value: hex(color),
+          async "@input"(e) {
+            if (lock) return;
+            await invoke(editor, "update_value", {
+              path: localStorage.getItem("current-path"),
+              selector: editor.dataset.selector,
+              name: ast.property.name(color.closest('[data-kind="property"]')),
+              original_value: color.dataset.stringValue,
+              value: hex_to_rgb(e.target.value),
+            });
+            lock = false;
+          },
+        }),
+      );
+    }
+  } else {
+    property.querySelector(".property-color-picker")?.remove();
+  }
+}
+
 function init(editor) {
-  for (let color of editor.querySelectorAll(COLOR_SELECTOR)) {
-    color
-      .closest('[data-kind="property"]')
-      .addEventListener("reload-value", function (_) {
-        color = this.querySelector(`[data-attr="value"] ${COLOR_SELECTOR}`);
-        this.querySelector(".property-color-picker").value = hex(color);
-      });
-    let lock = false;
-    color.after(
-      h.input({
-        type: "color",
-        class: "property-color-picker",
-        value: hex(color),
-        async "@input"(e) {
-          if (lock) return;
-          await invoke(editor, "update_value", {
-            path: localStorage.getItem("current-path"),
-            selector: editor.dataset.selector,
-            name: ast.property.name(color.closest('[data-kind="property"]')),
-            original_value: color.dataset.stringValue,
-            value: hex_to_rgb(e.target.value),
-          });
-          lock = false;
-        },
-      }),
-    );
+  for (let property of ast.rule.properties(editor)) {
+    try_setup_color_picker(property, editor);
+    property.addEventListener("reload-value", (_) => {
+      try_setup_color_picker(property, editor);
+    });
   }
 }
 
