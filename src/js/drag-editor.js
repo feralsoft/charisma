@@ -74,12 +74,31 @@ window.addEventListener("mousemove", (e) => {
     canvas.append(editor);
     if (!group?.querySelector(".--editor")) group.remove();
 
+    // when we click on a rule that's been stretched by the group
+    // eg.
+    //
+    // .test {} <- empty
+    // .btn {
+    //   font-size: 20px;
+    // } <- this rule is wider then .test
+    //
+    // so when .test is in the same group as .btn, it'll appear wider
+    // when it we take it out, we'll get the actual width
+    //
+    // if we click on a part of the rule that's outside of its natural size
+    // and we drag, the rule won't be under the cursor
+    //
+    // so we can fix this by getting the diff between the cursor & the actual right of the rule
+    // and correcting
+    let { width: actual_width } = editor.getBoundingClientRect();
+    let diff_right = e.clientX - (left + actual_width);
+
     editor.style.position = "absolute";
 
     state = {
       editor: editor,
       start_offset: {
-        x: e.clientX - left + x_offset,
+        x: e.clientX - left + x_offset - Math.max(diff_right, 0),
         y: e.clientY - top + y_offset,
       },
     };
