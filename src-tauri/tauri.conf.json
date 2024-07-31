@@ -2,8 +2,8 @@
   "build": {
     "devPath": "http://localhost:5173",
     "distDir": "../src/dist",
-    "beforeDevCommand": "npm run dev --prefix src",
-    "beforeBuildCommand": "npm run build --prefix src",
+    "beforeDevCommand": "cd src && npm install && npm run dev",
+    "beforeBuildCommand": "cd src && npm install && npm run build",
     "withGlobalTauri": true
   },
   "package": {
