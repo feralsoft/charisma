@@ -241,10 +241,10 @@
     
 }
 .test {
-    display: flex;
-    color: rgb(178, 202, 96);
-    font-size: 2px;
-    /* font-size: 7px; */
+    color: rgb(1, 2, 3);
+}
+.test.active {
+    background-color: rgb(1, 2, 3);
 }
 .titlebar {
     z-index: 100;
@@ -1269,7 +1269,7 @@ tes {
     
 }
 test {
-    color: rgb(164, 80, 24);
+    
 }
 test2 {
     font-size: 31px;

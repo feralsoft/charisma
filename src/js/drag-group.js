@@ -42,6 +42,9 @@ window.addEventListener("mousedown", (e) => {
       y: e.clientY - top + y_offset,
     },
   };
+
+  state.group.style.left = `${e.clientX - state.start_offset.x}px`;
+  state.group.style.top = `${e.clientY - state.start_offset.y}px`;
 });
 
 window.addEventListener("mousemove", (e) => {
