@@ -1,6 +1,8 @@
 use biome_css_syntax::{CssDeclarationWithSemicolon, CssSelectorList};
 
-pub fn parse_selector(str: &str) -> Option<CssSelectorList> {
+use crate::CharismaError;
+
+pub fn parse_selector(str: &str) -> Result<CssSelectorList, CharismaError> {
     let rule = biome_css_parser::parse_css(
         format!("{} {{}}", str).as_str(),
         biome_css_parser::CssParserOptions::default(),
@@ -8,9 +10,14 @@ pub fn parse_selector(str: &str) -> Option<CssSelectorList> {
     .tree()
     .rules()
     .into_iter()
-    .next()?;
+    .next();
 
-    Some(rule.as_css_qualified_rule()?.prelude())
+    let rule = match rule.and_then(|r| r.as_css_qualified_rule().cloned()) {
+        Some(r) => r,
+        None => return Err(CharismaError::ParseError("invalid selector".into())),
+    };
+
+    Ok(rule.prelude())
 }
 
 pub fn parse_one(rule: &str) -> Option<biome_css_syntax::CssQualifiedRule> {

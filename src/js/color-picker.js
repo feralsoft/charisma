@@ -74,6 +74,10 @@ function init(editor) {
       try_setup_color_picker(property, editor);
     });
   }
+
+  editor.addEventListener("new-property", ({ detail: { new_property } }) =>
+    try_setup_color_picker(new_property, editor),
+  );
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {

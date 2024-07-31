@@ -21,6 +21,7 @@ import "./js/off-screen.js";
 import "./js/color-picker.js";
 import "./js/find-property.js";
 import "./js/rename-rule.js";
+import "./js/update-property-name.js";
 
 import { appWindow } from "./node_modules/@tauri-apps/api/window.js";
 

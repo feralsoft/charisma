@@ -72,15 +72,19 @@ fn search(
                     },
                 }
             } else {
-                match parse_selector(s).and_then(|s| s.into_iter().next()) {
-                    Some(selector) => match selector {
-                        Ok(s) => s.render_html(&RenderOptions::default()),
-                        Err(e) => RenderResult {
+                match parse_selector(s) {
+                    Ok(selector) => match selector.into_iter().next() {
+                        Some(Ok(s)) => s.render_html(&RenderOptions::default()),
+                        Some(Err(e)) => RenderResult {
                             html: "".to_string(),
                             errors: vec![CharismaError::ParseError(e.to_string())],
                         },
+                        None => RenderResult {
+                            html: "".to_string(),
+                            errors: vec![CharismaError::ParseError("no selector found".into())],
+                        },
                     },
-                    None => RenderResult {
+                    Err(_) => RenderResult {
                         html: "".to_string(),
                         errors: vec![CharismaError::ParseError(s.to_string())],
                     },
@@ -128,15 +132,12 @@ fn find_property(
         .map(|(p, s)| (p, parse_selector(&s.string)))
         .map(
             |(property, selector)| -> Result<(RenderResult, RenderResult), CharismaError> {
-                match selector {
-                    None => Err(CharismaError::ParseError(
-                        "failed to parse selector".to_owned(),
-                    )),
-                    Some(selector) => Ok((
+                selector.map(|selector| {
+                    (
                         property.render_html(&RenderOptions::default()),
                         selector.render_html(&RenderOptions::default()),
-                    )),
-                }
+                    )
+                })
             },
         )
         .take(100)
@@ -163,23 +164,21 @@ fn insert_empty_rule(
             }
         }
     } else {
-        match parse_selector(selector) {
-            Some(selector_list) => match selector_list
+        parse_selector(selector).and_then(|selector_list| {
+            selector_list
                 .into_iter()
                 .map(|s| {
                     s.map_err(|e| CharismaError::ParseError(e.to_string()))
                         .and_then(|s| s.to_selectors(None))
                 })
                 .collect::<Result<Vec<Vec<Selector>>, _>>()
-            {
-                Ok(selectors) => selectors
-                    .iter()
-                    .flatten()
-                    .for_each(|selector| db.insert_empty_regular_rule(selector)),
-                Err(e) => return Err(e.into()),
-            },
-            None => return Err(CharismaError::ParseError("selector empty".to_string()).into()),
-        }
+                .map(|selectors| {
+                    selectors
+                        .iter()
+                        .flatten()
+                        .for_each(|selector| db.insert_empty_regular_rule(selector))
+                })
+        })?;
     }
     Ok(fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?)
 }
@@ -237,10 +236,7 @@ fn render_rule(
                 .html
         ))
     } else {
-        let selector_list = match parse_selector(selector) {
-            Some(selector) => selector,
-            None => return Err(CharismaError::ParseError("missing selector".into()).into()),
-        };
+        let selector_list = parse_selector(selector)?;
 
         let list_of_paths: Vec<Vec<Vec<Part>>> = (&selector_list)
             .into_iter()
@@ -308,13 +304,10 @@ fn delete(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("selector parse error".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
 
     for paths in selector_list.into_iter().map(|s| s.to_css_db_paths()) {
         for path in paths? {
@@ -338,13 +331,10 @@ fn disable(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("selector parse err".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
         for selector in selectors? {
@@ -368,13 +358,10 @@ fn enable(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("sel".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
         for selector in selectors? {
@@ -405,13 +392,10 @@ fn insert_property(
         None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
     };
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("invalid slector".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
         for selector in selectors? {
@@ -440,13 +424,11 @@ fn replace_all_properties(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("invalid selector".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
+
     // TODO: if we fail, we should revert all the things .. ugh
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
         for selector in selectors? {
@@ -497,13 +479,10 @@ fn update_value(
         None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
     };
 
-    let selector_list: Vec<_> = match parse_selector(selector) {
-        Some(list) => list
-            .into_iter()
-            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .collect::<Result<_, _>>(),
-        None => return Err(CharismaError::ParseError("invalid selector".to_string()).into()),
-    }?;
+    let selector_list: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+        .collect::<Result<_, _>>()?;
 
     for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
         for selector in selectors? {
@@ -604,14 +583,8 @@ fn rename_rule(
         db.load(path)?;
     }
 
-    let old_selector = match parse_selector(old_selector) {
-        Some(s) => s,
-        None => return Err(CharismaError::ParseError("old selector invalid".into()).into()),
-    };
-    let new_selector = match parse_selector(new_selector) {
-        Some(s) => s,
-        None => return Err(CharismaError::ParseError("new selector invalid".into()).into()),
-    };
+    let old_selector = parse_selector(old_selector)?;
+    let new_selector = parse_selector(new_selector)?;
 
     let mut paths_from_old_selector: Vec<Vec<Part>> = vec![];
 
@@ -676,6 +649,64 @@ fn rename_rule(
     Ok(())
 }
 
+#[tauri::command(rename_all = "snake_case")]
+fn rename_property(
+    state: tauri::State<Mutex<CssDB>>,
+    path: &str,
+    is_commented: bool,
+    selector: &str,
+    old_property_name: &str,
+    new_property_name: &str,
+    property_value: &str,
+) -> Result<(), InvokeError> {
+    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
+    if !db.is_loaded(path) {
+        db.load(path)?;
+    }
+
+    let paths: Vec<_> = parse_selector(selector)?
+        .into_iter()
+        .map(|s| {
+            s.map_err(|e| CharismaError::ParseError(e.to_string()))
+                .and_then(|s| s.to_selectors(None))
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .iter()
+        .flatten()
+        .map(|s| s.path.clone())
+        .collect();
+
+    let state = if is_commented {
+        State::Commented
+    } else {
+        State::Valid
+    };
+
+    for path in paths {
+        match db
+            .get_mut(&path)
+            .and_then(|t| t.rule.as_mut())
+            .and_then(|r| r.as_mut_regular_rule())
+        {
+            Some(rule) => {
+                rule.remove(&Property {
+                    state: state.clone(),
+                    name: old_property_name.into(),
+                    value: property_value.into(),
+                });
+                rule.insert(Property {
+                    state: state.clone(),
+                    name: new_property_name.into(),
+                    value: property_value.into(),
+                })
+            }
+            None => todo!(),
+        }
+    }
+
+    Ok(())
+}
+
 fn main() {
     let db = Mutex::new(CssDB::new());
 
@@ -695,6 +726,7 @@ fn main() {
             insert_empty_rule,
             load_rule,
             rename_rule,
+            rename_property,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

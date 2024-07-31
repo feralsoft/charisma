@@ -205,6 +205,11 @@ impl RegularRule {
     }
 
     pub fn remove(&mut self, property_to_remove: &Property) {
+        assert!(self
+            .properties
+            .iter()
+            .any(|p| p.name == property_to_remove.name && p.value == property_to_remove.value));
+
         self.properties = self
             .properties
             .iter()

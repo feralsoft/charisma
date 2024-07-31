@@ -20,10 +20,8 @@ export const value = {
 
 export const rule = {
   properties(rule) {
-    return Array.from(
-      rule.querySelectorAll(
-        '[data-attr="properties"] > [data-kind="property"]',
-      ),
+    return rule.querySelectorAll(
+      '[data-attr="properties"] > [data-kind="property"]',
     );
   },
 };
