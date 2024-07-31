@@ -7,9 +7,9 @@
 .--editor {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing);
-    outline: 0.1em solid black;
     background-color: rgb(40, 40, 40);
+    outline: 0.1em solid black;
+    gap: var(--spacing);
 }
 .--editor * {
     user-select: none;
@@ -1272,7 +1272,7 @@ tes {
     
 }
 test {
-    
+    color: red;
 }
 test2 {
     font-size: 31px;

@@ -146,6 +146,7 @@ fn find_property(
     Ok(results?)
 }
 
+// TODO: remove the need for this
 #[tauri::command]
 fn insert_empty_rule(
     state: tauri::State<Mutex<CssDB>>,
@@ -164,21 +165,8 @@ fn insert_empty_rule(
             }
         }
     } else {
-        parse_selector(selector).and_then(|selector_list| {
-            selector_list
-                .into_iter()
-                .map(|s| {
-                    s.map_err(|e| CharismaError::ParseError(e.to_string()))
-                        .and_then(|s| s.to_selectors(None))
-                })
-                .collect::<Result<Vec<Vec<Selector>>, _>>()
-                .map(|selectors| {
-                    selectors
-                        .iter()
-                        .flatten()
-                        .for_each(|selector| db.insert_empty_regular_rule(selector))
-                })
-        })?;
+        let selector = parse_selector(selector)?.to_selector(None)?;
+        db.insert_empty_regular_rule(&selector);
     }
     Ok(fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?)
 }
@@ -236,35 +224,18 @@ fn render_rule(
                 .html
         ))
     } else {
-        let selector_list = parse_selector(selector)?;
+        let selector = parse_selector(selector)?;
+        let path = selector.to_css_db_path()?;
 
-        let list_of_paths: Vec<Vec<Vec<Part>>> = (&selector_list)
-            .into_iter()
-            .map(|s| s.map_err(|e| CharismaError::ParseError(e.to_string())))
-            .map(|s| s.and_then(|s| s.to_css_db_paths()))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let paths = list_of_paths.concat();
-
-        let mut properties: Vec<Arc<Property>> = vec![];
-        let mut i = 0;
-        for path in paths {
-            let rule = match db
-                .get(&path)
-                .and_then(|tree| tree.rule.as_ref())
-                .and_then(|r| r.as_regular_rule())
-            {
-                Some(rule) => rule,
-                None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
-            };
-            if i == 0 {
-                properties.append(&mut rule.properties.clone())
-            } else {
-                let rule_properties = rule.properties.clone();
-                properties.retain(|p| rule_properties.contains(p))
-            }
-            i += 1;
-        }
+        let rule = match db
+            .get(&path)
+            .and_then(|tree| tree.rule.as_ref())
+            .and_then(|r| r.as_regular_rule())
+        {
+            Some(rule) => rule,
+            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+        };
+        let mut properties = rule.properties;
         properties.sort_by_key(|p| p.name.clone());
 
         Ok(format!(
@@ -274,7 +245,7 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector_list.render_html(&RenderOptions::default()).html,
+            selector.render_html(&RenderOptions::default()).html,
             properties
                 .iter()
                 .map(|p| p.render_html(&RenderOptions::default()))
@@ -304,16 +275,8 @@ fn delete(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
-
-    for paths in selector_list.into_iter().map(|s| s.to_css_db_paths()) {
-        for path in paths? {
-            db.delete(&path, name, value);
-        }
-    }
+    let db_path = parse_selector(selector)?.to_css_db_path()?;
+    db.delete(&db_path, name, value);
 
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -331,16 +294,8 @@ fn disable(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
-
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            db.set_state(&selector.path, name, value, State::Commented);
-        }
-    }
+    let db_path = parse_selector(selector)?.to_css_db_path()?;
+    db.set_state(&db_path, name, value, State::Commented);
 
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -358,16 +313,9 @@ fn enable(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
+    let db_path = parse_selector(selector)?.to_css_db_path()?;
+    db.set_state(&db_path, name, value, State::Valid);
 
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            db.set_state(&selector.path, name, value, State::Valid);
-        }
-    }
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
@@ -387,21 +335,10 @@ fn insert_property(
     if !db.is_loaded(path) {
         db.load(path)?;
     }
-    let property = match parse_property(property) {
-        Some(p) => p,
-        None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
-    };
+    let property = parse_property(property)?;
+    let selector = parse_selector(selector)?.to_selector(None)?;
+    db.insert_regular_rule(&selector, &property)?;
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
-
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            db.insert_regular_rule(&selector, &property)?;
-        }
-    }
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
@@ -424,39 +361,23 @@ fn replace_all_properties(
         db.load(path)?;
     }
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
+    let selector = parse_selector(selector)?.to_selector(None)?;
 
-    // TODO: if we fail, we should revert all the things .. ugh
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            match db.get_mut(&selector.path) {
-                Some(rule) => rule.drain(),
-                None => return Err(CharismaError::RuleNotFound.into()),
-            };
+    match db.get_mut(&selector.path) {
+        Some(rule) => rule.drain(),
+        None => return Err(CharismaError::RuleNotFound.into()),
+    };
 
-            for property in properties.iter() {
-                // at this point we are just parsing to validate
-
-                let parsed_property =
-                    match parse_property(&format!("{}: {};", property.name, property.value)) {
-                        Some(p) => p,
-                        None => {
-                            return Err(
-                                CharismaError::ParseError("invalid property".to_string()).into()
-                            )
-                        }
-                    };
-                if property.is_commented {
-                    db.insert_regular_rule_commented(&selector, parsed_property)?;
-                } else {
-                    db.insert_regular_rule(&selector, &parsed_property)?;
-                }
-            }
+    for property in properties.iter() {
+        // at this point we are just parsing to validate
+        let parsed_property = parse_property(&format!("{}: {};", property.name, property.value))?;
+        if property.is_commented {
+            db.insert_regular_rule_commented(&selector, parsed_property)?;
+        } else {
+            db.insert_regular_rule(&selector, &parsed_property)?;
         }
     }
+
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
@@ -474,41 +395,31 @@ fn update_value(
         db.load(path)?;
     }
 
-    let property = match parse_property(&format!("{}: {};", name, value)) {
-        Some(p) => p,
-        None => return Err(CharismaError::ParseError("invalid property".to_string()).into()),
+    let property = parse_property(&format!("{}: {};", name, value))?;
+
+    let selector = parse_selector(selector)?.to_selector(None)?;
+
+    let rule = match db
+        .get(&selector.path)
+        .and_then(|t| t.rule.as_ref())
+        .and_then(|r| r.as_regular_rule())
+    {
+        Some(rule) => rule,
+        None => return Err(CharismaError::RuleNotFound.into()),
     };
 
-    let selector_list: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
-
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            let rule = match db
-                .get(&selector.path)
-                .and_then(|t| t.rule.as_ref())
-                .and_then(|r| r.as_regular_rule())
-            {
-                Some(rule) => rule,
-                None => return Err(CharismaError::RuleNotFound.into()),
-            };
-
-            if rule
-                .properties
-                .iter()
-                .any(|p| p.name == name.trim() && p.value == original_value)
-            {
-                db.delete(&selector.path, name.trim(), original_value);
-                db.insert_regular_rule(&selector, &property)?;
-            } else {
-                return Err(CharismaError::AssertionError(
-                    "updating value without knowing previous value".into(),
-                )
-                .into());
-            }
-        }
+    if rule
+        .properties
+        .iter()
+        .any(|p| p.name == name.trim() && p.value == original_value)
+    {
+        db.delete(&selector.path, name.trim(), original_value);
+        db.insert_regular_rule(&selector, &property)?;
+    } else {
+        return Err(CharismaError::AssertionError(
+            "updating value without knowing previous value".into(),
+        )
+        .into());
     }
 
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
@@ -525,12 +436,8 @@ fn load_rule(
         db.load(path)?;
     }
 
-    let rule = match parse_one(rule) {
-        Some(r) => r,
-        None => return Err(CharismaError::ParseError("rule invalid".to_string()).into()),
-    };
-
-    let selector = rule.prelude();
+    let rule = parse_one(rule)?;
+    let selector = rule.prelude().to_selector(None)?;
     let block = rule
         .block()
         .map_err(|e| CharismaError::ParseError(e.to_string()))?;
@@ -539,36 +446,20 @@ fn load_rule(
         None => return Err(CharismaError::ParseError("invalid rule".to_string()).into()),
     };
 
-    let selector_list: Vec<_> = selector
-        .into_iter()
-        .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
-        .collect::<Result<_, _>>()?;
-
-    for selectors in selector_list.iter().map(|s| s.to_selectors(None)) {
-        for selector in selectors? {
-            for item in block.items() {
-                // TODO: if this fails, we should revert everything
-                // what we need to is make a clone of the original db before making changes
-                // and then, revert it back
-                let property = match item.as_css_declaration_with_semicolon() {
-                    Some(p) => p,
-                    None => {
-                        return Err(CharismaError::ParseError("invalid decl".to_string()).into())
-                    }
-                };
-                db.insert_regular_rule(&selector, property)?;
-            }
-        }
+    for item in block.items() {
+        // TODO: if this fails, we should revert everything
+        // what we need to is make a clone of the original db before making changes
+        // and then, revert it back
+        let property = match item.as_css_declaration_with_semicolon() {
+            Some(p) => p,
+            None => return Err(CharismaError::ParseError("invalid decl".to_string()).into()),
+        };
+        db.insert_regular_rule(&selector, property)?;
     }
 
     fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?;
 
-    Ok(selector_list
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<String>()
-        .trim()
-        .to_string())
+    Ok(selector.string)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -583,70 +474,29 @@ fn rename_rule(
         db.load(path)?;
     }
 
-    let old_selector = parse_selector(old_selector)?;
-    let new_selector = parse_selector(new_selector)?;
+    let old_selector_path = parse_selector(old_selector)?.to_css_db_path()?;
 
-    let mut paths_from_old_selector: Vec<Vec<Part>> = vec![];
+    let old_tree = match db.get_mut(&old_selector_path) {
+        Some(t) => t,
+        None => return Err(CharismaError::RuleNotFound.into()),
+    };
 
-    for s in old_selector {
-        let s = s.map_err(|e| CharismaError::ParseError(e.to_string()))?;
-        paths_from_old_selector.extend(s.to_css_db_paths()?);
+    let rule = match old_tree.rule.as_ref().and_then(|r| r.as_regular_rule()) {
+        Some(rule) => rule,
+        None => return Err(CharismaError::RuleNotFound.into()),
+    };
+
+    let old_properties = rule.properties.clone();
+    old_tree.drain();
+
+    let new_selector = parse_selector(new_selector)?.to_selector(None)?;
+
+    for property_to_be_moved in old_properties {
+        db.insert_regular_property(&new_selector, property_to_be_moved.as_ref())
+            .unwrap();
     }
 
-    let mut shared_properties_from_all_paths: Vec<Arc<Property>> = vec![];
-
-    let mut i = 0;
-    for path in &paths_from_old_selector {
-        let rule = match db
-            .get(path)
-            .and_then(|tree| tree.rule.as_ref())
-            .and_then(|r| r.as_regular_rule())
-        {
-            Some(rule) => rule,
-            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
-        };
-
-        if i == 0 {
-            shared_properties_from_all_paths.append(&mut rule.properties.clone())
-        } else {
-            let rule_properties = rule.properties.clone();
-            shared_properties_from_all_paths.retain(|p| rule_properties.contains(p))
-        }
-        i += 1;
-    }
-
-    for path in paths_from_old_selector {
-        let rule = match db
-            .get_mut(&path)
-            .and_then(|tree| tree.rule.as_mut())
-            .and_then(|r| r.as_mut_regular_rule())
-        {
-            Some(rule) => rule,
-            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
-        };
-
-        for property in &shared_properties_from_all_paths {
-            rule.remove(property);
-        }
-    }
-
-    let mut new_selectors: Vec<Selector> = vec![];
-
-    for s in new_selector {
-        let s = s.map_err(|e| CharismaError::ParseError(e.to_string()))?;
-        new_selectors.extend(s.to_selectors(None)?);
-    }
-
-    for selector in new_selectors {
-        shared_properties_from_all_paths
-            .iter()
-            .for_each(|property| {
-                db.insert_regular_property(&selector, property.as_ref())
-                    .unwrap();
-            })
-    }
-
-    Ok(())
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -664,17 +514,7 @@ fn rename_property(
         db.load(path)?;
     }
 
-    let paths: Vec<_> = parse_selector(selector)?
-        .into_iter()
-        .map(|s| {
-            s.map_err(|e| CharismaError::ParseError(e.to_string()))
-                .and_then(|s| s.to_selectors(None))
-        })
-        .collect::<Result<Vec<_>, _>>()?
-        .iter()
-        .flatten()
-        .map(|s| s.path.clone())
-        .collect();
+    let selector_path = parse_selector(selector)?.to_css_db_path()?;
 
     let state = if is_commented {
         State::Commented
@@ -682,29 +522,27 @@ fn rename_property(
         State::Valid
     };
 
-    for path in paths {
-        match db
-            .get_mut(&path)
-            .and_then(|t| t.rule.as_mut())
-            .and_then(|r| r.as_mut_regular_rule())
-        {
-            Some(rule) => {
-                rule.remove(&Property {
-                    state: state.clone(),
-                    name: old_property_name.into(),
-                    value: property_value.into(),
-                });
-                rule.insert(Property {
-                    state: state.clone(),
-                    name: new_property_name.into(),
-                    value: property_value.into(),
-                })
-            }
-            None => todo!(),
+    match db
+        .get_mut(&selector_path)
+        .and_then(|t| t.rule.as_mut())
+        .and_then(|r| r.as_mut_regular_rule())
+    {
+        Some(rule) => {
+            rule.remove(&Property {
+                state: state.clone(),
+                name: old_property_name.into(),
+                value: property_value.into(),
+            });
+            rule.insert(Property {
+                state: state.clone(),
+                name: new_property_name.into(),
+                value: property_value.into(),
+            })
         }
+        None => todo!(),
     }
 
-    Ok(())
+    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 fn main() {

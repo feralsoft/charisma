@@ -20,24 +20,42 @@ pub fn parse_selector(str: &str) -> Result<CssSelectorList, CharismaError> {
     Ok(rule.prelude())
 }
 
-pub fn parse_one(rule: &str) -> Option<biome_css_syntax::CssQualifiedRule> {
+pub fn parse_one(rule: &str) -> Result<biome_css_syntax::CssQualifiedRule, CharismaError> {
     let rules = biome_css_parser::parse_css(rule, biome_css_parser::CssParserOptions::default())
         .tree()
         .rules();
     if (&rules).into_iter().count() != 1 {
-        return None;
+        return Err(CharismaError::ParseError("no rule found".into()));
     }
-    let rule = rules.into_iter().next()?;
+    let rule = match rules.into_iter().next() {
+        Some(r) => r,
+        None => {
+            return Err(CharismaError::ParseError("no rule found".into()));
+        }
+    };
 
-    Some(rule.as_css_qualified_rule()?.to_owned())
+    match rule.as_css_qualified_rule() {
+        Some(r) => Ok(r.clone()),
+        None => Err(CharismaError::ParseError("invalid rule".into())),
+    }
 }
 
-pub fn parse_property(property_str: &str) -> Option<CssDeclarationWithSemicolon> {
+pub fn parse_property(property_str: &str) -> Result<CssDeclarationWithSemicolon, CharismaError> {
     let dummy_rule = parse_one(&format!(".a {{ {} }}", property_str))?;
-    let block = dummy_rule.block().ok()?;
-    let block = block.as_css_declaration_or_rule_block()?;
+    let block = dummy_rule
+        .block()
+        .map_err(|e| CharismaError::ParseError(e.to_string()))?;
+    let block = match block.as_css_declaration_or_rule_block() {
+        Some(b) => b,
+        None => return Err(CharismaError::ParseError("not a valid rule".into())),
+    };
     assert!(block.items().into_iter().len() == 1);
-    let item = block.items().into_iter().next()?;
-    item.as_css_declaration_with_semicolon()
-        .map(|item| item.to_owned())
+    let item = match block.items().into_iter().next() {
+        Some(item) => item,
+        None => return Err(CharismaError::ParseError("no property found".into())),
+    };
+    match item.as_css_declaration_with_semicolon() {
+        Some(item) => Ok(item.clone()),
+        None => Err(CharismaError::ParseError("not valid decl".into())),
+    }
 }
