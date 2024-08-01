@@ -298,8 +298,8 @@ impl Rule {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct CssDB {
-    children: HashMap<Part, CssDB>,
+pub struct CssTree {
+    children: HashMap<Part, CssTree>,
     current_path: Option<String>,
     pub rule: Option<Rule>,
 }
@@ -320,9 +320,9 @@ fn get_comments(str: &str) -> Vec<String> {
     comments
 }
 
-impl CssDB {
-    pub fn new() -> CssDB {
-        CssDB {
+impl CssTree {
+    pub fn new() -> CssTree {
+        CssTree {
             children: HashMap::new(),
             rule: None,
             current_path: None,
@@ -592,7 +592,7 @@ impl CssDB {
             None => String::from(""),
         };
 
-        let mut children: Vec<(&Part, &CssDB)> = self.children.iter().collect();
+        let mut children: Vec<(&Part, &CssTree)> = self.children.iter().collect();
         children.sort_by_key(|(p, _)| p.to_string());
 
         format!(
@@ -744,7 +744,7 @@ impl CssDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw(parts, rule),
                 None => {
-                    let mut new_tree = CssDB::new();
+                    let mut new_tree = CssTree::new();
                     new_tree.insert_raw(parts, rule);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -769,7 +769,7 @@ impl CssDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw_regular_rule(selector, parts, property),
                 None => {
-                    let mut new_tree = CssDB::new();
+                    let mut new_tree = CssTree::new();
                     new_tree.insert_raw_regular_rule(selector, parts, property);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -805,7 +805,7 @@ impl CssDB {
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_empty_regular_rule_aux(selector, parts),
                 None => {
-                    let mut new_tree = CssDB::new();
+                    let mut new_tree = CssTree::new();
                     new_tree.insert_empty_regular_rule_aux(selector, parts);
                     self.children.insert(part.to_owned(), new_tree);
                 }
@@ -823,14 +823,14 @@ impl CssDB {
         let tree = match self.children.get_mut(&keyframes_part) {
             Some(tree) => tree,
             None => {
-                self.children.insert(keyframes_part.clone(), CssDB::new());
+                self.children.insert(keyframes_part.clone(), CssTree::new());
                 self.children.get_mut(&keyframes_part).unwrap()
             }
         };
         match tree.children.get(&name_part) {
             Some(_) => {} // already there
             None => {
-                let mut dst = CssDB::new();
+                let mut dst = CssTree::new();
                 dst.rule = Some(Rule::Keyframes(Keyframes {
                     name,
                     frames: vec![],
@@ -867,14 +867,14 @@ impl CssDB {
         Ok(())
     }
 
-    pub fn get(&self, path: &[Part]) -> Option<&CssDB> {
+    pub fn get(&self, path: &[Part]) -> Option<&CssTree> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get(part).and_then(|c| c.get(parts)),
         }
     }
 
-    pub fn get_mut(&mut self, path: &[Part]) -> Option<&mut CssDB> {
+    pub fn get_mut(&mut self, path: &[Part]) -> Option<&mut CssTree> {
         match path {
             [] => Some(self),
             [part, parts @ ..] => self.children.get_mut(part).and_then(|c| c.get_mut(parts)),

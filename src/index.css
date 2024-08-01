@@ -644,10 +644,10 @@
     
 }
 [data-kind="property"] {
-    align-items: center;
     gap: var(--spacing);
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
 }
 [data-kind="property"] > [data-attr="name"] {
     color: var(--property-name-color);

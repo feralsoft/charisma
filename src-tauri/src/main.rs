@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use db::*;
+use css_tree::*;
 use html::*;
 use parse_utils::{parse_one, parse_property, parse_selector};
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,7 @@ use std::{
 };
 use tauri::InvokeError;
 
-mod db;
+mod css_tree;
 mod html;
 mod parse_utils;
 
@@ -36,7 +36,7 @@ pub enum CharismaError {
 
 #[tauri::command]
 fn search(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     q: &str,
 ) -> Result<RenderResult, InvokeError> {
@@ -106,7 +106,7 @@ fn search(
 
 #[tauri::command]
 fn find_property(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     q: &str,
 ) -> Result<Vec<(RenderResult, RenderResult)>, InvokeError> {
@@ -149,7 +149,7 @@ fn find_property(
 // TODO: remove the need for this
 #[tauri::command]
 fn insert_empty_rule(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
 ) -> Result<(), InvokeError> {
@@ -173,7 +173,7 @@ fn insert_empty_rule(
 
 #[tauri::command]
 fn render_rule(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
 ) -> Result<String, InvokeError> {
@@ -264,7 +264,7 @@ fn render_rule(
 
 #[tauri::command]
 fn delete(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -283,7 +283,7 @@ fn delete(
 
 #[tauri::command]
 fn disable(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -302,7 +302,7 @@ fn disable(
 
 #[tauri::command]
 fn enable(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -326,7 +326,7 @@ fn all_properties() -> &'static str {
 
 #[tauri::command]
 fn insert_property(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     property: &str,
@@ -351,7 +351,7 @@ struct JsonProperty {
 
 #[tauri::command]
 fn replace_all_properties(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     properties: Vec<JsonProperty>,
@@ -383,7 +383,7 @@ fn replace_all_properties(
 
 #[tauri::command(rename_all = "snake_case")]
 fn update_value(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     selector: &str,
     name: &str,
@@ -427,7 +427,7 @@ fn update_value(
 
 #[tauri::command(rename_all = "snake_case")]
 fn load_rule(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     rule: &str,
 ) -> Result<String, InvokeError> {
@@ -464,7 +464,7 @@ fn load_rule(
 
 #[tauri::command(rename_all = "snake_case")]
 fn rename_rule(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     old_selector: &str,
     new_selector: &str,
@@ -501,7 +501,7 @@ fn rename_rule(
 
 #[tauri::command(rename_all = "snake_case")]
 fn rename_property(
-    state: tauri::State<Mutex<CssDB>>,
+    state: tauri::State<Mutex<CssTree>>,
     path: &str,
     is_commented: bool,
     selector: &str,
@@ -546,7 +546,7 @@ fn rename_property(
 }
 
 fn main() {
-    let db = Mutex::new(CssDB::new());
+    let db = Mutex::new(CssTree::new());
 
     tauri::Builder::default()
         .manage(db)
