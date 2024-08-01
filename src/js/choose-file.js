@@ -14,6 +14,7 @@ async function prompt_file_selector(file_picker) {
   if (!path) return;
   localStorage.setItem("current-path", path);
   await set_path_text(path, file_picker);
+  document.querySelector(".canvas").replaceChildren();
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {

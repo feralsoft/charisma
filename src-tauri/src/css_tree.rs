@@ -16,8 +16,8 @@ use biome_css_syntax::{
     CssRelativeSelectorList, CssSelectorList, CssSubSelectorList, CssSyntaxKind,
     CssUniversalSelector,
 };
+use std::fmt::Write;
 use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
-use std::{fmt::Write, string::ParseError};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum State {
@@ -333,7 +333,7 @@ impl CssTree {
         return self
             .current_path
             .as_ref()
-            .map(|p| p.as_str() == path)
+            .filter(|p| p.as_str() == path)
             .is_some();
     }
 
