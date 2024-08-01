@@ -375,7 +375,9 @@ impl CssTree {
                         self.load_rule(selector, block)?;
                     }
                 }
-                biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => panic!(),
+                biome_css_syntax::AnyCssDeclarationOrRule::CssBogus(_) => {
+                    return Err(CharismaError::ParseError(property.to_string()))
+                }
                 biome_css_syntax::AnyCssDeclarationOrRule::CssDeclarationWithSemicolon(
                     property,
                 ) => {
@@ -558,17 +560,23 @@ impl CssTree {
                     }
                     Err(e) => {
                         errors.push(e);
-                        self.insert_bogus_rule(rule.to_string());
+                        if let Err(e) = self.insert_bogus_rule(rule.to_string()) {
+                            errors.push(e);
+                        }
                     }
                 },
                 AnyCssRule::CssAtRule(at_rule) => {
                     if let Err(e) = self.load_at_rule(at_rule.rule().unwrap()) {
                         errors.push(e);
-                        self.insert_bogus_rule(at_rule.to_string())
+                        if let Err(e) = self.insert_bogus_rule(at_rule.to_string()) {
+                            errors.push(e);
+                        }
                     }
                 }
                 AnyCssRule::CssBogusRule(_) => {
-                    self.insert_bogus_rule(rule.to_string());
+                    if let Err(e) = self.insert_bogus_rule(rule.to_string()) {
+                        errors.push(e);
+                    }
                     errors.push(CharismaError::NotSupported(rule.to_string()))
                 }
                 AnyCssRule::CssNestedQualifiedRule(_) => {
@@ -718,14 +726,25 @@ impl CssTree {
         selectors
     }
 
-    pub fn drain(&mut self) {
+    pub fn drain(&mut self) -> Result<(), CharismaError> {
         match &mut self.rule {
-            Some(Rule::Regular(rule)) => rule.properties.drain(0..),
-            Some(Rule::Keyframes(_)) => panic!("can't drain @keyframes rule"),
-            Some(Rule::FontFace(_)) => panic!("can't drain @font-face rule"),
-            Some(Rule::Bogus(_)) => panic!("can't drain bogus rule"),
-            None => panic!("can't drain empty rule"),
-        };
+            Some(Rule::Regular(rule)) => {
+                rule.properties.drain(0..);
+                Ok(())
+            }
+            Some(Rule::Keyframes(_)) => Err(CharismaError::NotSupported(
+                "can't drain @keyframes rule".to_string(),
+            )),
+            Some(Rule::FontFace(_)) => Err(CharismaError::NotSupported(
+                "can't drain @font-face rule".to_string(),
+            )),
+            Some(Rule::Bogus(_)) => Err(CharismaError::NotSupported(
+                "can't drain bogus rule".to_string(),
+            )),
+            None => Err(CharismaError::NotSupported(
+                "can't drain empty rule".to_string(),
+            )),
+        }
     }
 
     pub fn set_state(
@@ -734,7 +753,7 @@ impl CssTree {
         property_name: &str,
         property_value: &str,
         state: State,
-    ) {
+    ) -> Result<(), CharismaError> {
         let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
 
         match rule {
@@ -747,24 +766,41 @@ impl CssTree {
                         state,
                     });
                 }
+                Ok(())
             }
-            Rule::Keyframes(_) => panic!(),
-            Rule::FontFace(_) => panic!(),
-            Rule::Bogus(_) => panic!(),
+            Rule::Keyframes(_) => Err(CharismaError::NotSupported(
+                "can't edit @keyframes rule".into(),
+            )),
+            Rule::FontFace(_) => Err(CharismaError::NotSupported(
+                "can't edit @font-face rule".into(),
+            )),
+            Rule::Bogus(_) => Err(CharismaError::NotSupported("can't edit bogus rule".into())),
         }
     }
 
-    pub fn delete(&mut self, path: &[Part], property_name: &str, property_value: &str) {
+    pub fn delete(
+        &mut self,
+        path: &[Part],
+        property_name: &str,
+        property_value: &str,
+    ) -> Result<(), CharismaError> {
         let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
 
         match rule {
             Rule::Regular(rule) => {
                 rule.properties
                     .retain(|p| !(p.name == property_name && p.value == property_value));
+                Ok(())
             }
-            Rule::Keyframes(_) => panic!(),
-            Rule::FontFace(_) => panic!(),
-            Rule::Bogus(_) => panic!(),
+            Rule::Keyframes(_) => Err(CharismaError::NotSupported(
+                "can't delete property for @keyframes rule".into(),
+            )),
+            Rule::FontFace(_) => Err(CharismaError::NotSupported(
+                "can't delete property for @font-face rule".into(),
+            )),
+            Rule::Bogus(_) => Err(CharismaError::NotSupported(
+                "can't delete property for bogus rule".into(),
+            )),
         }
     }
 
@@ -799,27 +835,41 @@ impl CssTree {
         }
     }
 
-    fn insert_raw_regular_rule(&mut self, selector: Selector, path: &[Part], property: Property) {
+    fn insert_raw_regular_rule(
+        &mut self,
+        selector: Selector,
+        path: &[Part],
+        property: Property,
+    ) -> Result<(), CharismaError> {
         match path {
-            [] => {
-                match &mut self.rule {
-                    Some(Rule::Regular(rule)) => rule.insert(property),
-                    Some(Rule::Keyframes(_)) => panic!(),
-                    Some(Rule::FontFace(_)) => panic!(),
-                    Some(Rule::Bogus(_)) => panic!(),
-                    None => {
-                        let mut rule = RegularRule::new(selector);
-                        rule.insert(property);
-                        self.rule = Some(Rule::Regular(rule))
-                    }
-                };
-            }
+            [] => match &mut self.rule {
+                Some(Rule::Regular(rule)) => {
+                    rule.insert(property);
+                    Ok(())
+                }
+                Some(Rule::Keyframes(_)) => {
+                    Err(CharismaError::AssertionError("not a regular rule".into()))
+                }
+                Some(Rule::FontFace(_)) => {
+                    Err(CharismaError::AssertionError("not a regular rule".into()))
+                }
+                Some(Rule::Bogus(_)) => {
+                    Err(CharismaError::AssertionError("not a regular rule".into()))
+                }
+                None => {
+                    let mut rule = RegularRule::new(selector);
+                    rule.insert(property);
+                    self.rule = Some(Rule::Regular(rule));
+                    Ok(())
+                }
+            },
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw_regular_rule(selector, parts, property),
                 None => {
                     let mut new_tree = CssTree::new();
-                    new_tree.insert_raw_regular_rule(selector, parts, property);
+                    new_tree.insert_raw_regular_rule(selector, parts, property)?;
                     self.children.insert(part.to_owned(), new_tree);
+                    Ok(())
                 }
             },
         }
@@ -838,8 +888,7 @@ impl CssTree {
                 value: Property::value(&property)?,
                 state: State::Commented,
             },
-        );
-        Ok(())
+        )
     }
 
     fn insert_empty_regular_rule_aux(&mut self, selector: Selector, path: &[Part]) {
@@ -865,21 +914,34 @@ impl CssTree {
         self.insert_empty_regular_rule_aux(selector.clone(), &selector.path);
     }
 
-    pub fn insert_bogus_rule(&mut self, rule: String) {
+    pub fn insert_bogus_rule(&mut self, rule: String) -> Result<(), CharismaError> {
         match self.children.get_mut(&Part::Bogus) {
             Some(t) => match t.rule.as_mut() {
                 Some(r) => match r {
-                    Rule::Regular(_) => panic!("unexpected regular rule at bogus location"),
-                    Rule::Keyframes(_) => panic!("unexpected @keyframes rul at bogus location"),
-                    Rule::FontFace(_) => panic!("unexpected @font-face rule at bogus location"),
-                    Rule::Bogus(rules) => rules.push(rule),
+                    Rule::Regular(_) => Err(CharismaError::AssertionError(
+                        "unexpected regular rule at bogus location".into(),
+                    )),
+                    Rule::Keyframes(_) => Err(CharismaError::AssertionError(
+                        "unexpected @keyframes rul at bogus location".into(),
+                    )),
+                    Rule::FontFace(_) => Err(CharismaError::AssertionError(
+                        "unexpected @font-face rule at bogus location".into(),
+                    )),
+                    Rule::Bogus(rules) => {
+                        rules.push(rule);
+                        Ok(())
+                    }
                 },
-                None => t.rule = Some(Rule::Bogus(vec![rule])),
+                None => {
+                    t.rule = Some(Rule::Bogus(vec![rule]));
+                    Ok(())
+                }
             },
             None => {
                 let mut tree = CssTree::new();
                 tree.rule = Some(Rule::Bogus(vec![rule]));
                 self.children.insert(Part::Bogus, tree);
+                Ok(())
             }
         }
     }
@@ -920,9 +982,7 @@ impl CssTree {
                 value: Property::value(property)?,
                 state: State::Valid,
             },
-        );
-
-        Ok(())
+        )
     }
 
     pub fn insert_regular_property(
@@ -930,8 +990,7 @@ impl CssTree {
         selector: &Selector,
         property: &Property,
     ) -> Result<(), CharismaError> {
-        self.insert_raw_regular_rule(selector.clone(), &selector.path, property.clone());
-        Ok(())
+        self.insert_raw_regular_rule(selector.clone(), &selector.path, property.clone())
     }
 
     pub fn get(&self, path: &[Part]) -> Option<&CssTree> {
@@ -1253,7 +1312,7 @@ impl CssTreePath for CssPseudoClassNth {
 
 impl CssTreePath for CssPseudoClassNthIdentifier {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
@@ -1327,31 +1386,31 @@ impl CssTreePath for CssPseudoClassFunctionNth {
 
 impl CssTreePath for CssPseudoClassFunctionValueList {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
 impl CssTreePath for CssPseudoClassFunctionCompoundSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
 impl CssTreePath for CssPseudoClassFunctionCompoundSelectorList {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
 impl CssTreePath for CssPseudoClassFunctionIdentifier {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
 impl CssTreePath for CssPseudoClassFunctionSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
@@ -1563,13 +1622,13 @@ impl CssTreePath for AnyCssAtRule {
 
 impl CssTreePath for CssPseudoElementFunctionIdentifier {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 
 impl CssTreePath for CssPseudoElementFunctionSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        todo!()
+        Err(CharismaError::NotSupported(self.to_string()))
     }
 }
 

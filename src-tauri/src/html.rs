@@ -82,7 +82,10 @@ impl Render for AnyCssSelector {
             )],
         };
         match self {
-            AnyCssSelector::CssBogusSelector(_) => panic!(),
+            AnyCssSelector::CssBogusSelector(_) => RenderResult {
+                html: self.to_string(),
+                errors: vec![CharismaError::ParseError(self.to_string())],
+            },
             AnyCssSelector::CssComplexSelector(s) => s.render_html(&options),
             AnyCssSelector::CssCompoundSelector(s) => s.render_html(&options),
         }
@@ -358,7 +361,10 @@ impl Render for CssPseudoClassNth {
 
 impl Render for CssPseudoClassNthIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 
@@ -460,7 +466,10 @@ impl Render for CssPseudoClassNthSelector {
 impl Render for AnyCssPseudoClassNthSelector {
     fn render_html(&self, options: &RenderOptions) -> RenderResult {
         match self {
-            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => panic!(),
+            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => RenderResult {
+                html: self.to_string(),
+                errors: vec![CharismaError::ParseError(self.to_string())],
+            },
             AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.render_html(options),
         }
     }
@@ -504,22 +513,34 @@ impl Render for CssPseudoClassFunctionNth {
 
 impl Render for CssPseudoClassFunctionCompoundSelector {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 impl Render for CssPseudoClassFunctionCompoundSelectorList {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 impl Render for CssPseudoClassFunctionIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 impl Render for CssPseudoClassFunctionSelector {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 impl Render for CssPseudoClassFunctionSelectorList {
@@ -570,7 +591,10 @@ impl Render for CssPseudoClassFunctionSelectorList {
 }
 impl Render for CssPseudoClassFunctionValueList {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 
@@ -749,7 +773,10 @@ impl Render for AnyCssSubSelector {
             AnyCssSubSelector::CssAttributeSelector(attribute_selector) => {
                 attribute_selector.render_html(options)
             }
-            AnyCssSubSelector::CssBogusSubSelector(_) => panic!(),
+            AnyCssSubSelector::CssBogusSubSelector(_) => RenderResult {
+                html: self.to_string(),
+                errors: vec![CharismaError::ParseError(self.to_string())],
+            },
             AnyCssSubSelector::CssClassSelector(class) => class.render_html(options),
             AnyCssSubSelector::CssIdSelector(s) => s.render_html(options),
             AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => {
@@ -993,7 +1020,10 @@ impl Render for CssBinaryExpression {
 
 impl Render for CssParenthesizedExpression {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 
@@ -1233,7 +1263,10 @@ impl Render for CssRatio {
 
 impl Render for CssCustomIdentifier {
     fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        todo!()
+        RenderResult {
+            html: render_error_node(&self.to_string()),
+            errors: vec![CharismaError::NotSupported(self.to_string())],
+        }
     }
 }
 

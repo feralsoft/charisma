@@ -275,7 +275,7 @@ fn delete(
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.delete(&tree_path, name, value);
+    tree.delete(&tree_path, name, value)?;
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -295,7 +295,7 @@ fn disable(
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.set_state(&tree_path, name, value, State::Commented);
+    tree.set_state(&tree_path, name, value, State::Commented)?;
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -315,7 +315,7 @@ fn enable(
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.set_state(&tree_path, name, value, State::Valid);
+    tree.set_state(&tree_path, name, value, State::Valid)?;
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -367,7 +367,7 @@ fn replace_all_properties(
     let selector = parse_selector(selector)?.to_selector(None)?;
 
     match tree.get_mut(&selector.path) {
-        Some(rule) => rule.drain(),
+        Some(rule) => rule.drain()?,
         None => return Err(CharismaError::RuleNotFound.into()),
     };
 
@@ -417,7 +417,7 @@ fn update_value(
         .iter()
         .any(|p| p.name == name.trim() && p.value == original_value)
     {
-        tree.delete(&selector.path, name.trim(), original_value);
+        tree.delete(&selector.path, name.trim(), original_value)?;
         tree.insert_regular_rule(&selector, &property)?;
     } else {
         return Err(CharismaError::AssertionError(
@@ -493,7 +493,7 @@ fn rename_rule(
     };
 
     let old_properties = rule.properties.clone();
-    old_tree.drain();
+    old_tree.drain()?;
 
     let new_selector = parse_selector(new_selector)?.to_selector(None)?;
 
