@@ -73,20 +73,10 @@ fn search(
                 }
             } else {
                 match parse_selector(s) {
-                    Ok(selector) => match selector.into_iter().next() {
-                        Some(Ok(s)) => s.render_html(&RenderOptions::default()),
-                        Some(Err(e)) => RenderResult {
-                            html: "".to_string(),
-                            errors: vec![CharismaError::ParseError(e.to_string())],
-                        },
-                        None => RenderResult {
-                            html: "".to_string(),
-                            errors: vec![CharismaError::ParseError("no selector found".into())],
-                        },
-                    },
-                    Err(_) => RenderResult {
-                        html: "".to_string(),
-                        errors: vec![CharismaError::ParseError(s.to_string())],
+                    Ok(s) => s.render_html(&RenderOptions::default()),
+                    Err(e) => RenderResult {
+                        html: s.to_owned(),
+                        errors: vec![e],
                     },
                 }
             }

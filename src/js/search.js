@@ -131,6 +131,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
           path: localStorage.getItem("current-path"),
           q: input.innerText,
         });
+
         options.innerHTML = results.html;
       });
     } else {

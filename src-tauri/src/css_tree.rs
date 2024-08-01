@@ -518,13 +518,11 @@ impl CssTree {
         for rule in ast.tree().rules() {
             match rule {
                 AnyCssRule::CssQualifiedRule(rule) => {
-                    for selector in rule.prelude() {
-                        let block = rule.block().unwrap();
-                        let block = block.as_css_declaration_or_rule_block().unwrap();
-                        let selector = selector.unwrap().to_selector(None)?;
-                        self.insert_empty_regular_rule(&selector);
-                        self.load_rule(selector, block)?;
-                    }
+                    let selector = rule.prelude().to_selector(None)?;
+                    let block = rule.block().unwrap();
+                    let block = block.as_css_declaration_or_rule_block().unwrap();
+                    self.insert_empty_regular_rule(&selector);
+                    self.load_rule(selector, block)?;
                 }
                 AnyCssRule::CssAtRule(at_rule) => self.load_at_rule(at_rule.rule().unwrap())?,
                 AnyCssRule::CssBogusRule(_) => todo!(),
@@ -1286,18 +1284,22 @@ impl CssTreePath for CssPseudoClassFunctionSelector {
 
 impl CssTreePath for CssSelectorList {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        let list = self.into_iter().collect::<Vec<_>>();
-        match list.as_slice() {
-            [] => Ok(vec![]),
-            [item] => item
-                .as_ref()
-                .map_err(|e| CharismaError::ParseError(e.to_string()))?
-                .to_css_tree_path(),
-            items => {
-                println!("{:?}", items);
-                panic!("noo");
+        let list = self
+            .into_iter()
+            .map(|item| {
+                item.as_ref()
+                    .map_err(|e| CharismaError::ParseError(e.to_string()))
+                    .and_then(|item| item.to_css_tree_path())
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(list.iter().fold(vec![], |acc, path| {
+            if acc.is_empty() {
+                path.clone()
+            } else {
+                [acc, vec![Part::Comma], path.clone()].concat()
             }
-        }
+        }))
     }
 }
 
