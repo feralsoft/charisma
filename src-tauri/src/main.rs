@@ -275,8 +275,8 @@ fn delete(
         tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.delete(&db_path, name, value);
+    let tree_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.delete(&tree_path, name, value);
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -294,8 +294,8 @@ fn disable(
         tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.set_state(&db_path, name, value, State::Commented);
+    let tree_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.set_state(&tree_path, name, value, State::Commented);
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
@@ -313,8 +313,8 @@ fn enable(
         tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_tree_path()?;
-    tree.set_state(&db_path, name, value, State::Valid);
+    let tree_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.set_state(&tree_path, name, value, State::Valid);
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
