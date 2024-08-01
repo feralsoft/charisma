@@ -115,10 +115,13 @@ impl Render for CssComplexSelector {
             }
         };
         let combinator = match self.combinator() {
-            Ok(r) => get_combinator_type(r.kind()),
+            Ok(r) => render_combinator_type(r.kind()),
             Err(e) => {
                 errors.push(CharismaError::ParseError(e.to_string()));
-                Combinator::Bogus
+                RenderResult {
+                    html: "".into(),
+                    errors: vec![CharismaError::ParseError(e.to_string())],
+                }
             }
         };
 
@@ -129,18 +132,12 @@ impl Render for CssComplexSelector {
                 <div data-attr=\"left\">{}</div>
                 <div data-attr=\"right\">{}</div>
             </div>",
-                match combinator {
-                    Combinator::Descendant => "descendant",
-                    Combinator::DirectDescendant => "direct-descendant",
-                    Combinator::Plus => "next-sibling",
-                    Combinator::And => panic!(""),
-                    Combinator::Bogus => "bogus",
-                },
+                combinator.html,
                 data_string_value(&self.to_string()),
                 left,
                 right,
             ),
-            errors,
+            errors: [errors, combinator.errors].concat(),
         }
     }
 }
@@ -189,6 +186,35 @@ impl Render for CssPseudoClassIdentifier {
     }
 }
 
+fn render_combinator_type(kind: CssSyntaxKind) -> RenderResult {
+    match get_combinator_type(kind) {
+        Ok(Combinator::Descendant) => RenderResult {
+            html: "descendant".to_string(),
+            errors: vec![],
+        },
+        Ok(Combinator::DirectDescendant) => RenderResult {
+            html: "direct-descendant".to_string(),
+            errors: vec![],
+        },
+        Ok(Combinator::Plus) => RenderResult {
+            html: "next-sibling".to_string(),
+            errors: vec![],
+        },
+        Ok(Combinator::And) => RenderResult {
+            html: "".to_string(),
+            errors: vec![CharismaError::AssertionError("unexpected `And`".into())],
+        },
+        Ok(Combinator::Bogus) => RenderResult {
+            html: "bogus".to_string(),
+            errors: vec![],
+        },
+        Err(e) => RenderResult {
+            html: "".to_owned(),
+            errors: vec![e],
+        },
+    }
+}
+
 impl Render for CssRelativeSelector {
     fn render_html(&self, options: &RenderOptions) -> RenderResult {
         match self.combinator() {
@@ -206,20 +232,16 @@ impl Render for CssRelativeSelector {
                     }
                 };
 
+                let combinator_type = render_combinator_type(combinator.kind());
+
                 RenderResult {
                     html: format!(
-                "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" {}>{}</div>",
-                match get_combinator_type(combinator.kind()) {
-                    Combinator::Descendant => "descendant",
-                    Combinator::DirectDescendant => "direct-descendant",
-                    Combinator::Plus => "next-sibling",
-                    Combinator::And => todo!(),
-                    Combinator::Bogus=> "bogus"
-                },
-                data_string_value(&self.to_string()),
-                selector
-            ),
-                    errors,
+                        "<div data-kind=\"relative-selector\" data-combinator-type=\"{}\" {}>{}</div>",
+                        combinator_type.html,
+                        data_string_value(&self.to_string()),
+                        selector
+                    ),
+                    errors: [errors, combinator_type.errors].concat(),
                 }
             }
             None => match self.selector() {

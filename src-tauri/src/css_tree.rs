@@ -16,8 +16,8 @@ use biome_css_syntax::{
     CssRelativeSelectorList, CssSelectorList, CssSubSelectorList, CssSyntaxKind,
     CssUniversalSelector,
 };
-use std::fmt::Write;
 use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
+use std::{fmt::Write, string::ParseError};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum State {
@@ -95,10 +95,10 @@ impl ToSelector for AnyCssRelativeSelector {
         let combinator = if selector.to_string().trim().starts_with('&') {
             Combinator::And
         } else {
-            selector
-                .combinator()
-                .map(|c| get_combinator_type(c.kind()))
-                .unwrap_or(Combinator::Descendant)
+            match selector.combinator() {
+                Some(c) => get_combinator_type(c.kind()),
+                None => Ok(Combinator::Descendant),
+            }?
         };
         let selector = selector.selector().unwrap();
 
@@ -986,7 +986,7 @@ impl Display for Combinator {
             Combinator::DirectDescendant => write!(f, " > ")?,
             Combinator::And => write!(f, "")?,
             Combinator::Plus => write!(f, " + ")?,
-            Combinator::Bogus => todo!(),
+            Combinator::Bogus => return Err(std::fmt::Error),
         };
         Ok(())
     }
@@ -1037,12 +1037,15 @@ impl Display for AtRulePart {
     }
 }
 
-pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Combinator {
+pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Result<Combinator, CharismaError> {
     match token_kind {
-        CssSyntaxKind::CSS_SPACE_LITERAL => Combinator::Descendant,
-        CssSyntaxKind::R_ANGLE => Combinator::DirectDescendant,
-        CssSyntaxKind::PLUS => Combinator::Plus,
-        _ => panic!("unexpected token = {:?}", token_kind),
+        CssSyntaxKind::CSS_SPACE_LITERAL => Ok(Combinator::Descendant),
+        CssSyntaxKind::R_ANGLE => Ok(Combinator::DirectDescendant),
+        CssSyntaxKind::PLUS => Ok(Combinator::Plus),
+        _ => Err(CharismaError::ParseError(format!(
+            "unexpected token = {:?}",
+            token_kind
+        ))),
     }
 }
 
@@ -1063,7 +1066,7 @@ impl CssTreePath for biome_css_syntax::AnyCssSelector {
                     s.combinator()
                         .map_err(|e| CharismaError::ParseError(e.to_string()))?
                         .kind(),
-                ));
+                )?);
 
                 let lhs_path = left.to_css_tree_path()?;
                 let rhs_path = right.to_css_tree_path()?;
@@ -1518,7 +1521,7 @@ impl CssTreePath for CssRelativeSelector {
         if let Some(combinator) = self.combinator() {
             // prepend combinator to all the paths
             Ok([
-                vec![Part::Combinator(get_combinator_type(combinator.kind()))],
+                vec![Part::Combinator(get_combinator_type(combinator.kind())?)],
                 path.clone(),
             ]
             .concat())
