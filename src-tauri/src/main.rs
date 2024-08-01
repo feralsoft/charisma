@@ -529,7 +529,7 @@ fn rename_property(
                 value: property_value.into(),
             })
         }
-        None => todo!(),
+        None => return Err(CharismaError::RuleNotFound.into()),
     }
 
     fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
