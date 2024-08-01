@@ -27,7 +27,7 @@ fn render_keyframes_selector(name: &str) -> String {
 
 #[derive(Serialize, Debug, Clone)]
 pub enum CharismaError {
-    DbLocked,
+    TreeLocked,
     ParseError(String),
     FailedToSave,
     RuleNotFound,
@@ -40,13 +40,13 @@ fn search(
     path: &str,
     q: &str,
 ) -> Result<RenderResult, InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
     let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
 
-    let mut results: Vec<String> = db
+    let mut results: Vec<String> = tree
         .all_selectors_with_properties()
         .iter()
         .filter(|selector| parts.iter().all(|q| selector.contains(q)))
@@ -110,13 +110,13 @@ fn find_property(
     path: &str,
     q: &str,
 ) -> Result<Vec<(RenderResult, RenderResult)>, InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
     let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
 
-    let mut results: Vec<(Arc<Property>, Selector)> = db.recursive_search_for_property(&parts);
+    let mut results: Vec<(Arc<Property>, Selector)> = tree.recursive_search_for_property(&parts);
 
     results.sort_by(|a, b| {
         let a_property = format!("{}: {};", a.0.name, a.0.value);
@@ -153,22 +153,22 @@ fn insert_empty_rule(
     path: &str,
     selector: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
     if selector.starts_with("@keyframes") {
         match selector.split("@keyframes").nth(1) {
-            Some(name) => db.insert_empty_keyframes_rule(name.trim().to_string()),
+            Some(name) => tree.insert_empty_keyframes_rule(name.trim().to_string()),
             None => {
                 return Err(CharismaError::ParseError("keyframes parse error".to_string()).into())
             }
         }
     } else {
         let selector = parse_selector(selector)?.to_selector(None)?;
-        db.insert_empty_regular_rule(&selector);
+        tree.insert_empty_regular_rule(&selector);
     }
-    Ok(fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?)
+    Ok(fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave)?)
 }
 
 #[tauri::command]
@@ -177,9 +177,9 @@ fn render_rule(
     path: &str,
     selector: &str,
 ) -> Result<String, InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
     if selector.starts_with("@keyframes") {
         let name = match selector.split("@keyframes").nth(1) {
@@ -192,7 +192,7 @@ fn render_rule(
             Part::AtRule(AtRulePart::Name(name.trim().to_string())),
         ];
 
-        let keyframes_rule = match db
+        let keyframes_rule = match tree
             .get(&path)
             .and_then(|tree| tree.rule.as_ref())
             .and_then(|r| r.as_keyframes())
@@ -225,9 +225,9 @@ fn render_rule(
         ))
     } else {
         let selector = parse_selector(selector)?;
-        let path = selector.to_css_db_path()?;
+        let path = selector.to_css_tree_path()?;
 
-        let rule = match db
+        let rule = match tree
             .get(&path)
             .and_then(|tree| tree.rule.as_ref())
             .and_then(|r| r.as_regular_rule())
@@ -270,15 +270,15 @@ fn delete(
     name: &str,
     value: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_db_path()?;
-    db.delete(&db_path, name, value);
+    let db_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.delete(&db_path, name, value);
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]
@@ -289,15 +289,15 @@ fn disable(
     name: &str,
     value: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_db_path()?;
-    db.set_state(&db_path, name, value, State::Commented);
+    let db_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.set_state(&db_path, name, value, State::Commented);
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]
@@ -308,15 +308,15 @@ fn enable(
     name: &str,
     value: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
-    let db_path = parse_selector(selector)?.to_css_db_path()?;
-    db.set_state(&db_path, name, value, State::Valid);
+    let db_path = parse_selector(selector)?.to_css_tree_path()?;
+    tree.set_state(&db_path, name, value, State::Valid);
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command]
@@ -331,15 +331,15 @@ fn insert_property(
     selector: &str,
     property: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
     let property = parse_property(property)?;
     let selector = parse_selector(selector)?.to_selector(None)?;
-    db.insert_regular_rule(&selector, &property)?;
+    tree.insert_regular_rule(&selector, &property)?;
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[derive(Deserialize)]
@@ -356,14 +356,14 @@ fn replace_all_properties(
     selector: &str,
     properties: Vec<JsonProperty>,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
     let selector = parse_selector(selector)?.to_selector(None)?;
 
-    match db.get_mut(&selector.path) {
+    match tree.get_mut(&selector.path) {
         Some(rule) => rule.drain(),
         None => return Err(CharismaError::RuleNotFound.into()),
     };
@@ -372,13 +372,13 @@ fn replace_all_properties(
         // at this point we are just parsing to validate
         let parsed_property = parse_property(&format!("{}: {};", property.name, property.value))?;
         if property.is_commented {
-            db.insert_regular_rule_commented(&selector, parsed_property)?;
+            tree.insert_regular_rule_commented(&selector, parsed_property)?;
         } else {
-            db.insert_regular_rule(&selector, &parsed_property)?;
+            tree.insert_regular_rule(&selector, &parsed_property)?;
         }
     }
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -390,16 +390,16 @@ fn update_value(
     original_value: &str,
     value: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
     let property = parse_property(&format!("{}: {};", name, value))?;
 
     let selector = parse_selector(selector)?.to_selector(None)?;
 
-    let rule = match db
+    let rule = match tree
         .get(&selector.path)
         .and_then(|t| t.rule.as_ref())
         .and_then(|r| r.as_regular_rule())
@@ -413,8 +413,8 @@ fn update_value(
         .iter()
         .any(|p| p.name == name.trim() && p.value == original_value)
     {
-        db.delete(&selector.path, name.trim(), original_value);
-        db.insert_regular_rule(&selector, &property)?;
+        tree.delete(&selector.path, name.trim(), original_value);
+        tree.insert_regular_rule(&selector, &property)?;
     } else {
         return Err(CharismaError::AssertionError(
             "updating value without knowing previous value".into(),
@@ -422,7 +422,7 @@ fn update_value(
         .into());
     }
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -431,9 +431,9 @@ fn load_rule(
     path: &str,
     rule: &str,
 ) -> Result<String, InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
     let rule = parse_one(rule)?;
@@ -448,16 +448,16 @@ fn load_rule(
 
     for item in block.items() {
         // TODO: if this fails, we should revert everything
-        // what we need to is make a clone of the original db before making changes
+        // what we need to is make a clone of the original tree before making changes
         // and then, revert it back
         let property = match item.as_css_declaration_with_semicolon() {
             Some(p) => p,
             None => return Err(CharismaError::ParseError("invalid decl".to_string()).into()),
         };
-        db.insert_regular_rule(&selector, property)?;
+        tree.insert_regular_rule(&selector, property)?;
     }
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave)?;
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave)?;
 
     Ok(selector.string)
 }
@@ -469,14 +469,14 @@ fn rename_rule(
     old_selector: &str,
     new_selector: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
-    let old_selector_path = parse_selector(old_selector)?.to_css_db_path()?;
+    let old_selector_path = parse_selector(old_selector)?.to_css_tree_path()?;
 
-    let old_tree = match db.get_mut(&old_selector_path) {
+    let old_tree = match tree.get_mut(&old_selector_path) {
         Some(t) => t,
         None => return Err(CharismaError::RuleNotFound.into()),
     };
@@ -492,11 +492,11 @@ fn rename_rule(
     let new_selector = parse_selector(new_selector)?.to_selector(None)?;
 
     for property_to_be_moved in old_properties {
-        db.insert_regular_property(&new_selector, property_to_be_moved.as_ref())
+        tree.insert_regular_property(&new_selector, property_to_be_moved.as_ref())
             .unwrap();
     }
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -509,12 +509,12 @@ fn rename_property(
     new_property_name: &str,
     property_value: &str,
 ) -> Result<(), InvokeError> {
-    let mut db = state.lock().map_err(|_| CharismaError::DbLocked)?;
-    if !db.is_loaded(path) {
-        db.load(path)?;
+    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    if !tree.is_loaded(path) {
+        tree.load(path)?;
     }
 
-    let selector_path = parse_selector(selector)?.to_css_db_path()?;
+    let selector_path = parse_selector(selector)?.to_css_tree_path()?;
 
     let state = if is_commented {
         State::Commented
@@ -522,7 +522,7 @@ fn rename_property(
         State::Valid
     };
 
-    match db
+    match tree
         .get_mut(&selector_path)
         .and_then(|t| t.rule.as_mut())
         .and_then(|r| r.as_mut_regular_rule())
@@ -542,14 +542,14 @@ fn rename_property(
         None => todo!(),
     }
 
-    fs::write(path, db.serialize()).map_err(|_| CharismaError::FailedToSave.into())
+    fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave.into())
 }
 
 fn main() {
-    let db = Mutex::new(CssTree::new());
+    let tree = Mutex::new(CssTree::new());
 
     tauri::Builder::default()
-        .manage(db)
+        .manage(tree)
         .invoke_handler(tauri::generate_handler![
             render_rule,
             search,
