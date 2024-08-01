@@ -1,8 +1,31 @@
 import { focus } from "./focus.js";
 import { add_editor } from "./editor.js";
 import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
+import { h } from "./html.js";
 
 const { invoke } = window.__TAURI__.tauri;
+
+let search_errors = [];
+
+function push_errors(new_errors) {
+  if (new_errors.every((e) => search_errors.includes(e))) return;
+  search_errors = new_errors;
+
+  let errors_toast = document.querySelector(".errors-toast-box");
+  errors_toast.replaceChildren(
+    ...search_errors.map((e) => {
+      if (typeof e === "string") {
+        return h.div({ class: "search-error" }, e);
+      } else {
+        let kind = Object.keys(e)[0];
+        assert(Object.keys(e).length === 1);
+        let value = e[kind];
+
+        return h.div({ class: "search-error", "data-error-type": kind }, value);
+      }
+    }),
+  );
+}
 
 document.addEventListener("DOMContentLoaded", (_) => {
   let input = document.querySelector(".search");
@@ -132,6 +155,8 @@ document.addEventListener("DOMContentLoaded", (_) => {
           q: input.innerText,
         });
 
+        push_errors(results.errors);
+
         options.innerHTML = results.html;
       });
     } else {
@@ -146,6 +171,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
             path: localStorage.getItem("current-path"),
             q: input.innerText,
           });
+          push_errors(results.errors);
 
           options.innerHTML = results.html;
         }

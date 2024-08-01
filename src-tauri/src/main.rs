@@ -31,7 +31,7 @@ pub enum CharismaError {
     ParseError(String),
     FailedToSave,
     RuleNotFound,
-    NotSupported,
+    NotSupported(String),
     AssertionError(String),
 }
 

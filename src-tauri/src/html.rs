@@ -625,7 +625,7 @@ impl Render for CssAttributeSelector {
         match self.matcher() {
             Some(matcher) => {
                 let name = match self.name() {
-                    Ok(name) => format!("{}", name.to_string()),
+                    Ok(name) => name.to_string(),
                     Err(e) => {
                         errors.push(CharismaError::ParseError(e.to_string()));
                         String::from("")
@@ -633,7 +633,7 @@ impl Render for CssAttributeSelector {
                 };
                 assert!(matcher.modifier().is_none());
                 let operator = match matcher.operator() {
-                    Ok(op) => format!("{}", op.text_trimmed()),
+                    Ok(op) => op.text_trimmed().to_string(),
                     Err(e) => {
                         errors.push(CharismaError::ParseError(e.to_string()));
                         String::from("")
