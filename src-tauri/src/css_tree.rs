@@ -244,7 +244,9 @@ impl RegularRule {
                 .collect();
         }
 
-        self.properties.push(Arc::new(new_property))
+        self.properties.push(Arc::new(new_property));
+        self.properties
+            .sort_by_key(|p| format!("{}: {};", p.name, p.value))
     }
 }
 
@@ -902,8 +904,6 @@ pub enum Combinator {
     And,
     // +
     Plus,
-    // borked
-    Bogus,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -994,7 +994,6 @@ impl Display for Combinator {
             Combinator::DirectDescendant => write!(f, " > ")?,
             Combinator::And => write!(f, "")?,
             Combinator::Plus => write!(f, " + ")?,
-            Combinator::Bogus => return Err(std::fmt::Error),
         };
         Ok(())
     }

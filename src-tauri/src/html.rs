@@ -204,10 +204,6 @@ fn render_combinator_type(kind: CssSyntaxKind) -> RenderResult {
             html: "".to_string(),
             errors: vec![CharismaError::AssertionError("unexpected `And`".into())],
         },
-        Ok(Combinator::Bogus) => RenderResult {
-            html: "bogus".to_string(),
-            errors: vec![],
-        },
         Err(e) => RenderResult {
             html: "".to_owned(),
             errors: vec![e],
