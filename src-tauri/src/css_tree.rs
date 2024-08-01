@@ -512,26 +512,37 @@ impl CssTree {
         }
     }
 
-    pub fn load(&mut self, css_path: &str) -> Result<(), CharismaError> {
+    pub fn load(&mut self, css_path: &str) -> Vec<CharismaError> {
         let css = fs::read_to_string(css_path).unwrap();
         let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
+        let mut errors: Vec<CharismaError> = vec![];
         for rule in ast.tree().rules() {
             match rule {
-                AnyCssRule::CssQualifiedRule(rule) => {
-                    let selector = rule.prelude().to_selector(None)?;
-                    let block = rule.block().unwrap();
-                    let block = block.as_css_declaration_or_rule_block().unwrap();
-                    self.insert_empty_regular_rule(&selector);
-                    self.load_rule(selector, block)?;
+                AnyCssRule::CssQualifiedRule(rule) => match rule.prelude().to_selector(None) {
+                    Ok(selector) => {
+                        let block = rule.block().unwrap();
+                        let block = block.as_css_declaration_or_rule_block().unwrap();
+                        self.insert_empty_regular_rule(&selector);
+                        match self.load_rule(selector, block) {
+                            Err(e) => errors.push(e),
+                            Ok(_) => {}
+                        }
+                    }
+                    Err(e) => errors.push(e),
+                },
+                AnyCssRule::CssAtRule(at_rule) => {
+                    match self.load_at_rule(at_rule.rule().unwrap()) {
+                        Err(e) => errors.push(e),
+                        Ok(_) => {}
+                    }
                 }
-                AnyCssRule::CssAtRule(at_rule) => self.load_at_rule(at_rule.rule().unwrap())?,
                 AnyCssRule::CssBogusRule(_) => todo!(),
                 AnyCssRule::CssNestedQualifiedRule(_) => todo!(),
             };
         }
         self.current_path = Some(css_path.to_string());
 
-        Ok(())
+        errors
     }
 
     pub fn serialize(&self) -> String {
@@ -607,9 +618,6 @@ impl CssTree {
     // we are going to stretch the definition of "selector"
     // a wee-lil-bit so that "@keyframes animation_name"
     // is also a selector
-    //
-    // if that doesn't sit well with you, I can understand that
-    // but us men have to get some work done around here
     fn all_selectors_with_properties_aux(&self, selectors: &mut Vec<String>) {
         match self.rule.as_ref() {
             Some(Rule::RegularRule(rule)) => {
@@ -1456,25 +1464,25 @@ impl CssTreePath for CssFontFaceAtRule {
 impl CssTreePath for AnyCssAtRule {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            AnyCssAtRule::CssBogusAtRule(_) => todo!(),
-            AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
-            AnyCssAtRule::CssColorProfileAtRule(_) => todo!(),
-            AnyCssAtRule::CssContainerAtRule(_) => todo!(),
-            AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
-            AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
+            AnyCssAtRule::CssBogusAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssCharsetAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssColorProfileAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssContainerAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssCounterStyleAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssDocumentAtRule(_) => Err(CharismaError::NotSupported),
             AnyCssAtRule::CssFontFaceAtRule(r) => r.to_css_tree_path(),
-            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
-            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
-            AnyCssAtRule::CssImportAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssImportAtRule(_) => Err(CharismaError::NotSupported),
             AnyCssAtRule::CssKeyframesAtRule(r) => r.to_css_tree_path(),
-            AnyCssAtRule::CssLayerAtRule(_) => todo!(),
-            AnyCssAtRule::CssMediaAtRule(_) => todo!(),
-            AnyCssAtRule::CssNamespaceAtRule(_) => todo!(),
-            AnyCssAtRule::CssPageAtRule(_) => todo!(),
-            AnyCssAtRule::CssPropertyAtRule(_) => todo!(),
-            AnyCssAtRule::CssScopeAtRule(_) => todo!(),
-            AnyCssAtRule::CssStartingStyleAtRule(_) => todo!(),
-            AnyCssAtRule::CssSupportsAtRule(_) => todo!(),
+            AnyCssAtRule::CssLayerAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssMediaAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssNamespaceAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssPageAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssPropertyAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssScopeAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssStartingStyleAtRule(_) => Err(CharismaError::NotSupported),
+            AnyCssAtRule::CssSupportsAtRule(_) => Err(CharismaError::NotSupported),
         }
     }
 }

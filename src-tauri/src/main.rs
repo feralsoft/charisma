@@ -31,6 +31,7 @@ pub enum CharismaError {
     ParseError(String),
     FailedToSave,
     RuleNotFound,
+    NotSupported,
     AssertionError(String),
 }
 
@@ -41,8 +42,9 @@ fn search(
     q: &str,
 ) -> Result<RenderResult, InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
     let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
 
@@ -91,7 +93,10 @@ fn search(
             errors: vec![],
         });
 
-    Ok(results)
+    Ok(RenderResult {
+        html: results.html,
+        errors: [errors, results.errors].concat(),
+    })
 }
 
 #[tauri::command]
@@ -101,8 +106,9 @@ fn find_property(
     q: &str,
 ) -> Result<Vec<(RenderResult, RenderResult)>, InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
     let parts: Vec<&str> = q.trim().split(' ').map(|s| s.trim()).collect();
 
@@ -144,8 +150,9 @@ fn insert_empty_rule(
     selector: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
     if selector.starts_with("@keyframes") {
         match selector.split("@keyframes").nth(1) {
@@ -168,8 +175,9 @@ fn render_rule(
     selector: &str,
 ) -> Result<String, InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
     if selector.starts_with("@keyframes") {
         let name = match selector.split("@keyframes").nth(1) {
@@ -261,8 +269,9 @@ fn delete(
     value: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
@@ -280,8 +289,9 @@ fn disable(
     value: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
@@ -299,8 +309,9 @@ fn enable(
     value: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let tree_path = parse_selector(selector)?.to_css_tree_path()?;
@@ -322,8 +333,9 @@ fn insert_property(
     property: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
     let property = parse_property(property)?;
     let selector = parse_selector(selector)?.to_selector(None)?;
@@ -347,8 +359,9 @@ fn replace_all_properties(
     properties: Vec<JsonProperty>,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let selector = parse_selector(selector)?.to_selector(None)?;
@@ -381,8 +394,9 @@ fn update_value(
     value: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let property = parse_property(&format!("{}: {};", name, value))?;
@@ -422,8 +436,9 @@ fn load_rule(
     rule: &str,
 ) -> Result<String, InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let rule = parse_one(rule)?;
@@ -460,8 +475,9 @@ fn rename_rule(
     new_selector: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let old_selector_path = parse_selector(old_selector)?.to_css_tree_path()?;
@@ -500,8 +516,9 @@ fn rename_property(
     property_value: &str,
 ) -> Result<(), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
+    let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
-        tree.load(path)?;
+        errors.extend(tree.load(path));
     }
 
     let selector_path = parse_selector(selector)?.to_css_tree_path()?;
