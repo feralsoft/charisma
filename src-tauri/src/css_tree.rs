@@ -1168,10 +1168,10 @@ impl CssTreePath for CssPseudoClassNth {
         match self.offset() {
             Some(o) => {
                 let sign = match o.sign().unwrap().kind() {
-                    CssSyntaxKind::PLUS => Sign::Plus,
-                    CssSyntaxKind::MINUS => Sign::Minus,
-                    _ => panic!(),
-                };
+                    CssSyntaxKind::PLUS => Ok(Sign::Plus),
+                    CssSyntaxKind::MINUS => Ok(Sign::Minus),
+                    _ => Err(CharismaError::ParseError("can't determine nth sign".into())),
+                }?;
 
                 let offset: i32 = o.value().unwrap().to_string().trim().parse().unwrap();
                 Ok(vec![Part::Pattern(Pattern::NthWithOffset(
