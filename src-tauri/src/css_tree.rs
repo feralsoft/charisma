@@ -406,7 +406,9 @@ impl CssTree {
                 let mut frames: Vec<Frame> = vec![];
                 for item in block.items() {
                     let frame = match item {
-                        biome_css_syntax::AnyCssKeyframesItem::CssBogusKeyframesItem(_) => todo!(),
+                        biome_css_syntax::AnyCssKeyframesItem::CssBogusKeyframesItem(_) => {
+                            return Err(CharismaError::NotSupported("bogus @keyframes item".into()))
+                        }
                         biome_css_syntax::AnyCssKeyframesItem::CssKeyframesItem(item) => {
                             let path = item.selectors().to_css_tree_path()?;
 
@@ -456,12 +458,24 @@ impl CssTree {
 
                 Ok(())
             }
-            AnyCssAtRule::CssBogusAtRule(_) => todo!(),
-            AnyCssAtRule::CssCharsetAtRule(_) => todo!(),
-            AnyCssAtRule::CssColorProfileAtRule(_) => todo!(),
-            AnyCssAtRule::CssContainerAtRule(_) => todo!(),
-            AnyCssAtRule::CssCounterStyleAtRule(_) => todo!(),
-            AnyCssAtRule::CssDocumentAtRule(_) => todo!(),
+            AnyCssAtRule::CssBogusAtRule(_) => {
+                Err(CharismaError::NotSupported("bogus at rule".into()))
+            }
+            AnyCssAtRule::CssCharsetAtRule(_) => {
+                Err(CharismaError::NotSupported("char set".into()))
+            }
+            AnyCssAtRule::CssColorProfileAtRule(_) => {
+                Err(CharismaError::NotSupported("color profile".into()))
+            }
+            AnyCssAtRule::CssContainerAtRule(_) => {
+                Err(CharismaError::NotSupported("@container".into()))
+            }
+            AnyCssAtRule::CssCounterStyleAtRule(_) => {
+                Err(CharismaError::NotSupported("counter".into()))
+            }
+            AnyCssAtRule::CssDocumentAtRule(_) => {
+                Err(CharismaError::NotSupported("at document".into()))
+            }
             AnyCssAtRule::CssFontFaceAtRule(rule) => {
                 let block = rule
                     .block()
@@ -501,17 +515,29 @@ impl CssTree {
 
                 Ok(())
             }
-            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => todo!(),
-            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => todo!(),
-            AnyCssAtRule::CssImportAtRule(_) => panic!(),
-            AnyCssAtRule::CssLayerAtRule(_) => todo!(),
-            AnyCssAtRule::CssMediaAtRule(_) => todo!(),
-            AnyCssAtRule::CssNamespaceAtRule(_) => todo!(),
-            AnyCssAtRule::CssPageAtRule(_) => todo!(),
-            AnyCssAtRule::CssPropertyAtRule(_) => todo!(),
-            AnyCssAtRule::CssScopeAtRule(_) => todo!(),
-            AnyCssAtRule::CssStartingStyleAtRule(_) => todo!(),
-            AnyCssAtRule::CssSupportsAtRule(_) => todo!(),
+            AnyCssAtRule::CssFontFeatureValuesAtRule(_) => {
+                Err(CharismaError::NotSupported("font-features".into()))
+            }
+            AnyCssAtRule::CssFontPaletteValuesAtRule(_) => {
+                Err(CharismaError::NotSupported("font palette".into()))
+            }
+            AnyCssAtRule::CssImportAtRule(_) => Err(CharismaError::NotSupported("@import".into())),
+            AnyCssAtRule::CssLayerAtRule(_) => Err(CharismaError::NotSupported("@layer".into())),
+            AnyCssAtRule::CssMediaAtRule(_) => Err(CharismaError::NotSupported("@media".into())),
+            AnyCssAtRule::CssNamespaceAtRule(_) => {
+                Err(CharismaError::NotSupported("namespace".into()))
+            }
+            AnyCssAtRule::CssPageAtRule(_) => Err(CharismaError::NotSupported("page".into())),
+            AnyCssAtRule::CssPropertyAtRule(_) => {
+                Err(CharismaError::NotSupported("@property".into()))
+            }
+            AnyCssAtRule::CssScopeAtRule(_) => Err(CharismaError::NotSupported("@scope".into())),
+            AnyCssAtRule::CssStartingStyleAtRule(_) => {
+                Err(CharismaError::NotSupported("@starting-style".into()))
+            }
+            AnyCssAtRule::CssSupportsAtRule(_) => {
+                Err(CharismaError::NotSupported("@supports".into()))
+            }
         }
     }
 
@@ -541,8 +567,13 @@ impl CssTree {
                         self.insert_bogus_rule(at_rule.to_string())
                     }
                 }
-                AnyCssRule::CssBogusRule(_) => todo!(),
-                AnyCssRule::CssNestedQualifiedRule(_) => todo!(),
+                AnyCssRule::CssBogusRule(_) => {
+                    self.insert_bogus_rule(rule.to_string());
+                    errors.push(CharismaError::NotSupported(rule.to_string()))
+                }
+                AnyCssRule::CssNestedQualifiedRule(_) => {
+                    errors.push(CharismaError::NotSupported(rule.to_string()))
+                }
             };
         }
         self.current_path = Some(css_path.to_string());
@@ -690,10 +721,10 @@ impl CssTree {
     pub fn drain(&mut self) {
         match &mut self.rule {
             Some(Rule::Regular(rule)) => rule.properties.drain(0..),
-            Some(Rule::Keyframes(_)) => panic!("drain"),
-            Some(Rule::FontFace(_)) => panic!("drain"),
-            Some(Rule::Bogus(_)) => panic!("drain"),
-            None => todo!(),
+            Some(Rule::Keyframes(_)) => panic!("can't drain @keyframes rule"),
+            Some(Rule::FontFace(_)) => panic!("can't drain @font-face rule"),
+            Some(Rule::Bogus(_)) => panic!("can't drain bogus rule"),
+            None => panic!("can't drain empty rule"),
         };
     }
 
@@ -1265,7 +1296,9 @@ impl CssTreePath for CssPseudoClassNthSelector {
 impl CssTreePath for AnyCssPseudoClassNthSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => todo!(),
+            AnyCssPseudoClassNthSelector::CssBogusSelector(_) => {
+                Err(CharismaError::ParseError("bogus selector".into()))
+            }
             AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.to_css_tree_path(),
         }
     }
@@ -1477,7 +1510,9 @@ impl CssTreePath for CssKeyframesSelectorList {
         let item = item.map_err(|e| CharismaError::ParseError(e.to_string()))?;
 
         match item {
-            AnyCssKeyframesSelector::CssBogusSelector(_) => todo!(),
+            AnyCssKeyframesSelector::CssBogusSelector(_) => {
+                Err(CharismaError::NotSupported("".into()))
+            }
             AnyCssKeyframesSelector::CssKeyframesIdentSelector(id) => id.to_css_tree_path(),
             AnyCssKeyframesSelector::CssKeyframesPercentageSelector(s) => s.to_css_tree_path(),
         }
