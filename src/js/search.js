@@ -5,26 +5,47 @@ import { h } from "./html.js";
 
 const { invoke } = window.__TAURI__.tauri;
 
-let search_errors = [];
+let active_search_errors = [];
 
 function push_errors(new_errors) {
-  if (new_errors.every((e) => search_errors.includes(e))) return;
-  search_errors = new_errors;
+  if (new_errors.every((e) => active_search_errors.includes(e))) return;
+  active_search_errors = new_errors;
 
   let errors_toast = document.querySelector(".errors-toast-box");
   errors_toast.replaceChildren(
-    ...search_errors.map((e) => {
+    ...active_search_errors.map((e) => {
       if (typeof e === "string") {
-        return h.div({ class: "search-error" }, e);
+        return h.div(
+          {
+            class: "search-error",
+            "@click"(_) {
+              this.remove();
+            },
+          },
+          e,
+        );
       } else {
         let kind = Object.keys(e)[0];
         assert(Object.keys(e).length === 1);
         let value = e[kind];
 
-        return h.div({ class: "search-error", "data-error-type": kind }, value);
+        return h.div(
+          {
+            class: "search-error",
+            "data-error-type": kind,
+            "@click"(_) {
+              this.remove();
+            },
+          },
+          value,
+        );
       }
     }),
   );
+  setTimeout(() => {
+    errors_toast.replaceChildren();
+    active_search_errors = [];
+  }, 5000);
 }
 
 document.addEventListener("DOMContentLoaded", (_) => {
