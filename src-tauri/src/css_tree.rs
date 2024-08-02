@@ -456,9 +456,7 @@ impl CssTree {
                         name: name.to_string().trim().to_string(),
                         frames,
                     }),
-                );
-
-                Ok(())
+                )
             }
             AnyCssAtRule::CssBogusAtRule(_) => {
                 Err(CharismaError::NotSupported("bogus at rule".into()))
@@ -513,9 +511,7 @@ impl CssTree {
                     });
                 }
 
-                self.insert_font_face(FontFace { properties });
-
-                Ok(())
+                self.insert_font_face(FontFace { properties })
             }
             AnyCssAtRule::CssFontFeatureValuesAtRule(_) => {
                 Err(CharismaError::NotSupported("font-features".into()))
@@ -804,13 +800,18 @@ impl CssTree {
         }
     }
 
-    fn insert_font_face(&mut self, fontface: FontFace) {
+    fn insert_font_face(&mut self, fontface: FontFace) -> Result<(), CharismaError> {
         match self
             .get_mut(&[Part::AtRule(AtRulePart::Fontface)])
             .and_then(|t| t.rule.as_mut())
         {
-            Some(Rule::FontFace(fonts)) => fonts.push(fontface),
-            Some(_) => panic!("should have a font here"),
+            Some(Rule::FontFace(fonts)) => {
+                fonts.push(fontface);
+                Ok(())
+            }
+            Some(_) => Err(CharismaError::AssertionError(
+                "should have a font here".into(),
+            )),
             None => self.insert_raw(
                 &[Part::AtRule(AtRulePart::Fontface)],
                 Rule::FontFace(vec![fontface]),
@@ -818,18 +819,24 @@ impl CssTree {
         }
     }
 
-    fn insert_raw(&mut self, path: &[Part], rule: Rule) {
+    fn insert_raw(&mut self, path: &[Part], rule: Rule) -> Result<(), CharismaError> {
         match path {
             [] => match &mut self.rule {
-                Some(_) => panic!(),
-                None => self.rule = Some(rule),
+                Some(_) => Err(CharismaError::AssertionError(
+                    "failed to insert raw rule, rule already exists".into(),
+                )),
+                None => {
+                    self.rule = Some(rule);
+                    Ok(())
+                }
             },
             [part, parts @ ..] => match self.children.get_mut(part) {
                 Some(tree) => tree.insert_raw(parts, rule),
                 None => {
                     let mut new_tree = CssTree::new();
-                    new_tree.insert_raw(parts, rule);
+                    new_tree.insert_raw(parts, rule)?;
                     self.children.insert(part.to_owned(), new_tree);
+                    Ok(())
                 }
             },
         }
@@ -1675,7 +1682,9 @@ impl CssTreePath for CssRelativeSelector {
 impl CssTreePath for AnyCssRelativeSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            AnyCssRelativeSelector::CssBogusSelector(_) => panic!(),
+            AnyCssRelativeSelector::CssBogusSelector(_) => {
+                Err(CharismaError::ParseError(self.to_string()))
+            }
             AnyCssRelativeSelector::CssRelativeSelector(s) => s.to_css_tree_path(),
         }
     }

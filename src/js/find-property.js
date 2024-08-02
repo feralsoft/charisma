@@ -36,7 +36,7 @@ function start_search() {
   function on_keydown(e) {
     input.dataset.empty = false;
     if (!input.classList.contains("find-property")) return;
-    if (e.key === "Escape" || (e.key == "p" && e.ctrlKey)) {
+    if (e.key === "Escape" || (e.key == "p" && e.metaKey)) {
       clear();
     } else {
       setTimeout(async () => {
@@ -71,7 +71,7 @@ function start_search() {
 
 window.addEventListener("keydown", (e) => {
   if (e.target.closest(".--editor-group")) return;
-  if (e.key === "f" && e.ctrlKey) {
+  if (e.key === "f" && e.metaKey) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();

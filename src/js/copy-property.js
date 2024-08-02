@@ -6,10 +6,10 @@ let property_to_copy;
 window.addEventListener("keydown", async (e) => {
   if (!document.querySelector(".focused")) return;
 
-  if (e.key === "c" && e.ctrlKey) {
+  if (e.key === "c" && e.metaKey) {
     // trying to copy
     property_to_copy = document.querySelector('[data-kind="property"].focused');
-  } else if (e.key === "v" && e.ctrlKey) {
+  } else if (e.key === "v" && e.metaKey) {
     if (!property_to_copy) return;
     let focused_editor = document.querySelector(".--editor.focused");
 
