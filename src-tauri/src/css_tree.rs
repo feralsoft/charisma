@@ -52,36 +52,20 @@ pub trait ToSelector {
     fn to_selector(&self, parent: Option<&Selector>) -> Result<Selector, CharismaError>;
 }
 
-fn path_to_string(path: &[Part]) -> String {
-    let condensed_path = path
-        .iter()
-        .fold::<Vec<Part>, _>(vec![], |new_path, part| match part {
-            Part::Pattern(Pattern::AttributeMatch(name, _, _)) => {
-                if let Some(Part::Pattern(Pattern::Attribute(new_name))) = new_path.last() {
-                    assert!(new_name == name);
-                } else {
-                    panic!();
-                };
-                let mut new_path: Vec<Part> =
-                    new_path.iter().take(new_path.len() - 1).cloned().collect();
-                new_path.push(part.clone());
-                new_path
-            }
-            _ => [new_path, vec![part.clone()]].concat(),
-        });
-
-    condensed_path
-        .iter()
-        .map(|p| p.to_string())
-        .collect::<String>()
-}
-
 impl ToSelector for CssSelectorList {
     fn to_selector(&self, _parent: Option<&Selector>) -> Result<Selector, CharismaError> {
         let path = self.to_css_tree_path()?;
 
+        let list: Result<Vec<String>, _> = self
+            .into_iter()
+            .map(|s| {
+                s.map(|s| s.to_string())
+                    .map_err(|e| CharismaError::ParseError(e.to_string()))
+            })
+            .collect();
+
         Ok(Selector {
-            string: path_to_string(&path),
+            string: list?.join(", ").trim().to_string(),
             path,
         })
     }
@@ -110,7 +94,7 @@ impl ToSelector for AnyCssRelativeSelector {
         .concat();
 
         Ok(Selector {
-            string: path_to_string(&path),
+            string: self.to_string().trim().to_string(),
             path,
         })
     }
@@ -118,15 +102,13 @@ impl ToSelector for AnyCssRelativeSelector {
 
 impl ToSelector for AnyCssSelector {
     fn to_selector(&self, parent: Option<&Selector>) -> Result<Selector, CharismaError> {
-        let path = [
-            parent.map(|p| p.path.clone()).unwrap_or_default(),
-            self.to_css_tree_path()?,
-        ]
-        .concat();
-
         Ok(Selector {
-            string: path_to_string(&path),
-            path,
+            string: self.to_string().trim().to_string(),
+            path: [
+                parent.map(|p| p.path.clone()).unwrap_or_default(),
+                self.to_css_tree_path()?,
+            ]
+            .concat(),
         })
     }
 }
@@ -1519,6 +1501,7 @@ impl CssTreePath for CssAttributeSelector {
                     .map_err(|e| CharismaError::ParseError(e.to_string()))?;
                 // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
                 // so that you can explore siblings along [data-kind]
+
                 Ok(vec![
                     Part::Pattern(Pattern::Attribute(name.clone())),
                     Part::Pattern(Pattern::AttributeMatch(
