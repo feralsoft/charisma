@@ -1,5 +1,5 @@
 const { invoke } = window.__TAURI__.tauri;
-import { add_editor } from "./editor.js";
+import { add_css_editor } from "../editor.js";
 
 function start_search() {
   let input = document.querySelector(".search");
@@ -29,7 +29,7 @@ function start_search() {
       path: localStorage.getItem("current-path"),
       selector,
     });
-    await add_editor(selector);
+    await add_css_editor(selector);
     clear();
   }
 

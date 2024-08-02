@@ -1,4 +1,4 @@
-import { add_editor } from "./editor.js";
+import { add_css_editor } from "../editor.js";
 
 const { invoke } = window.__TAURI__.tauri;
 
@@ -12,7 +12,7 @@ window.addEventListener("paste", async (e) => {
       path: localStorage.getItem("current-path"),
       rule,
     });
-    await add_editor(selector);
+    await add_css_editor(selector);
   } catch (e) {
     console.error(e);
   }

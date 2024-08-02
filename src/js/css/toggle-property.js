@@ -1,4 +1,4 @@
-import invoke from "./invoke.js";
+import invoke from "../invoke.js";
 import * as ast from "./ast.js";
 
 async function toggle(e) {

@@ -1,6 +1,6 @@
-import { add_editor } from "./editor.js";
-import { h, modifiers } from "./html.js";
-import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
+import { add_css_editor } from "../editor.js";
+import { h, modifiers } from "../html.js";
+import { move_cursor_to_end_of_element } from "../utils/contenteditable.js";
 
 const { invoke } = window.__TAURI__.tauri;
 
@@ -32,7 +32,10 @@ function init(editor) {
               old_selector: string,
               new_selector,
             });
-            await add_editor(new_selector, editor.closest(".--editor-group"));
+            await add_css_editor(
+              new_selector,
+              editor.closest(".--editor-group"),
+            );
             editor.remove();
           },
           [modifiers.on_mount]() {

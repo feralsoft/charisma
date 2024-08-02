@@ -1,4 +1,4 @@
-import * as ast from "./ast.js";
+import * as ast from "./css/ast.js";
 const { invoke } = window.__TAURI__.tauri;
 
 let reload_lock = new Map();

@@ -1,5 +1,5 @@
 import * as ast from "./ast.js";
-import invoke from "./invoke.js";
+import invoke from "../invoke.js";
 
 function setup_property(property, editor) {
   property

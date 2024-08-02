@@ -75,37 +75,6 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// go up and down properties with arrow keys when a property is focused
-window.addEventListener("keydown", (e) => {
-  let focused_property = document.querySelector(
-    '[data-kind="property"].focused',
-  );
-  if (!focused_property) return;
-
-  if (e.key === "ArrowUp") {
-    let previous_property = focused_property.previousElementSibling;
-    if (!previous_property) {
-      // hack
-      previous_property = [
-        ...focused_property
-          .closest('[data-attr="properties"]')
-          .querySelectorAll('[data-kind="property"]'),
-      ].at(-1);
-    }
-
-    focus(previous_property);
-  } else if (e.key === "ArrowDown") {
-    let next_property = focused_property.nextElementSibling;
-
-    if (!next_property?.matches('[data-kind="property"]'))
-      next_property = focused_property
-        .closest('[data-attr="properties"]')
-        .querySelector('[data-kind="property"]');
-
-    focus(next_property);
-  }
-});
-
 // focus value
 window.addEventListener("mousedown", (e) => {
   if (e.button !== 0) return;

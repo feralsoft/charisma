@@ -8,6 +8,8 @@ version = "0.0.0"
 dependencies = [
  "biome_css_parser",
  "biome_css_syntax",
+ "biome_js_parser",
+ "biome_js_syntax",
  "serde",
  "serde_json",
  "tauri",
@@ -230,6 +232,53 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "biome_js_factory"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c9847f4dfd16ee242d12b90f96f6b2eb33238dfc4eac7b5c045e14eebe717b7"
+dependencies = [
+ "biome_js_syntax",
+ "biome_rowan",
+]
+
+[[package]]
+name = "biome_js_parser"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72eabd0387646248dd76d18f7ac20a93158939484fa688492defd76b15673f2e"
+dependencies = [
+ "biome_console",
+ "biome_diagnostics",
+ "biome_js_factory",
+ "biome_js_syntax",
+ "biome_parser",
+ "biome_rowan",
+ "biome_unicode_table",
+ "bitflags 2.6.0",
+ "cfg-if",
+ "drop_bomb",
+ "indexmap 1.9.3",
+ "rustc-hash 1.1.0",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "tracing",
+ "unicode-bom",
+]
+
+[[package]]
+name = "biome_js_syntax"
+version = "0.5.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38a524bd8b1f5f7b3355dfe2744196227ee15e9aa3446d562deb9ed511cf2015"
+dependencies = [
+ "biome_console",
+ "biome_diagnostics",
+ "biome_rowan",
+ "serde",
 ]
 
 [[package]]

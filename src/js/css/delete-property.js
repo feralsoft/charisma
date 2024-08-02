@@ -1,5 +1,5 @@
-import { focus } from "./focus.js";
-import invoke from "./invoke.js";
+import { focus } from "../focus.js";
+import invoke from "../invoke.js";
 import * as ast from "./ast.js";
 
 window.addEventListener("keydown", async (e) => {
