@@ -1326,3 +1326,5 @@ tets {
 
 
 @media (prefers-reduced-motion: no-preference) { a { text-decoration-style: dashed; } }
+
+i:has(a,b,c) { display: flex; }

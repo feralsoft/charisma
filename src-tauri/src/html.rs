@@ -12,8 +12,8 @@ use biome_css_syntax::{
     CssPseudoClassFunctionValueList, CssPseudoClassIdentifier, CssPseudoClassNth,
     CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
     CssPseudoClassSelector, CssPseudoElementSelector, CssRatio, CssRegularDimension,
-    CssRelativeSelector, CssSelectorList, CssString, CssSyntaxKind, CssSyntaxNode, CssTypeSelector,
-    CssUniversalSelector, CssUrlFunction,
+    CssRelativeSelector, CssRelativeSelectorList, CssSelectorList, CssString, CssSyntaxKind,
+    CssSyntaxNode, CssTypeSelector, CssUniversalSelector, CssUrlFunction,
 };
 use serde::Serialize;
 use std::fmt::Display;
@@ -267,6 +267,45 @@ impl Render for AnyCssRelativeSelector {
     }
 }
 
+impl Render for CssRelativeSelectorList {
+    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+        let string_value = self
+            .into_iter()
+            .map(|s| s.unwrap().to_string())
+            .reduce(|acc, cur| acc + ", " + &cur)
+            .unwrap();
+
+        let result = self
+            .into_iter()
+            .map(|s| match s {
+                Ok(s) => s.render_html(options),
+                Err(e) => RenderResult {
+                    html: "".to_string(),
+                    errors: vec![CharismaError::ParseError(e.to_string())],
+                },
+            })
+            .reduce(|acc, RenderResult { html, errors }| RenderResult {
+                html: acc.html + &html,
+                errors: [acc.errors, errors].concat(),
+            })
+            .unwrap_or(RenderResult {
+                html: String::from(""),
+                errors: vec![],
+            });
+
+        RenderResult {
+            html: format!(
+                "<div data-kind=\"selector-list\" {}>
+                    <div data-attr=\"selectors\">{}</div>
+                </div>",
+                data_string_value(&string_value),
+                result.html
+            ),
+            errors: result.errors,
+        }
+    }
+}
+
 impl Render for CssPseudoClassFunctionRelativeSelectorList {
     fn render_html(&self, options: &RenderOptions) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
@@ -277,35 +316,19 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
                 String::from("")
             }
         };
-        assert!(self.relative_selectors().into_iter().count() == 1);
-
-        let selector = match self.relative_selectors().into_iter().next() {
-            Some(Ok(s)) => {
-                let r = s.render_html(options);
-                errors.extend(r.errors);
-                r.html
-            }
-            Some(Err(e)) => {
-                errors.push(CharismaError::ParseError(e.to_string()));
-                String::from("")
-            }
-            None => {
-                errors.push(CharismaError::ParseError(String::from("expected selector")));
-                String::from("")
-            }
-        };
+        let list = self.relative_selectors().render_html(options);
 
         RenderResult {
             html: format!(
                 "<div data-kind=\"pseudo-class-function\" {}>
-                <div data-attr=\"function-name\">{}</div>
-                <div data-attr=\"args\">{}</div>
-            </div>",
+                    <div data-attr=\"function-name\">{}</div>
+                    <div data-attr=\"args\">{}</div>
+                </div>",
                 data_string_value(&self.to_string()),
                 render_value(name.trim()),
-                selector
+                list.html
             ),
-            errors,
+            errors: [errors, list.errors].concat(),
         }
     }
 }

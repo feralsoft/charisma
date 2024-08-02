@@ -1183,10 +1183,10 @@ pub fn get_combinator_type(token_kind: CssSyntaxKind) -> Result<Combinator, Char
     }
 }
 
-impl CssTreePath for biome_css_syntax::AnyCssSelector {
+impl CssTreePath for AnyCssSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            CssBogusSelector(_) => panic!(),
+            CssBogusSelector(_) => Err(CharismaError::ParseError(self.to_string())),
             CssComplexSelector(s) => {
                 let left = s
                     .left()
@@ -1259,17 +1259,22 @@ impl CssTreePath for biome_css_syntax::CssCompoundSelector {
 
 impl CssTreePath for CssRelativeSelectorList {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        let list = self.into_iter().collect::<Vec<_>>();
-        match list.as_slice() {
-            [] => Ok(vec![]),
-            [item] => item
-                .as_ref()
-                .map_err(|e| CharismaError::ParseError(e.to_string()))?
-                .to_css_tree_path(),
-            items => {
-                panic!("wtf is this = {:?}", items)
+        let list = self
+            .into_iter()
+            .map(|item| {
+                item.as_ref()
+                    .map_err(|e| CharismaError::ParseError(e.to_string()))
+                    .and_then(|item| item.to_css_tree_path())
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(list.iter().fold(vec![], |acc, path| {
+            if acc.is_empty() {
+                path.clone()
+            } else {
+                [acc, vec![Part::Comma], path.clone()].concat()
             }
-        }
+        }))
     }
 }
 
