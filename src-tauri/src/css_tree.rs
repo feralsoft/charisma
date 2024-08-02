@@ -1469,7 +1469,9 @@ impl CssTreePath for CssPseudoClassFunctionSelectorList {
 impl CssTreePath for AnyCssPseudoClass {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            AnyCssPseudoClass::CssBogusPseudoClass(_) => panic!(),
+            AnyCssPseudoClass::CssBogusPseudoClass(_) => {
+                Err(CharismaError::ParseError(self.to_string()))
+            }
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.to_css_tree_path(),
             AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => {
                 s.to_css_tree_path()
@@ -1647,7 +1649,9 @@ impl CssTreePath for CssPseudoElementFunctionSelector {
 impl CssTreePath for AnyCssPseudoElement {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
-            AnyCssPseudoElement::CssBogusPseudoElement(_) => panic!(),
+            AnyCssPseudoElement::CssBogusPseudoElement(_) => {
+                Err(CharismaError::ParseError(self.to_string()))
+            }
             AnyCssPseudoElement::CssPseudoElementFunctionIdentifier(s) => s.to_css_tree_path(),
             AnyCssPseudoElement::CssPseudoElementFunctionSelector(s) => s.to_css_tree_path(),
             AnyCssPseudoElement::CssPseudoElementIdentifier(id) => {
