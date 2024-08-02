@@ -84,12 +84,14 @@ impl ToSelector for AnyCssRelativeSelector {
                 None => Ok(Combinator::Descendant),
             }?
         };
-        let selector = selector.selector().unwrap();
 
         let path = [
             parent.map(|p| p.path.clone()).unwrap_or_default(),
             vec![Part::Combinator(combinator.clone())],
-            selector.to_css_tree_path()?,
+            selector
+                .selector()
+                .map_err(|e| CharismaError::ParseError(e.to_string()))?
+                .to_css_tree_path()?,
         ]
         .concat();
 
@@ -422,8 +424,9 @@ impl CssTree {
                                     .value()
                                     .into_iter()
                                     .map(|value| value.to_string())
-                                    .reduce(|acc, cur| format!("{} {}", acc.trim(), cur.trim()))
-                                    .unwrap();
+                                    .fold(String::new(), |acc, cur| {
+                                        format!("{} {}", acc.trim(), cur.trim())
+                                    });
                                 properties.push(Property {
                                     state: State::Valid,
                                     name,
@@ -473,9 +476,8 @@ impl CssTree {
                 for property in block.declarations() {
                     let property = property
                         .declaration()
-                        .map_err(|e| CharismaError::ParseError(e.to_string()))?
-                        .property()
-                        .unwrap();
+                        .and_then(|d| d.property())
+                        .map_err(|e| CharismaError::ParseError(e.to_string()))?;
                     let property = property.as_css_generic_property().unwrap();
                     let name = property
                         .name()
@@ -526,17 +528,31 @@ impl CssTree {
     }
 
     pub fn load(&mut self, css_path: &str) -> Vec<CharismaError> {
-        let css = fs::read_to_string(css_path).unwrap();
-        let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
+        let css = match fs::read_to_string(css_path) {
+            Ok(css) => css,
+            Err(_) => return vec![CharismaError::FileNotFound(css_path.to_string())],
+        };
         let mut errors: Vec<CharismaError> = vec![];
+        let ast = biome_css_parser::parse_css(&css, biome_css_parser::CssParserOptions::default());
         for rule in ast.tree().rules() {
             match rule {
                 AnyCssRule::CssQualifiedRule(rule) => match rule.prelude().to_selector(None) {
                     Ok(selector) => {
-                        let block = rule.block().unwrap();
-                        let block = block.as_css_declaration_or_rule_block().unwrap();
+                        let block = match rule.block() {
+                            Ok(block) => match block.as_css_declaration_or_rule_block() {
+                                Some(block) => block.clone(),
+                                None => {
+                                    errors.push(CharismaError::ParseError(block.to_string()));
+                                    continue;
+                                }
+                            },
+                            Err(e) => {
+                                errors.push(CharismaError::ParseError(e.to_string()));
+                                continue;
+                            }
+                        };
                         self.insert_empty_regular_rule(&selector);
-                        if let Err(e) = self.load_rule(selector, block) {
+                        if let Err(e) = self.load_rule(selector, &block) {
                             errors.push(e)
                         }
                     }
@@ -736,7 +752,10 @@ impl CssTree {
         property_value: &str,
         state: State,
     ) -> Result<(), CharismaError> {
-        let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
+        let rule = match self.get_mut(path).and_then(|t| t.rule.as_mut()) {
+            Some(r) => r,
+            None => return Err(CharismaError::RuleNotFound),
+        };
 
         match rule {
             Rule::Regular(rule) => {
@@ -766,7 +785,10 @@ impl CssTree {
         property_name: &str,
         property_value: &str,
     ) -> Result<(), CharismaError> {
-        let rule = self.get_mut(path).and_then(|t| t.rule.as_mut()).unwrap();
+        let rule = match self.get_mut(path).and_then(|t| t.rule.as_mut()) {
+            Some(r) => r,
+            None => return Err(CharismaError::RuleNotFound),
+        };
 
         match rule {
             Rule::Regular(rule) => {
@@ -1292,9 +1314,9 @@ impl CssTreePath for CssPseudoClassNth {
             .map_err(|e| CharismaError::ParseError(e.to_string()))?;
         match self.offset() {
             Some(o) => {
-                let sign = match o.sign().unwrap().kind() {
-                    CssSyntaxKind::PLUS => Ok(Sign::Plus),
-                    CssSyntaxKind::MINUS => Ok(Sign::Minus),
+                let sign = match o.sign().map(|s| s.kind()) {
+                    Ok(CssSyntaxKind::PLUS) => Ok(Sign::Plus),
+                    Ok(CssSyntaxKind::MINUS) => Ok(Sign::Minus),
                     _ => Err(CharismaError::ParseError("can't determine nth sign".into())),
                 }?;
 
@@ -1485,11 +1507,10 @@ impl CssTreePath for AnyCssPseudoClass {
 
 impl CssTreePath for CssAttributeSelector {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
-        let name = self.name().unwrap();
-        let name = name
+        let name = self
             .name()
-            .map_err(|e| CharismaError::ParseError(e.to_string()))?
-            .value_token()
+            .and_then(|n| n.name())
+            .and_then(|n| n.value_token())
             .map_err(|e| CharismaError::ParseError(e.to_string()))?
             .text_trimmed()
             .to_string();

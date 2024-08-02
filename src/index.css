@@ -1316,15 +1316,17 @@ tets {
 }
 @keyframes expand {
     0% {
-        height: 0.5em;
+        height:  0.5em;
         border-bottom: 0 solid rgb(0, 0, 0, 0);
     }
     100% {
-        height: 1.25em;
-        width: calc(100% - 1em);
+        height:  1.25em;
+        width:  calc(100% - 1em);
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
+
+
 
 
 

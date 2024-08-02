@@ -29,6 +29,7 @@ fn render_keyframes_selector(name: &str) -> String {
 pub enum CharismaError {
     TreeLocked,
     ParseError(String),
+    FileNotFound(String),
     FailedToSave,
     RuleNotFound,
     NotSupported(String),
