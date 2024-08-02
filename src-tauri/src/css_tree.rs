@@ -1501,7 +1501,6 @@ impl CssTreePath for CssAttributeSelector {
                     .map_err(|e| CharismaError::ParseError(e.to_string()))?;
                 // [data-kind="rule"] -> ['[data-kind]', '[data-kind="rule"]']
                 // so that you can explore siblings along [data-kind]
-
                 Ok(vec![
                     Part::Pattern(Pattern::Attribute(name.clone())),
                     Part::Pattern(Pattern::AttributeMatch(
