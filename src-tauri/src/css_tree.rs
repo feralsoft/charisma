@@ -289,7 +289,7 @@ pub struct CssTree {
     pub rule: Option<Rule>,
 }
 
-fn get_comments(str: &str) -> Vec<String> {
+fn get_comments(str: &str) -> Result<Vec<String>, CharismaError> {
     let mut idx = 0;
     let mut comments: Vec<String> = vec![];
     while str[idx..].contains("/*") {
@@ -299,10 +299,14 @@ fn get_comments(str: &str) -> Vec<String> {
                 idx += end + 2;
             }
             (None, None) => {}
-            _ => panic!("unexpected pattern"),
+            _ => {
+                return Err(CharismaError::ParseError(
+                    "unexpected pattern during comment parsing".into(),
+                ))
+            }
         }
     }
-    comments
+    Ok(comments)
 }
 
 impl CssTree {
@@ -334,14 +338,14 @@ impl CssTree {
                 .map_err(|e| CharismaError::ParseError(e.to_string()))?
                 .token_text()
                 .text(),
-        ));
+        )?);
         comments.extend(get_comments(
             block
                 .r_curly_token()
                 .map_err(|e| CharismaError::ParseError(e.to_string()))?
                 .token_text()
                 .text(),
-        ));
+        )?);
 
         for property in block.items() {
             match property {
@@ -363,7 +367,7 @@ impl CssTree {
                 biome_css_syntax::AnyCssDeclarationOrRule::CssDeclarationWithSemicolon(
                     property,
                 ) => {
-                    comments.extend(get_comments(&property.to_string()));
+                    comments.extend(get_comments(&property.to_string())?);
                     self.insert_regular_rule(&selector, &property)?;
                 }
             }
