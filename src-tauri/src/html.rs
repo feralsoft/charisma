@@ -16,7 +16,6 @@ use biome_css_syntax::{
     CssSyntaxNode, CssTypeSelector, CssUniversalSelector, CssUrlFunction,
 };
 use serde::Serialize;
-use std::fmt::Display;
 
 use crate::{
     get_combinator_type, parse_utils::parse_property, AtRulePart, CharismaError, Combinator, Frame,
@@ -43,26 +42,6 @@ pub fn data_string_value(value: &str) -> String {
     attr("data-string-value", value)
 }
 
-// TODO: remove this
-pub struct RenderOptions {
-    pub attrs: Vec<(String, String)>,
-}
-
-impl RenderOptions {
-    pub fn default() -> Self {
-        Self { attrs: vec![] }
-    }
-}
-
-impl Display for RenderOptions {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (key, value) in self.attrs.iter() {
-            write!(f, "{}='{}'", key, value)?;
-        }
-        Ok(())
-    }
-}
-
 #[derive(Serialize, Debug)]
 pub struct RenderResult {
     pub html: String,
@@ -70,34 +49,28 @@ pub struct RenderResult {
 }
 
 pub trait Render {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult;
+    fn render_html(&self) -> RenderResult;
 }
 
 impl Render for AnyCssSelector {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        let options = RenderOptions {
-            attrs: vec![(
-                "data-string-value".to_string().trim().to_string(),
-                self.to_string(),
-            )],
-        };
+    fn render_html(&self) -> RenderResult {
         match self {
             AnyCssSelector::CssBogusSelector(_) => RenderResult {
                 html: self.to_string(),
                 errors: vec![CharismaError::ParseError(self.to_string())],
             },
-            AnyCssSelector::CssComplexSelector(s) => s.render_html(&options),
-            AnyCssSelector::CssCompoundSelector(s) => s.render_html(&options),
+            AnyCssSelector::CssComplexSelector(s) => s.render_html(),
+            AnyCssSelector::CssCompoundSelector(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssComplexSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let left = match self.left() {
             Ok(l) => {
-                let r = l.render_html(options);
+                let r = l.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -108,7 +81,7 @@ impl Render for CssComplexSelector {
         };
         let right = match self.right() {
             Ok(r) => {
-                let r = r.render_html(options);
+                let r = r.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -146,7 +119,7 @@ impl Render for CssComplexSelector {
 }
 
 impl Render for CssClassSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let name = match self.name() {
@@ -160,7 +133,7 @@ impl Render for CssClassSelector {
         RenderResult {
             html: format!(
                 "<div data-kind=\"class\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(name.trim())
             ),
             errors,
@@ -169,7 +142,7 @@ impl Render for CssClassSelector {
 }
 
 impl Render for CssPseudoClassIdentifier {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let name = match self.name() {
             Ok(name) => name.to_string(),
@@ -181,7 +154,7 @@ impl Render for CssPseudoClassIdentifier {
         RenderResult {
             html: format!(
                 "<div data-kind=\"pseudo-class-id\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(name.trim())
             ),
             errors,
@@ -215,13 +188,13 @@ fn render_combinator_type(kind: CssSyntaxKind) -> RenderResult {
 }
 
 impl Render for CssRelativeSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self.combinator() {
             Some(combinator) => {
                 let mut errors: Vec<CharismaError> = vec![];
                 let selector = match self.selector() {
                     Ok(s) => {
-                        let result = s.render_html(options);
+                        let result = s.render_html();
                         errors.extend(result.errors);
                         result.html
                     }
@@ -244,7 +217,7 @@ impl Render for CssRelativeSelector {
                 }
             }
             None => match self.selector() {
-                Ok(s) => s.render_html(options),
+                Ok(s) => s.render_html(),
 
                 Err(err) => RenderResult {
                     errors: vec![CharismaError::ParseError(err.to_string())],
@@ -256,19 +229,19 @@ impl Render for CssRelativeSelector {
 }
 
 impl Render for AnyCssRelativeSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
             AnyCssRelativeSelector::CssBogusSelector(s) => RenderResult {
                 html: String::from(""),
                 errors: vec![CharismaError::ParseError(format!("{:?}", s))],
             },
-            AnyCssRelativeSelector::CssRelativeSelector(s) => s.render_html(options),
+            AnyCssRelativeSelector::CssRelativeSelector(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssRelativeSelectorList {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let string_value = self
             .into_iter()
             .map(|s| s.unwrap().to_string())
@@ -278,7 +251,7 @@ impl Render for CssRelativeSelectorList {
         let result = self
             .into_iter()
             .map(|s| match s {
-                Ok(s) => s.render_html(options),
+                Ok(s) => s.render_html(),
                 Err(e) => RenderResult {
                     html: "".to_string(),
                     errors: vec![CharismaError::ParseError(e.to_string())],
@@ -307,7 +280,7 @@ impl Render for CssRelativeSelectorList {
 }
 
 impl Render for CssPseudoClassFunctionRelativeSelectorList {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let name = match self.name_token() {
             Ok(n) => format!("{}", n),
@@ -316,7 +289,7 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
                 String::from("")
             }
         };
-        let list = self.relative_selectors().render_html(options);
+        let list = self.relative_selectors().render_html();
 
         RenderResult {
             html: format!(
@@ -333,7 +306,7 @@ impl Render for CssPseudoClassFunctionRelativeSelectorList {
     }
 }
 impl Render for CssNthOffset {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let sign = self.sign().unwrap().to_string();
         let value = self.value().unwrap().to_string();
 
@@ -354,11 +327,11 @@ impl Render for CssNthOffset {
 }
 
 impl Render for CssPseudoClassNth {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let offset = match self.offset() {
             Some(o) => {
-                let r = o.render_html(options);
+                let r = o.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -383,7 +356,7 @@ impl Render for CssPseudoClassNth {
 }
 
 impl Render for CssPseudoClassNthIdentifier {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -392,7 +365,7 @@ impl Render for CssPseudoClassNthIdentifier {
 }
 
 impl Render for Frame {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let selector = match self.path.last() {
             Some(Part::AtRule(AtRulePart::Percentage(pct))) => {
@@ -414,7 +387,7 @@ impl Render for Frame {
         let properties = self
             .properties
             .iter()
-            .map(|p| p.render_html(options))
+            .map(|p| p.render_html())
             .reduce(|acc, RenderResult { html, errors }| RenderResult {
                 errors: [acc.errors, errors].concat(),
                 html: acc.html + &html,
@@ -438,7 +411,7 @@ impl Render for Frame {
 }
 
 impl Render for CssPseudoClassNthNumber {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         assert!(self.sign().is_none());
         let number = match self.value() {
@@ -464,20 +437,20 @@ impl Render for CssPseudoClassNthNumber {
 }
 
 impl Render for AnyCssPseudoClassNth {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssPseudoClassNth::CssPseudoClassNth(s) => s.render_html(options),
-            AnyCssPseudoClassNth::CssPseudoClassNthIdentifier(s) => s.render_html(options),
-            AnyCssPseudoClassNth::CssPseudoClassNthNumber(s) => s.render_html(options),
+            AnyCssPseudoClassNth::CssPseudoClassNth(s) => s.render_html(),
+            AnyCssPseudoClassNth::CssPseudoClassNthIdentifier(s) => s.render_html(),
+            AnyCssPseudoClassNth::CssPseudoClassNthNumber(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssPseudoClassNthSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         assert!(self.of_selector().is_none());
         match self.nth() {
-            Ok(nth) => nth.render_html(options),
+            Ok(nth) => nth.render_html(),
             Err(er) => RenderResult {
                 html: String::from(""),
                 errors: vec![CharismaError::ParseError(er.to_string())],
@@ -487,19 +460,19 @@ impl Render for CssPseudoClassNthSelector {
 }
 
 impl Render for AnyCssPseudoClassNthSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
             AnyCssPseudoClassNthSelector::CssBogusSelector(_) => RenderResult {
                 html: self.to_string(),
                 errors: vec![CharismaError::ParseError(self.to_string())],
             },
-            AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.render_html(options),
+            AnyCssPseudoClassNthSelector::CssPseudoClassNthSelector(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssPseudoClassFunctionNth {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let name = match self.name() {
             Ok(name) => format!("{}", name),
@@ -510,7 +483,7 @@ impl Render for CssPseudoClassFunctionNth {
         };
         let selector = match self.selector() {
             Ok(s) => {
-                let r = s.render_html(options);
+                let r = s.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -535,7 +508,7 @@ impl Render for CssPseudoClassFunctionNth {
 }
 
 impl Render for CssPseudoClassFunctionCompoundSelector {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -543,7 +516,7 @@ impl Render for CssPseudoClassFunctionCompoundSelector {
     }
 }
 impl Render for CssPseudoClassFunctionCompoundSelectorList {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -551,7 +524,7 @@ impl Render for CssPseudoClassFunctionCompoundSelectorList {
     }
 }
 impl Render for CssPseudoClassFunctionIdentifier {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -559,7 +532,7 @@ impl Render for CssPseudoClassFunctionIdentifier {
     }
 }
 impl Render for CssPseudoClassFunctionSelector {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -567,7 +540,7 @@ impl Render for CssPseudoClassFunctionSelector {
     }
 }
 impl Render for CssPseudoClassFunctionSelectorList {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let name = match self.name() {
             Ok(n) => format!("{}", n),
@@ -581,7 +554,7 @@ impl Render for CssPseudoClassFunctionSelectorList {
             .selectors()
             .into_iter()
             .map(|s| match s {
-                Ok(s) => s.render_html(&RenderOptions::default()),
+                Ok(s) => s.render_html(),
                 Err(er) => RenderResult {
                     html: "".to_owned(),
                     errors: vec![CharismaError::ParseError(er.to_string())],
@@ -613,7 +586,7 @@ impl Render for CssPseudoClassFunctionSelectorList {
     }
 }
 impl Render for CssPseudoClassFunctionValueList {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -622,7 +595,7 @@ impl Render for CssPseudoClassFunctionValueList {
 }
 
 impl Render for CssPseudoClassSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let class = match self.class() {
             Ok(c) => c,
@@ -644,19 +617,15 @@ impl Render for CssPseudoClassSelector {
                     s
                 ))],
             },
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => {
-                s.render_html(options)
-            }
-            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassFunctionNth(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => {
-                s.render_html(options)
-            }
-            AnyCssPseudoClass::CssPseudoClassFunctionSelector(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassFunctionValueList(s) => s.render_html(options),
-            AnyCssPseudoClass::CssPseudoClassIdentifier(id) => id.render_html(options),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelector(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionCompoundSelectorList(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionIdentifier(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionNth(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionRelativeSelectorList(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelector(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionSelectorList(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassFunctionValueList(s) => s.render_html(),
+            AnyCssPseudoClass::CssPseudoClassIdentifier(id) => id.render_html(),
         };
 
         RenderResult {
@@ -667,7 +636,7 @@ impl Render for CssPseudoClassSelector {
 }
 
 impl Render for CssAttributeSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         match self.matcher() {
             Some(matcher) => {
@@ -708,7 +677,7 @@ impl Render for CssAttributeSelector {
                     <div data-attr=\"operator\">{}</div>
                     <div data-attr=\"value\">{}</div>
                 </div>",
-                        options,
+                        data_string_value(&self.to_string()),
                         render_value(name.trim()),
                         render_value(operator.trim()),
                         render_value(value.trim())
@@ -730,7 +699,7 @@ impl Render for CssAttributeSelector {
                 <div data-kind=\"attribute-selector\" {}>
                     <div data-attr=\"name\">{}</div>
                 </div>",
-                        options,
+                        data_string_value(&self.to_string()),
                         render_value(name.trim())
                     ),
                     errors,
@@ -741,7 +710,7 @@ impl Render for CssAttributeSelector {
 }
 
 impl Render for CssPseudoElementSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         // TODO:
         let element = self.element().unwrap();
@@ -758,7 +727,7 @@ impl Render for CssPseudoElementSelector {
         RenderResult {
             html: format!(
                 "<div data-kind=\"pseudo-element-selector\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(name.trim())
             ),
             errors,
@@ -767,7 +736,7 @@ impl Render for CssPseudoElementSelector {
 }
 
 impl Render for CssIdSelector {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let name = match self.name() {
             Ok(n) => n.to_string(),
@@ -791,32 +760,30 @@ impl Render for CssIdSelector {
 }
 
 impl Render for AnyCssSubSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
             AnyCssSubSelector::CssAttributeSelector(attribute_selector) => {
-                attribute_selector.render_html(options)
+                attribute_selector.render_html()
             }
             AnyCssSubSelector::CssBogusSubSelector(_) => RenderResult {
                 html: self.to_string(),
                 errors: vec![CharismaError::ParseError(self.to_string())],
             },
-            AnyCssSubSelector::CssClassSelector(class) => class.render_html(options),
-            AnyCssSubSelector::CssIdSelector(s) => s.render_html(options),
-            AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => {
-                pseudo_class.render_html(options)
-            }
+            AnyCssSubSelector::CssClassSelector(class) => class.render_html(),
+            AnyCssSubSelector::CssIdSelector(s) => s.render_html(),
+            AnyCssSubSelector::CssPseudoClassSelector(pseudo_class) => pseudo_class.render_html(),
             AnyCssSubSelector::CssPseudoElementSelector(pseudo_element) => {
-                pseudo_element.render_html(options)
+                pseudo_element.render_html()
             }
         }
     }
 }
 
 impl Render for CssTypeSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         assert!(self.namespace().is_none());
         match self.ident() {
-            Ok(n) => n.render_html(options),
+            Ok(n) => n.render_html(),
             Err(e) => RenderResult {
                 html: String::from(""),
                 errors: vec![CharismaError::ParseError(e.to_string())],
@@ -826,7 +793,7 @@ impl Render for CssTypeSelector {
 }
 
 impl Render for CssUniversalSelector {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: "<div data-kind=\"universal-selector\"></div>".to_string(),
             errors: vec![],
@@ -835,38 +802,38 @@ impl Render for CssUniversalSelector {
 }
 
 impl Render for AnyCssSimpleSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssSimpleSelector::CssTypeSelector(node) => node.render_html(options),
-            AnyCssSimpleSelector::CssUniversalSelector(s) => s.render_html(options),
+            AnyCssSimpleSelector::CssTypeSelector(node) => node.render_html(),
+            AnyCssSimpleSelector::CssUniversalSelector(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssCompoundSelector {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         assert!(self.nesting_selector_token().is_none());
         // simple selector is either an element/type selector eg. `body`, or `*` the universal selector
         // I don't understand at the moment why it is separate from compound selector thing, but we're
         // just going to prepend it onto the list of sub_selectors
-        let simple_selector_html = self
-            .simple_selector()
-            .map(|s| s.render_html(options))
-            .unwrap_or(RenderResult {
-                html: String::from(""),
-                errors: vec![],
-            });
+        let simple_selector_html =
+            self.simple_selector()
+                .map(|s| s.render_html())
+                .unwrap_or(RenderResult {
+                    html: String::from(""),
+                    errors: vec![],
+                });
 
         let sub_selectors = self.sub_selectors().into_iter().collect::<Vec<_>>();
 
         if sub_selectors.len() == 1 && self.simple_selector().is_none() {
-            sub_selectors[0].render_html(options)
+            sub_selectors[0].render_html()
         } else if sub_selectors.is_empty() && self.simple_selector().is_some() {
             simple_selector_html
         } else {
             let selectors = sub_selectors
                 .iter()
-                .map(|selector| selector.render_html(options))
+                .map(|selector| selector.render_html())
                 .reduce(|acc, RenderResult { html, errors }| RenderResult {
                     errors: [acc.errors, errors].concat(),
                     html: acc.html + &html,
@@ -879,7 +846,9 @@ impl Render for CssCompoundSelector {
             RenderResult {
                 html: format!(
                     "<div data-kind=\"compound-selector\" {}>{}{}</div>",
-                    options, simple_selector_html.html, selectors.html
+                    data_string_value(&self.to_string()),
+                    simple_selector_html.html,
+                    selectors.html
                 ),
                 errors: [simple_selector_html.errors, selectors.errors].concat(),
             }
@@ -888,7 +857,7 @@ impl Render for CssCompoundSelector {
 }
 
 impl Render for CssRegularDimension {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let unit_type = match self.unit_token() {
             Ok(u) => u.to_string(),
@@ -908,7 +877,7 @@ impl Render for CssRegularDimension {
             html: format!(
                 "<div data-kind=\"unit\" data-unit-type=\"{}\" {}>{}</div>",
                 unit_type.trim(),
-                options,
+                data_string_value(&self.to_string()),
                 render_value(value.trim())
             ),
             errors,
@@ -917,7 +886,7 @@ impl Render for CssRegularDimension {
 }
 
 impl Render for CssPercentage {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let value = match self.value_token() {
@@ -930,7 +899,7 @@ impl Render for CssPercentage {
         RenderResult {
             html: format!(
                 "<div data-kind=\"unit\" data-unit-type=\"percentage\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(value.trim())
             ),
             errors,
@@ -939,10 +908,10 @@ impl Render for CssPercentage {
 }
 
 impl Render for AnyCssDimension {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssDimension::CssPercentage(node) => node.render_html(options),
-            AnyCssDimension::CssRegularDimension(node) => node.render_html(options),
+            AnyCssDimension::CssPercentage(node) => node.render_html(),
+            AnyCssDimension::CssRegularDimension(node) => node.render_html(),
             AnyCssDimension::CssUnknownDimension(d) => RenderResult {
                 html: render_error_node(&d.to_string()),
                 errors: vec![CharismaError::ParseError(
@@ -954,7 +923,7 @@ impl Render for AnyCssDimension {
 }
 
 impl Render for CssIdentifier {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let value = match self.value_token() {
@@ -977,9 +946,9 @@ impl Render for CssIdentifier {
 }
 
 impl Render for CssComponentValueList {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         self.into_iter()
-            .map(|item| item.render_html(options))
+            .map(|item| item.render_html())
             .reduce(|acc, RenderResult { html, errors }| RenderResult {
                 errors: [acc.errors, errors].concat(),
                 html: acc.html + &html,
@@ -992,12 +961,12 @@ impl Render for CssComponentValueList {
 }
 
 impl Render for CssBinaryExpression {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let left = match self.left() {
             Ok(l) => {
-                let r = l.render_html(options);
+                let r = l.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -1008,7 +977,7 @@ impl Render for CssBinaryExpression {
         };
         let right = match self.right() {
             Ok(l) => {
-                let r = l.render_html(options);
+                let r = l.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -1042,7 +1011,7 @@ impl Render for CssBinaryExpression {
 }
 
 impl Render for CssParenthesizedExpression {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -1051,29 +1020,29 @@ impl Render for CssParenthesizedExpression {
 }
 
 impl Render for AnyCssExpression {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssExpression::CssBinaryExpression(s) => s.render_html(options),
+            AnyCssExpression::CssBinaryExpression(s) => s.render_html(),
             AnyCssExpression::CssListOfComponentValuesExpression(list) => {
-                list.css_component_value_list().render_html(options)
+                list.css_component_value_list().render_html()
             }
-            AnyCssExpression::CssParenthesizedExpression(s) => s.render_html(options),
+            AnyCssExpression::CssParenthesizedExpression(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssParameter {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
-        self.any_css_expression().unwrap().render_html(options)
+    fn render_html(&self) -> RenderResult {
+        self.any_css_expression().unwrap().render_html()
     }
 }
 
 impl Render for CssFunction {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let function_name = match self.name() {
             Ok(n) => {
-                let r = n.render_html(options);
+                let r = n.render_html();
                 errors.extend(r.errors);
                 r.html
             }
@@ -1087,7 +1056,7 @@ impl Render for CssFunction {
             .items()
             .into_iter()
             .map(|item| match item {
-                Ok(r) => r.render_html(options),
+                Ok(r) => r.render_html(),
                 Err(e) => RenderResult {
                     html: String::from(""),
                     errors: vec![CharismaError::ParseError(e.to_string())],
@@ -1110,7 +1079,9 @@ impl Render for CssFunction {
             <div data-attr=\"args\">{}</div>
         </div>
         ",
-                options, function_name, args.html
+                data_string_value(&self.to_string()),
+                function_name,
+                args.html
             ),
             errors: [errors, args.errors].concat(),
         }
@@ -1118,7 +1089,7 @@ impl Render for CssFunction {
 }
 
 impl Render for CssUrlFunction {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         assert!(self.modifiers().into_iter().len() == 0);
         let name = match self.name() {
@@ -1146,16 +1117,16 @@ impl Render for CssUrlFunction {
 }
 
 impl Render for AnyCssFunction {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssFunction::CssFunction(f) => f.render_html(options),
-            AnyCssFunction::CssUrlFunction(s) => s.render_html(options),
+            AnyCssFunction::CssFunction(f) => f.render_html(),
+            AnyCssFunction::CssUrlFunction(s) => s.render_html(),
         }
     }
 }
 
 impl Render for CssNumber {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let value = match self.value_token() {
             Ok(v) => v.to_string(),
@@ -1168,7 +1139,7 @@ impl Render for CssNumber {
         RenderResult {
             html: format!(
                 "<div data-kind=\"number\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(value.trim())
             ),
             errors,
@@ -1177,7 +1148,7 @@ impl Render for CssNumber {
 }
 
 impl Render for CssDashedIdentifier {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
         let value = match self.value_token() {
             Ok(v) => v.to_string(),
@@ -1190,7 +1161,7 @@ impl Render for CssDashedIdentifier {
         RenderResult {
             html: format!(
                 "<div data-kind=\"dashed-id\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(value.trim())
             ),
             errors,
@@ -1199,7 +1170,7 @@ impl Render for CssDashedIdentifier {
 }
 
 impl Render for CssColor {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let hash = match self.hash_token() {
@@ -1223,7 +1194,7 @@ impl Render for CssColor {
             html: format!(
                 "<div data-kind=\"color\" data-hash=\"{}\" {}>{}</div>",
                 hash.trim(),
-                options,
+                data_string_value(&self.to_string()),
                 render_value(value.trim())
             ),
             errors,
@@ -1232,7 +1203,7 @@ impl Render for CssColor {
 }
 
 impl Render for CssString {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let mut errors: Vec<CharismaError> = vec![];
 
         let value = match self.value_token() {
@@ -1246,7 +1217,7 @@ impl Render for CssString {
         RenderResult {
             html: format!(
                 "<div data-kind=\"string\" {}>{}</div>",
-                options,
+                data_string_value(&self.to_string()),
                 render_value(&value)
             ),
             errors,
@@ -1255,16 +1226,16 @@ impl Render for CssString {
 }
 
 impl Render for CssRatio {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let numerator = match self.numerator() {
-            Ok(n) => n.render_html(options),
+            Ok(n) => n.render_html(),
             Err(err) => RenderResult {
                 html: "".to_string(),
                 errors: vec![CharismaError::ParseError(err.to_string())],
             },
         };
         let denominator = match self.denominator() {
-            Ok(d) => d.render_html(options),
+            Ok(d) => d.render_html(),
             Err(err) => RenderResult {
                 html: "".to_string(),
                 errors: vec![CharismaError::ParseError(err.to_string())],
@@ -1285,7 +1256,7 @@ impl Render for CssRatio {
 }
 
 impl Render for CssCustomIdentifier {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         RenderResult {
             html: render_error_node(&self.to_string()),
             errors: vec![CharismaError::NotSupported(self.to_string())],
@@ -1294,28 +1265,25 @@ impl Render for CssCustomIdentifier {
 }
 
 impl Render for AnyCssValue {
-    fn render_html(&self, _options: &RenderOptions) -> RenderResult {
-        let options = RenderOptions {
-            attrs: vec![("data-string-value".to_string(), self.to_string())],
-        };
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssValue::AnyCssDimension(dim) => dim.render_html(&options),
-            AnyCssValue::AnyCssFunction(f) => f.render_html(&options),
-            AnyCssValue::CssColor(color) => color.render_html(&options),
-            AnyCssValue::CssCustomIdentifier(s) => s.render_html(&options),
-            AnyCssValue::CssDashedIdentifier(id) => id.render_html(&options),
-            AnyCssValue::CssIdentifier(id) => id.render_html(&options),
-            AnyCssValue::CssNumber(num) => num.render_html(&options),
-            AnyCssValue::CssRatio(s) => s.render_html(&options),
-            AnyCssValue::CssString(css_string) => css_string.render_html(&options),
+            AnyCssValue::AnyCssDimension(dim) => dim.render_html(),
+            AnyCssValue::AnyCssFunction(f) => f.render_html(),
+            AnyCssValue::CssColor(color) => color.render_html(),
+            AnyCssValue::CssCustomIdentifier(s) => s.render_html(),
+            AnyCssValue::CssDashedIdentifier(id) => id.render_html(),
+            AnyCssValue::CssIdentifier(id) => id.render_html(),
+            AnyCssValue::CssNumber(num) => num.render_html(),
+            AnyCssValue::CssRatio(s) => s.render_html(),
+            AnyCssValue::CssString(css_string) => css_string.render_html(),
         }
     }
 }
 
 impl Render for AnyCssGenericComponentValue {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         match self {
-            AnyCssGenericComponentValue::AnyCssValue(node) => node.render_html(options),
+            AnyCssGenericComponentValue::AnyCssValue(node) => node.render_html(),
             // these are just commas I believe
             AnyCssGenericComponentValue::CssGenericDelimiter(_) => RenderResult {
                 html: String::from(""),
@@ -1326,7 +1294,7 @@ impl Render for AnyCssGenericComponentValue {
 }
 
 impl Render for CssSelectorList {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let string_value = self
             .into_iter()
             .map(|s| s.unwrap().to_string())
@@ -1336,7 +1304,7 @@ impl Render for CssSelectorList {
         let result = self
             .into_iter()
             .map(|s| match s {
-                Ok(s) => s.render_html(options),
+                Ok(s) => s.render_html(),
                 Err(e) => RenderResult {
                     html: "".to_string(),
                     errors: vec![CharismaError::ParseError(e.to_string())],
@@ -1365,7 +1333,7 @@ impl Render for CssSelectorList {
 }
 
 impl Render for Property {
-    fn render_html(&self, options: &RenderOptions) -> RenderResult {
+    fn render_html(&self) -> RenderResult {
         let property = parse_property(&format!("{}: {};", self.name, self.value)).unwrap();
         match property.declaration().and_then(|d| d.property()) {
             Ok(p) => {
@@ -1375,12 +1343,12 @@ impl Render for Property {
                 let value = if property.value().into_iter().len() == 1 {
                     let value = property.value().into_iter().next().unwrap();
                     let value = value.as_any_css_value().unwrap();
-                    value.render_html(options)
+                    value.render_html()
                 } else {
                     let values = property
                         .value()
                         .into_iter()
-                        .map(|value| value.render_html(options))
+                        .map(|value| value.render_html())
                         .reduce(|acc, RenderResult { html, errors }| RenderResult {
                             html: acc.html + &html,
                             errors: [acc.errors, errors].concat(),

@@ -75,7 +75,7 @@ fn search(
                 }
             } else {
                 match parse_selector(s) {
-                    Ok(s) => s.render_html(&RenderOptions::default()),
+                    Ok(s) => s.render_html(),
                     Err(e) => RenderResult {
                         html: s.to_owned(),
                         errors: vec![e],
@@ -128,12 +128,7 @@ fn find_property(
         .map(|(p, s)| (p, parse_selector(&s.string)))
         .map(
             |(property, selector)| -> Result<(RenderResult, RenderResult), CharismaError> {
-                selector.map(|selector| {
-                    (
-                        property.render_html(&RenderOptions::default()),
-                        selector.render_html(&RenderOptions::default()),
-                    )
-                })
+                selector.map(|selector| (property.render_html(), selector.render_html()))
             },
         )
         .take(100)
@@ -210,7 +205,7 @@ fn render_rule(
             keyframes_rule
                 .frames
                 .iter()
-                .map(|frame| frame.render_html(&RenderOptions::default()))
+                .map(|frame| frame.render_html())
                 .reduce(|acc, RenderResult { html, errors }| RenderResult {
                     errors: [acc.errors, errors].concat(),
                     html: acc.html + &html,
@@ -243,10 +238,10 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector.render_html(&RenderOptions::default()).html,
+            selector.render_html().html,
             properties
                 .iter()
-                .map(|p| p.render_html(&RenderOptions::default()))
+                .map(|p| p.render_html())
                 .reduce(|acc, RenderResult { html, errors }| RenderResult {
                     errors: [acc.errors, errors].concat(),
                     html: acc.html + &html,
