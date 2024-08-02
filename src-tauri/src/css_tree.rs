@@ -80,9 +80,9 @@ impl ToSelector for AnyCssRelativeSelector {
             Combinator::And
         } else {
             match selector.combinator() {
-                Some(c) => get_combinator_type(c.kind()),
-                None => Ok(Combinator::Descendant),
-            }?
+                Some(c) => get_combinator_type(c.kind())?,
+                None => Combinator::Descendant,
+            }
         };
 
         let path = [
@@ -229,8 +229,7 @@ impl RegularRule {
         }
 
         self.properties.push(Arc::new(new_property));
-        self.properties
-            .sort_by_key(|p| format!("{}: {};", p.name, p.value))
+        self.properties.sort_by_key(|p| p.name.clone())
     }
 }
 

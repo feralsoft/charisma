@@ -109,9 +109,9 @@
     color: var(--variable-color);
 }
 [data-kind="error-node"] {
+    text-decoration: underline;
     text-decoration-color: darkred;
     text-decoration-style: wavy;
-    text-decoration: underline;
 }
 [data-kind="frame"] {
     display: flex;
@@ -289,8 +289,8 @@
 }
 [data-kind="property"][data-commented="true"] {
     opacity: 0.7;
-    text-decoration-color: white;
     text-decoration: line-through;
+    text-decoration-color: white;
 }
 [data-kind="property"][data-commented="true"] .toggle-comment {
     background-color: rgb(60, 60, 60);
@@ -489,8 +489,8 @@
 }
 [data-kind="rule"] [data-attr="properties"] .search-options .search-item-description {
     align-items: center;
-    /* display: flex; */
     display: none;
+    /* display: flex; */
     font-size: 0.8em;
     max-width: 200px;
     opacity: 0.8;
@@ -725,8 +725,8 @@
 .errors-toast-box > [data-error-type]::before {
     content: "[" attr(data-error-type) "]";
     margin-right: 0.5em;
-    text-decoration-color: rgb(0,0, 0, 0);
     text-decoration: underline;
+    text-decoration-color: rgb(0,0, 0, 0);
 }
 .errors-toast-box > ::before {
     
@@ -736,9 +736,9 @@
     font-size: 0.8em;
     justify-content: left;
     overflow: hidden;
+    text-decoration: underline;
     text-decoration-color: darkred;
     text-decoration-style: wavy;
-    text-decoration: underline;
     text-overflow: ellipsis;
     text-wrap: nowrap;
     width: 100%;
@@ -898,9 +898,9 @@
     color: inherit;
     cursor: pointer;
     margin: 0;
+    padding: 0;
     padding-left: 0.5em;
     padding-right: 0.5em;
-    padding: 0;
 }
 .titlebar .file-picker:active {
     background: #000000aa;
@@ -909,6 +909,9 @@
 }
 .titlebar .file-picker:hover {
     background: #00000030;
+}
+.titlebar.file-picker {
+    
 }
 .titlebar-button {
     align-items: center;
@@ -926,10 +929,13 @@
     display: flex;
     margin-left: 0.5em;
 }
+.titlebar-info .file-picker {
+    
+}
 .toggle-comment {
     background: none;
-    border-radius: 3px;
     border: 0.1em solid rgb(60, 60, 60);
+    border-radius: 3px;
     color: var(--foreground-color);
     cursor: pointer;
     font-size: 0.75em;
@@ -1038,9 +1044,9 @@ body .canvas:has( > .dragging) {
 }
 body .search.active {
     background-color: rgb(40, 40, 40);
+    border: none;
     border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     border-radius: 5px;
-    border: none;
     box-shadow: 0px 2px 2px 2px #00000030;
     color: white;
     font-family: var(--font-family);
@@ -1065,8 +1071,8 @@ body .search-box:has(.search.active) {
 }
 body .search-options:has( > *) {
     background: rgba(50, 50, 50, 0.97);
-    border-radius: 5px;
     border: 0.1em solid black;
+    border-radius: 5px;
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
@@ -1083,8 +1089,8 @@ body .search-options:has( > *) > [data-kind] * {
     pointer-events: none;
 }
 body .search-options:has( > *) > [data-kind].candidate {
-    text-decoration-color: white;
     text-decoration: underline;
+    text-decoration-color: white;
 }
 body .search-options:has( > *):not(:has(.candidate)) > [data-kind]:first-child {
     
@@ -1325,6 +1331,9 @@ tets {
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
+
+
+
 
 
 
