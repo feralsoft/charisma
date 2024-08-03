@@ -815,12 +815,6 @@
 .toggle-comment:hover {
     background: rgb(50, 50, 50);
 }
-#tagline {
-    --color: #f55e78;
-    --left: 20px;
-    --size: 400px;
-    --top: 17px;
-}
 a {
     display: flex;
 }
@@ -1109,5 +1103,6 @@ weee {
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
+
 
 @media (prefers-reduced-motion: no-preference) { a { text-decoration-style: dashed; } }

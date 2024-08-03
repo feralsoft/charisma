@@ -105,7 +105,8 @@ fn find_property(
     state: tauri::State<Mutex<CssTree>>,
     path: &str,
     q: &str,
-) -> Result<Vec<(RenderResult, RenderResult)>, InvokeError> {
+    offset: usize,
+) -> Result<(Vec<(RenderResult, RenderResult)>, usize), InvokeError> {
     let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
     let mut errors: Vec<CharismaError> = vec![];
     if !tree.is_loaded(path) {
@@ -124,6 +125,8 @@ fn find_property(
             .then_with(|| a_property.cmp(&b_property))
     });
 
+    let total = results.len();
+
     let results: Result<Vec<(RenderResult, RenderResult)>, _> = results
         .iter()
         .map(|(p, s)| (p, parse_selector(&s.string)))
@@ -132,10 +135,11 @@ fn find_property(
                 selector.map(|selector| (property.render_html(), selector.render_html()))
             },
         )
-        .take(100)
+        .skip(offset)
+        .take(50)
         .collect();
 
-    Ok(results?)
+    Ok((results?, total))
 }
 
 #[tauri::command]

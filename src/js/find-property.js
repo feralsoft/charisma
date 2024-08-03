@@ -41,21 +41,51 @@ function start_search() {
           options.innerHTML = "";
           input.dataset.empty = true;
         } else {
-          let properties = await invoke("find_property", {
+          let offset = 0;
+          let [properties, total] = await invoke("find_property", {
             path: localStorage.getItem("current-path"),
             q: input.textContent.trim(),
+            offset,
           });
 
-          options.innerHTML = properties
-            .map(([property, selector]) => {
-              // todo: handle errors
-              return `<div class='find-search-result'>
+          let load_more_results = document.createElement("button");
+          load_more_results.classList.add("load-more-result");
+          load_more_results.innerText = "load more";
+          load_more_results.addEventListener("mousedown", async function (_) {
+            offset += 50;
+            let [properties, total] = await invoke("find_property", {
+              path: localStorage.getItem("current-path"),
+              q: input.textContent.trim(),
+              offset,
+            });
+            options.removeChild(this);
+            options.innerHTML += properties
+              .map(
+                ([property, selector]) =>
+                  // todo: handle errors
+                  `<div class='find-search-result'>
                   <div class='property'>${property.html}</div>
                   <div class='selector'>${selector.html}</div>
                 </div>
-                `;
-            })
+                `,
+              )
+              .join("");
+
+            if (total - offset > 50) options.append(this);
+          });
+
+          options.innerHTML = properties
+            .map(
+              ([property, selector]) =>
+                // todo: handle errors
+                `<div class='find-search-result'>
+                  <div class='property'>${property.html}</div>
+                  <div class='selector'>${selector.html}</div>
+                </div>
+                `,
+            )
             .join("");
+          if (total > 50) options.append(load_more_results);
         }
       });
     }
