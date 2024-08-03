@@ -1,5 +1,5 @@
-import { h, modifiers } from "../html.js";
-import invoke from "../invoke.js";
+import { h, modifiers } from "./html.js";
+import invoke from "./invoke.js";
 
 function plain_text_node(editor, name, original_value) {
   return h.div(

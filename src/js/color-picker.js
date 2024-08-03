@@ -1,6 +1,6 @@
-import { h } from "../html.js";
+import { h } from "./html.js";
 import * as ast from "./ast.js";
-import invoke from "../invoke";
+import invoke from "./invoke";
 
 const COLOR_SELECTOR =
   '[data-kind="function"]:has(> [data-attr="name"] [data-value="rgb"])';

@@ -1201,6 +1201,9 @@ key {
 laugh {
     
 }
+main {
+    
+}
 menu {
     background-color: rgb(20, 20, 20);
     display: flex;
@@ -1331,6 +1334,7 @@ tets {
         border-bottom: 0.1em solid rgb(200, 200, 200, 0.5);
     }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-import invoke from "../invoke.js";
+import invoke from "./invoke.js";
 
 // make number go up & down (unit)
 

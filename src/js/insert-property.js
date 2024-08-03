@@ -1,6 +1,6 @@
-import { h } from "../html.js";
-import invoke from "../invoke.js";
-import { move_cursor_to_end_of_element } from "../utils/contenteditable.js";
+import { h } from "./html.js";
+import invoke from "./invoke.js";
+import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
 
 let { div } = h;
 

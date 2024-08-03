@@ -1,7 +1,7 @@
-import { focus } from "../focus.js";
-import { add_css_editor } from "../editor.js";
-import { move_cursor_to_end_of_element } from "../utils/contenteditable.js";
-import { h } from "../html.js";
+import { focus } from "./focus.js";
+import { add_editor } from "./editor.js";
+import { move_cursor_to_end_of_element } from "./utils/contenteditable.js";
+import { h } from "./html.js";
 
 const { invoke } = window.__TAURI__.tauri;
 
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
     if (!input.classList.contains("selector-search")) return;
     let selector = e.target.closest(".search-options > [data-kind]");
     if (!selector) return;
-    await add_css_editor(selector.dataset.stringValue);
+    await add_editor(selector.dataset.stringValue);
     clear();
   });
 
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
               path: localStorage.getItem("current-path"),
               selector,
             });
-            await add_css_editor(selector);
+            await add_editor(selector);
           } catch (e) {
             console.log(e);
             throw e;
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", (_) => {
         if (existing_rule) {
           focus(existing_rule);
         } else {
-          await add_css_editor(selector);
+          await add_editor(selector);
         }
       }
 
