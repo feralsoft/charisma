@@ -138,32 +138,6 @@ fn find_property(
     Ok(results?)
 }
 
-// TODO: remove the need for this
-#[tauri::command]
-fn insert_empty_rule(
-    state: tauri::State<Mutex<CssTree>>,
-    path: &str,
-    selector: &str,
-) -> Result<(), InvokeError> {
-    let mut tree = state.lock().map_err(|_| CharismaError::TreeLocked)?;
-    let mut errors: Vec<CharismaError> = vec![];
-    if !tree.is_loaded(path) {
-        errors.extend(tree.load(path));
-    }
-    if selector.starts_with("@keyframes") {
-        match selector.split("@keyframes").nth(1) {
-            Some(name) => tree.insert_empty_keyframes_rule(name.trim().to_string()),
-            None => {
-                return Err(CharismaError::ParseError("keyframes parse error".to_string()).into())
-            }
-        }
-    } else {
-        let selector = parse_selector(selector)?.to_selector(None)?;
-        tree.insert_empty_regular_rule(&selector);
-    }
-    Ok(fs::write(path, tree.serialize()).map_err(|_| CharismaError::FailedToSave)?)
-}
-
 #[tauri::command]
 fn render_rule(
     state: tauri::State<Mutex<CssTree>>,
@@ -218,16 +192,19 @@ fn render_rule(
                 .html
         ))
     } else {
-        let selector = parse_selector(selector)?;
-        let path = selector.to_css_tree_path()?;
+        let selector_list = parse_selector(selector)?;
+        let selector = selector_list.to_selector(None)?;
 
         let rule = match tree
-            .get(&path)
+            .get(&selector.path)
             .and_then(|tree| tree.rule.as_ref())
             .and_then(|r| r.as_regular_rule())
         {
             Some(rule) => rule,
-            None => return Err(CharismaError::AssertionError("expected_rule".into()).into()),
+            None => {
+                tree.insert_empty_regular_rule(&selector);
+                RegularRule::new(selector)
+            }
         };
         let mut properties = rule.properties;
         properties.sort_by_key(|p| p.name.clone());
@@ -239,7 +216,7 @@ fn render_rule(
         <div data-attr=\"properties\">{}</div>
     </div>
     ",
-            selector.render_html().html,
+            selector_list.render_html().html,
             properties
                 .iter()
                 .map(|p| p.render_html())
@@ -564,7 +541,6 @@ fn main() {
             insert_property,
             replace_all_properties,
             update_value,
-            insert_empty_rule,
             load_rule,
             rename_rule,
             rename_property,

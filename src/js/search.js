@@ -104,10 +104,6 @@ document.addEventListener("DOMContentLoaded", (_) => {
           focus(existing_rule);
         } else {
           try {
-            await invoke("insert_empty_rule", {
-              path: localStorage.getItem("current-path"),
-              selector,
-            });
             await add_editor(selector);
           } catch (e) {
             console.log(e);

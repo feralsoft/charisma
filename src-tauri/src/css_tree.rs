@@ -592,15 +592,19 @@ impl CssTree {
                 properties,
                 selector,
             })) => {
-                format!(
-                    "{} {{\n    {}\n}}\n",
-                    selector.string,
-                    properties
-                        .iter()
-                        .map(|p| p.to_string() + "\n    ")
-                        .collect::<String>()
-                        .trim()
-                )
+                if properties.is_empty() {
+                    String::new()
+                } else {
+                    format!(
+                        "{} {{\n    {}\n}}\n",
+                        selector.string,
+                        properties
+                            .iter()
+                            .map(|p| p.to_string() + "\n    ")
+                            .collect::<String>()
+                            .trim()
+                    )
+                }
             }
             Some(Rule::FontFace(fonts)) => fonts.iter().fold(String::new(), |mut out, f| {
                 let _ = write!(
@@ -956,29 +960,6 @@ impl CssTree {
                 tree.rule = Some(Rule::Bogus(vec![rule]));
                 self.children.insert(Part::Bogus, tree);
                 Ok(())
-            }
-        }
-    }
-
-    pub fn insert_empty_keyframes_rule(&mut self, name: String) {
-        let keyframes_part = Part::AtRule(AtRulePart::Keyframes);
-        let name_part = Part::AtRule(AtRulePart::Name(name.clone()));
-        let tree = match self.children.get_mut(&keyframes_part) {
-            Some(tree) => tree,
-            None => {
-                self.children.insert(keyframes_part.clone(), CssTree::new());
-                self.children.get_mut(&keyframes_part).unwrap()
-            }
-        };
-        match tree.children.get(&name_part) {
-            Some(_) => {} // already there
-            None => {
-                let mut dst = CssTree::new();
-                dst.rule = Some(Rule::Keyframes(Keyframes {
-                    name,
-                    frames: vec![],
-                }));
-                tree.children.insert(name_part, dst);
             }
         }
     }

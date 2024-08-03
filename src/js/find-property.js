@@ -25,10 +25,6 @@ function start_search() {
     let selector = result.querySelector(".selector > [data-kind]").dataset
       .stringValue;
 
-    await invoke("insert_empty_rule", {
-      path: localStorage.getItem("current-path"),
-      selector,
-    });
     await add_editor(selector);
     clear();
   }
