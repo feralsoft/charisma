@@ -1,20 +1,23 @@
 use crate::{parse_utils::parse_property, CharismaError};
 use biome_css_syntax::{
-    AnyCssAtRule, AnyCssKeyframesSelector, AnyCssPseudoClass, AnyCssPseudoClassNth,
-    AnyCssPseudoClassNthSelector, AnyCssPseudoElement, AnyCssRelativeSelector, AnyCssRule,
+    AnyCssAtRule, AnyCssDeclarationOrRuleBlock, AnyCssKeyframesSelector, AnyCssMediaCondition,
+    AnyCssMediaInParens, AnyCssMediaQuery, AnyCssMediaTypeQuery, AnyCssPseudoClass,
+    AnyCssPseudoClassNth, AnyCssPseudoClassNthSelector, AnyCssPseudoElement, AnyCssQueryFeature,
+    AnyCssRelativeSelector, AnyCssRule, AnyCssRuleListBlock,
     AnyCssSelector::{self, *},
     AnyCssSubSelector::{self, *},
     CssAttributeSelector, CssDeclarationOrRuleBlock, CssDeclarationWithSemicolon,
     CssFontFaceAtRule, CssKeyframesAtRule, CssKeyframesIdentSelector,
-    CssKeyframesPercentageSelector, CssKeyframesSelectorList,
+    CssKeyframesPercentageSelector, CssKeyframesSelectorList, CssMediaAtRule,
+    CssMediaConditionInParens, CssMediaConditionQuery, CssMediaFeatureInParens,
     CssPseudoClassFunctionCompoundSelector, CssPseudoClassFunctionCompoundSelectorList,
     CssPseudoClassFunctionIdentifier, CssPseudoClassFunctionNth,
     CssPseudoClassFunctionRelativeSelectorList, CssPseudoClassFunctionSelector,
     CssPseudoClassFunctionSelectorList, CssPseudoClassFunctionValueList, CssPseudoClassNth,
     CssPseudoClassNthIdentifier, CssPseudoClassNthNumber, CssPseudoClassNthSelector,
-    CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssRelativeSelector,
-    CssRelativeSelectorList, CssSelectorList, CssSubSelectorList, CssSyntaxKind,
-    CssUniversalSelector,
+    CssPseudoElementFunctionIdentifier, CssPseudoElementFunctionSelector, CssQueryFeaturePlain,
+    CssRelativeSelector, CssRelativeSelectorList, CssSelectorList, CssSubSelectorList,
+    CssSyntaxKind, CssUniversalSelector,
 };
 use std::fmt::Write;
 use std::{collections::HashMap, fmt::Display, fs, sync::Arc};
@@ -251,9 +254,16 @@ pub struct FontFace {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct MediaQuery {
+    pub path: Vec<Part>,
+    pub string: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Rule {
     Regular(RegularRule),
     Keyframes(Keyframes),
+    Media(MediaQuery, RegularRule),
     // there's no good way to index @font-face since the selector doesn't include
     // something to use
     FontFace(Vec<FontFace>),
@@ -508,7 +518,7 @@ impl CssTree {
             }
             AnyCssAtRule::CssImportAtRule(_) => Err(CharismaError::NotSupported("@import".into())),
             AnyCssAtRule::CssLayerAtRule(_) => Err(CharismaError::NotSupported("@layer".into())),
-            AnyCssAtRule::CssMediaAtRule(_) => Err(CharismaError::NotSupported("@media".into())),
+            AnyCssAtRule::CssMediaAtRule(rule) => self.insert_media_at_rule(rule),
             AnyCssAtRule::CssNamespaceAtRule(_) => {
                 Err(CharismaError::NotSupported("namespace".into()))
             }
@@ -524,6 +534,49 @@ impl CssTree {
                 Err(CharismaError::NotSupported("@supports".into()))
             }
         }
+    }
+
+    fn insert_media_at_rule(&mut self, at_rule: CssMediaAtRule) -> Result<(), CharismaError> {
+        let path = at_rule.to_css_tree_path()?;
+        println!("path = {:?}", path);
+        let queries = at_rule
+            .queries()
+            .into_iter()
+            .map(|q| q.unwrap().to_string())
+            .collect::<String>();
+
+        let block = at_rule
+            .block()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?;
+        match block {
+            AnyCssRuleListBlock::CssBogusBlock(_) => {
+                return Err(CharismaError::ParseError(block.to_string()))
+            }
+            AnyCssRuleListBlock::CssRuleListBlock(ref b) => {
+                for rule in b.rules() {
+                    let rule = rule.as_css_qualified_rule().unwrap();
+                    let selector = rule.prelude().to_selector(None)?;
+                    match rule
+                        .block()
+                        .map_err(|e| CharismaError::ParseError(e.to_string()))?
+                    {
+                        AnyCssDeclarationOrRuleBlock::CssBogusBlock(_) => {
+                            Err(CharismaError::ParseError(block.to_string()))
+                        }
+                        AnyCssDeclarationOrRuleBlock::CssDeclarationOrRuleBlock(block) => self
+                            .load_rule(
+                                Selector {
+                                    string: format!("@media {} {}", queries, selector.string),
+                                    path: [path.clone(), selector.path].concat(),
+                                },
+                                &block,
+                            ),
+                    }?
+                }
+            }
+        }
+
+        Err(CharismaError::NotSupported("@media".into()))
     }
 
     pub fn load(&mut self, css_path: &str) -> Vec<CharismaError> {
@@ -643,6 +696,25 @@ impl CssTree {
                 )
             }
             Some(Rule::Bogus(rules)) => rules.concat(),
+            Some(Rule::Media(q, rule)) => {
+                if rule.properties.is_empty() {
+                    String::new()
+                } else {
+                    format!(
+                        "@media ({}) {{{}}}",
+                        q.string,
+                        format!(
+                            "{} {{\n    {}\n}}\n",
+                            rule.selector.string,
+                            rule.properties
+                                .iter()
+                                .map(|p| p.to_string() + "\n    ")
+                                .collect::<String>()
+                                .trim()
+                        )
+                    )
+                }
+            }
             None => String::from(""),
         };
 
@@ -679,6 +751,9 @@ impl CssTree {
                 // TODO: what do we show here?
             }
             Some(Rule::Bogus(_)) => {}
+            Some(Rule::Media(_, _)) => {
+                //
+            }
             None => {}
         }
         for tree in self.children.values() {
@@ -708,6 +783,7 @@ impl CssTree {
                 // TODO!
             }
             Some(Rule::Bogus(_)) => {}
+            Some(Rule::Media(_, _)) => {}
             None => {}
         }
         for child in self.children.values() {
@@ -741,6 +817,9 @@ impl CssTree {
             )),
             Some(Rule::Bogus(_)) => Err(CharismaError::NotSupported(
                 "can't drain bogus rule".to_string(),
+            )),
+            Some(Rule::Media(_, _)) => Err(CharismaError::NotSupported(
+                "can't drain media rule".to_string(),
             )),
             None => Err(CharismaError::NotSupported(
                 "can't drain empty rule".to_string(),
@@ -778,6 +857,7 @@ impl CssTree {
             Rule::FontFace(_) => Err(CharismaError::NotSupported(
                 "can't edit @font-face rule".into(),
             )),
+            Rule::Media(_, _) => Err(CharismaError::NotSupported("can't edit @media rule".into())),
             Rule::Bogus(_) => Err(CharismaError::NotSupported("can't edit bogus rule".into())),
         }
     }
@@ -807,6 +887,9 @@ impl CssTree {
             )),
             Rule::Bogus(_) => Err(CharismaError::NotSupported(
                 "can't delete property for bogus rule".into(),
+            )),
+            Rule::Media(_, _) => Err(CharismaError::NotSupported(
+                "can't delete property for @media rule".into(),
             )),
         }
     }
@@ -865,15 +948,7 @@ impl CssTree {
                     rule.insert(property);
                     Ok(())
                 }
-                Some(Rule::Keyframes(_)) => {
-                    Err(CharismaError::AssertionError("not a regular rule".into()))
-                }
-                Some(Rule::FontFace(_)) => {
-                    Err(CharismaError::AssertionError("not a regular rule".into()))
-                }
-                Some(Rule::Bogus(_)) => {
-                    Err(CharismaError::AssertionError("not a regular rule".into()))
-                }
+                Some(_) => Err(CharismaError::AssertionError("not a regular rule".into())),
                 None => {
                     let mut rule = RegularRule::new(selector);
                     rule.insert(property);
@@ -936,19 +1011,13 @@ impl CssTree {
         match self.children.get_mut(&Part::Bogus) {
             Some(t) => match t.rule.as_mut() {
                 Some(r) => match r {
-                    Rule::Regular(_) => Err(CharismaError::AssertionError(
-                        "unexpected regular rule at bogus location".into(),
-                    )),
-                    Rule::Keyframes(_) => Err(CharismaError::AssertionError(
-                        "unexpected @keyframes rul at bogus location".into(),
-                    )),
-                    Rule::FontFace(_) => Err(CharismaError::AssertionError(
-                        "unexpected @font-face rule at bogus location".into(),
-                    )),
                     Rule::Bogus(rules) => {
                         rules.push(rule);
                         Ok(())
                     }
+                    _ => Err(CharismaError::AssertionError(
+                        "unexpected non-bogus rule at bogus location".into(),
+                    )),
                 },
                 None => {
                     t.rule = Some(Rule::Bogus(vec![rule]));
@@ -1073,6 +1142,12 @@ pub enum AtRulePart {
     Keyframes,
     // @font-face
     Fontface,
+    // @media
+    Media,
+    // eg. preferse-reduced-motion
+    FeatureName(String),
+    // eg. no-preference
+    FeatureValue(String),
     // keyframe-name
     Name(String),
     // `from` or `to`
@@ -1154,6 +1229,9 @@ impl Display for AtRulePart {
             AtRulePart::Name(name) => write!(f, "{}", name)?,
             AtRulePart::Percentage(num) => write!(f, "{}%", num)?,
             AtRulePart::Identifier(id) => write!(f, "{}", id)?,
+            AtRulePart::Media => write!(f, "@media")?,
+            AtRulePart::FeatureName(_) => todo!(),
+            AtRulePart::FeatureValue(_) => todo!(),
         }
         Ok(())
     }
@@ -1585,6 +1663,114 @@ impl CssTreePath for CssFontFaceAtRule {
     }
 }
 
+impl CssTreePath for AnyCssMediaTypeQuery {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        match self {
+            AnyCssMediaTypeQuery::CssMediaAndTypeQuery(_) => todo!(),
+            AnyCssMediaTypeQuery::CssMediaTypeQuery(_) => todo!(),
+        }
+    }
+}
+
+impl CssTreePath for CssMediaConditionInParens {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        self.condition()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?
+            .to_css_tree_path()
+    }
+}
+
+impl CssTreePath for CssQueryFeaturePlain {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        let name = self
+            .name()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?;
+        let value = self
+            .value()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?;
+
+        Ok(vec![
+            Part::AtRule(AtRulePart::FeatureName(name.to_string())),
+            Part::AtRule(AtRulePart::FeatureValue(value.to_string())),
+        ])
+    }
+}
+
+impl CssTreePath for AnyCssQueryFeature {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        match self {
+            AnyCssQueryFeature::CssQueryFeatureBoolean(_) => todo!(),
+            AnyCssQueryFeature::CssQueryFeaturePlain(f) => f.to_css_tree_path(),
+            AnyCssQueryFeature::CssQueryFeatureRange(_) => todo!(),
+            AnyCssQueryFeature::CssQueryFeatureRangeInterval(_) => todo!(),
+            AnyCssQueryFeature::CssQueryFeatureReverseRange(_) => todo!(),
+        }
+    }
+}
+
+impl CssTreePath for CssMediaFeatureInParens {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        self.feature()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?
+            .to_css_tree_path()
+    }
+}
+
+impl CssTreePath for AnyCssMediaInParens {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        match self {
+            AnyCssMediaInParens::CssMediaConditionInParens(c) => c.to_css_tree_path(),
+            AnyCssMediaInParens::CssMediaFeatureInParens(c) => c.to_css_tree_path(),
+        }
+    }
+}
+
+impl CssTreePath for AnyCssMediaCondition {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        match self {
+            AnyCssMediaCondition::AnyCssMediaInParens(m) => m.to_css_tree_path(),
+            AnyCssMediaCondition::CssMediaAndCondition(_) => todo!(),
+            AnyCssMediaCondition::CssMediaNotCondition(_) => todo!(),
+            AnyCssMediaCondition::CssMediaOrCondition(_) => todo!(),
+        }
+    }
+}
+
+impl CssTreePath for CssMediaConditionQuery {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        self.condition()
+            .map_err(|e| CharismaError::ParseError(e.to_string()))?
+            .to_css_tree_path()
+    }
+}
+
+impl CssTreePath for AnyCssMediaQuery {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        match self {
+            AnyCssMediaQuery::AnyCssMediaTypeQuery(q) => q.to_css_tree_path(),
+            AnyCssMediaQuery::CssBogusMediaQuery(_) => todo!(),
+            AnyCssMediaQuery::CssMediaConditionQuery(q) => q.to_css_tree_path(),
+        }
+    }
+}
+
+impl CssTreePath for CssMediaAtRule {
+    fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
+        let queries = self
+            .queries()
+            .into_iter()
+            .map(|r| r.map_err(|e| CharismaError::ParseError(e.to_string())))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut path: Vec<Part> = vec![Part::AtRule(AtRulePart::Media)];
+        for sub_path in queries.iter().map(|q| q.to_css_tree_path()) {
+            path.extend(sub_path?)
+        }
+
+        Ok(path)
+    }
+}
+
 impl CssTreePath for AnyCssAtRule {
     fn to_css_tree_path(&self) -> Result<Vec<Part>, CharismaError> {
         match self {
@@ -1608,7 +1794,7 @@ impl CssTreePath for AnyCssAtRule {
             AnyCssAtRule::CssImportAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
             AnyCssAtRule::CssKeyframesAtRule(r) => r.to_css_tree_path(),
             AnyCssAtRule::CssLayerAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
-            AnyCssAtRule::CssMediaAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
+            AnyCssAtRule::CssMediaAtRule(r) => r.to_css_tree_path(),
             AnyCssAtRule::CssNamespaceAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
             AnyCssAtRule::CssPageAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
             AnyCssAtRule::CssPropertyAtRule(r) => Err(CharismaError::NotSupported(r.to_string())),
